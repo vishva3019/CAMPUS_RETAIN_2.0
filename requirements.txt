@@ -1,0 +1,6 @@
+Flask
+Flask-SQLAlchemy
+Werkzeug
+twilio
+python-dotenv
+psycopg2-binary
