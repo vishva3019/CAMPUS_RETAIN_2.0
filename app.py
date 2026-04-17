@@ -1,279 +1,470 @@
 import os
-import random
-from datetime import datetime, timedelta
+import smtplib
+import base64
+from datetime import datetime
+from functools import wraps
+from email.mime.text import MIMEText
 
-from flask import (
-    Flask, render_template, request, redirect,
-    url_for, session, flash, jsonify
-)
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# Optional Twilio
+try:
+    from twilio.rest import Client
+except:
+    Client = None
 
-# =====================================================
-# APP CONFIG
-# =====================================================
 app = Flask(__name__)
 
-app.secret_key = os.getenv("SECRET_KEY", "fallback-secret-key")
+# ==================================================
+# CONFIG
+# ==================================================
 
-# IMPORTANT: DB config BEFORE SQLAlchemy(app)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///campusretain.db"
-)
+app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret-key")
 
+db_url = os.environ.get("DATABASE_URL")
+
+if not db_url:
+    raise Exception("DATABASE_URL is not set.")
+
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["UPLOAD_FOLDER"] = "static/uploads"
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+
+# Email
+MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
+MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+
+# Twilio
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.environ.get("TWILIO_PHONE_NUMBER")
+
+# Admin
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
 db = SQLAlchemy(app)
 
-
-# =====================================================
+# ==================================================
 # MODELS
-# =====================================================
+# ==================================================
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(150), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
 
 
-class LostItem(db.Model):
+class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    item_name = db.Column(db.String(150), nullable=False)
-    category = db.Column(db.String(100))
-    location = db.Column(db.String(200))
-    description = db.Column(db.Text)
-    status = db.Column(db.String(50), default="Available")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    name = db.Column(db.String(120), nullable=False)
+    category = db.Column(db.String(50))
+    location = db.Column(db.String(150))
+    secret_detail = db.Column(db.Text)
+    image_data = db.Column(db.Text)
+    status = db.Column(db.String(30), default="Available")
+    date_found = db.Column(db.DateTime, default=datetime.utcnow)
+
+    claims = db.relationship(
+        "Claim",
+        backref="item",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
 
 
-class ClaimRequest(db.Model):
+class Claim(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    item_id = db.Column(db.Integer, db.ForeignKey("lost_item.id"))
-    claimer_email = db.Column(db.String(150))
-    message = db.Column(db.Text)
-    status = db.Column(db.String(50), default="Under Review")
+    item_id = db.Column(db.Integer, db.ForeignKey("item.id"), nullable=False)
+    student_id = db.Column(db.String(50))
+    student_email = db.Column(db.String(120))
+    phone = db.Column(db.String(20))
+    proof_description = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-# =====================================================
-# INIT DB
-# =====================================================
-with app.app_context():
-    db.create_all()
+# ==================================================
+# HELPERS
+# ==================================================
+
+def send_email(receiver, subject, body):
+    if not MAIL_USERNAME or not MAIL_PASSWORD:
+        print("Email config missing")
+        return False
+
+    try:
+        msg = MIMEText(body)
+        msg["Subject"] = subject
+        msg["From"] = MAIL_USERNAME
+        msg["To"] = receiver
+
+        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as server:
+            server.starttls()
+            server.login(MAIL_USERNAME, MAIL_PASSWORD)
+            server.send_message(msg)
+
+        print("Email sent")
+        return True
+
+    except Exception as e:
+        print("Email Error:", str(e))
+        return False
 
 
-# =====================================================
-# HOME
-# =====================================================
+def send_sms(receiver, body):
+    if not (TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_PHONE_NUMBER and Client):
+        print("Twilio config missing")
+        return False
+
+    try:
+        number = ''.join(filter(str.isdigit, receiver))
+
+        if len(number) == 10:
+            receiver = f"+91{number}"
+        elif not receiver.startswith("+"):
+            receiver = f"+{number}"
+
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+        client.messages.create(
+            body=body,
+            from_=TWILIO_PHONE_NUMBER,
+            to=receiver
+        )
+
+        print("SMS sent")
+        return True
+
+    except Exception as e:
+        print("SMS Error:", str(e))
+        return False
+
+
+# ==================================================
+# AUTH DECORATORS
+# ==================================================
+
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_email" not in session:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if session.get("is_admin") != True:
+            return redirect(url_for("admin_login"))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+# ==================================================
+# ROUTES
+# ==================================================
+
 @app.route("/")
-def home():
-    items = LostItem.query.order_by(LostItem.created_at.desc()).all()
-    return render_template("index.html", items=items)
+@login_required
+def index():
+    items = Item.query.order_by(Item.date_found.desc()).all()
+    return render_template(
+        "index.html",
+        items=items,
+        user_email=session.get("user_email")
+    )
 
 
-# =====================================================
-# LOGIN PAGE
-# =====================================================
-@app.route("/login")
+# ---------------- LOGIN ----------------
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    return render_template("login.html")
+    try:
+        if request.method == "POST":
+            email = request.form.get("email", "").strip().lower()
+            password = request.form.get("password", "")
+
+            if not email.endswith("@ced.alliance.edu.in"):
+                return render_template(
+                    "login.html",
+                    error="Only organization emails allowed."
+                )
+
+            user = User.query.filter_by(email=email).first()
+
+            # First time register
+            if not user:
+                new_user = User(
+                    email=email,
+                    password=generate_password_hash(password)
+                )
+                db.session.add(new_user)
+                db.session.commit()
+
+                session["user_email"] = email
+
+                send_email(
+                    email,
+                    "Campus Retain Registration Successful",
+                    "Welcome to Campus Retain. Your account has been created."
+                )
+
+                return redirect(url_for("index"))
+
+            # Existing user
+            try:
+                valid = check_password_hash(user.password, password)
+            except:
+                valid = (user.password == password)
+
+            if valid:
+                session["user_email"] = email
+                return redirect(url_for("index"))
+
+            return render_template(
+                "login.html",
+                error="Incorrect password."
+            )
+
+        return render_template("login.html")
+
+    except Exception as e:
+        return f"Login Error: {str(e)}"
 
 
-# =====================================================
-# LOGIN / AUTO REGISTER
-# =====================================================
-@app.route("/login_submit", methods=["POST"])
-def login_submit():
-    email = request.form["email"].strip().lower()
-    password = request.form["password"]
+# ---------------- ADMIN LOGIN ----------------
 
-    user = User.query.filter_by(email=email).first()
+@app.route("/admin_login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
 
-    # Auto Register
-    if not user:
-        hashed = generate_password_hash(password)
-        user = User(email=email, password=hashed)
-        db.session.add(user)
-        db.session.commit()
+        if email == ADMIN_EMAIL and password == ADMIN_PASSWORD:
+            session["is_admin"] = True
+            session["user_email"] = email
+            return redirect(url_for("admin_dashboard"))
 
-    # Existing user login
-    if check_password_hash(user.password, password):
-        session["user"] = email
-        return redirect(url_for("home"))
+        return render_template(
+            "admin_login.html",
+            error="Invalid credentials."
+        )
 
-    flash("Wrong password. Use Forgot Password.")
-    return redirect(url_for("login"))
+    return render_template("admin_login.html")
 
 
-# =====================================================
-# LOGOUT
-# =====================================================
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
 
-# =====================================================
-# REPORT ITEM
-# =====================================================
-@app.route("/api/report", methods=["POST"])
-def report_item():
-    if "user" not in session:
-        return jsonify({"success": False, "message": "Login required"})
+# ---------------- DB INIT ----------------
 
-    data = request.json
-
-    item = LostItem(
-        item_name=data.get("item_name"),
-        category=data.get("category"),
-        location=data.get("location"),
-        description=data.get("description"),
-        status="Available"
-    )
-
-    db.session.add(item)
-    db.session.commit()
-
-    return jsonify({"success": True})
+@app.route("/init-db")
+def init_db():
+    try:
+        db.create_all()
+        return "Database initialized successfully!"
+    except Exception as e:
+        return f"DB Error: {str(e)}"
 
 
-# =====================================================
-# CLAIM ITEM
-# =====================================================
-@app.route("/api/claim", methods=["POST"])
-def claim_item():
-    if "user" not in session:
-        return jsonify({"success": False, "message": "Login required"})
+# ---------------- ADMIN DASHBOARD ----------------
 
-    data = request.json
-
-    claim = ClaimRequest(
-        item_id=data.get("item_id"),
-        claimer_email=session["user"],
-        message=data.get("message"),
-        status="Under Review"
-    )
-
-    db.session.add(claim)
-    db.session.commit()
-
-    return jsonify({"success": True})
-
-
-# =====================================================
-# ADMIN LOGIN PAGE
-# =====================================================
-@app.route("/admin_login")
-def admin_login():
-    return render_template("admin_login.html")
-
-
-# =====================================================
-# ADMIN LOGIN
-# =====================================================
-@app.route("/admin_login_submit", methods=["POST"])
-def admin_login_submit():
-    email = request.form["email"]
-    password = request.form["password"]
-
-    admin_email = os.getenv("ADMIN_EMAIL", "admin@campus.com")
-    admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
-
-    if email == admin_email and password == admin_password:
-        session["admin"] = True
-        return redirect(url_for("admin"))
-
-    flash("Invalid Admin Login")
-    return redirect(url_for("admin_login"))
-
-
-# =====================================================
-# ADMIN DASHBOARD
-# =====================================================
 @app.route("/admin")
-def admin():
-    if "admin" not in session:
-        return redirect(url_for("admin_login"))
-
-    claims = ClaimRequest.query.order_by(ClaimRequest.id.desc()).all()
-    return render_template("admin.html", claims=claims)
+@admin_required
+def admin_dashboard():
+    items = Item.query.order_by(Item.date_found.desc()).all()
+    return render_template("admin.html", items=items)
 
 
-# =====================================================
-# APPROVE CLAIM
-# =====================================================
-@app.route("/api/admin/approve/<int:claim_id>", methods=["POST"])
-def approve_claim(claim_id):
-    if "admin" not in session:
-        return jsonify({"success": False})
+# ==================================================
+# API ROUTES
+# ==================================================
 
-    claim = ClaimRequest.query.get(claim_id)
+# ---------- REPORT ITEM ----------
 
-    if not claim:
-        return jsonify({"success": False})
+@app.route("/api/report", methods=["POST"])
+@login_required
+def report_item():
+    try:
+        f = request.files.get("image")
+        image_b64 = None
 
-    claim.status = "Approved"
+        if f and f.filename:
+            image_b64 = (
+                "data:" + f.content_type +
+                ";base64," +
+                base64.b64encode(f.read()).decode()
+            )
 
-    # Reject others
-    other_claims = ClaimRequest.query.filter(
-        ClaimRequest.item_id == claim.item_id,
-        ClaimRequest.id != claim.id
-    ).all()
+        item = Item(
+            name=request.form["name"],
+            category=request.form.get("category", "Other"),
+            location=request.form["location"],
+            secret_detail=request.form.get("secret_detail", ""),
+            image_data=image_b64
+        )
 
-    for c in other_claims:
-        c.status = "Rejected"
+        db.session.add(item)
+        db.session.commit()
 
-    # Item marked claimed
-    item = LostItem.query.get(claim.item_id)
-    if item:
+        # Optional notify admin
+        if ADMIN_EMAIL:
+            send_email(
+                ADMIN_EMAIL,
+                "New Item Reported",
+                f"A new item '{item.name}' has been reported."
+            )
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- CLAIM ITEM ----------
+
+@app.route("/api/claim", methods=["POST"])
+@login_required
+def claim_item():
+    try:
+        data = request.json
+
+        item = db.session.get(Item, data["item_id"])
+
+        if not item:
+            return jsonify({"error": "Item not found"}), 404
+
+        item.status = "Pending"
+
+        claim = Claim(
+            item_id=data["item_id"],
+            student_id=data["student_id"],
+            student_email=data["student_email"],
+            phone=data.get("phone", ""),
+            proof_description=data["proof_description"]
+        )
+
+        db.session.add(claim)
+        db.session.commit()
+
+        # Notify student
+        send_email(
+            data["student_email"],
+            "Campus Retain Claim Submitted",
+            f"Your claim request for '{item.name}' is submitted and under review."
+        )
+
+        send_sms(
+            data.get("phone", ""),
+            f"Campus Retain: Claim request for {item.name} submitted."
+        )
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- APPROVE CLAIM ----------
+
+@app.route("/api/admin/approve/<int:item_id>", methods=["POST"])
+@admin_required
+def approve_claim(item_id):
+    try:
+        item = db.session.get(Item, item_id)
+
+        if not item:
+            return jsonify({"error": "Not found"}), 404
+
         item.status = "Claimed"
 
-    db.session.commit()
+        latest_claim = Claim.query.filter_by(
+            item_id=item_id
+        ).order_by(
+            Claim.timestamp.desc()
+        ).first()
 
-    return jsonify({"success": True})
-
-
-# =====================================================
-# REJECT CLAIM
-# =====================================================
-@app.route("/api/admin/reject/<int:claim_id>", methods=["POST"])
-def reject_claim(claim_id):
-    if "admin" not in session:
-        return jsonify({"success": False})
-
-    claim = ClaimRequest.query.get(claim_id)
-
-    if claim:
-        claim.status = "Rejected"
         db.session.commit()
 
-    return jsonify({"success": True})
+        if latest_claim:
+            send_email(
+                latest_claim.student_email,
+                "Campus Retain Claim Approved",
+                f"Your claim for '{item.name}' has been approved. Please collect it from office."
+            )
+
+            send_sms(
+                latest_claim.phone,
+                f"Campus Retain: Claim approved for {item.name}. Collect from office."
+            )
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
-# =====================================================
-# FORGOT PASSWORD (TEMP)
-# =====================================================
-@app.route("/forgot_password", methods=["POST"])
-def forgot_password():
-    email = request.form["email"].strip().lower()
-    new_password = request.form["new_password"]
+# ---------- DELETE ITEM ----------
 
-    user = User.query.filter_by(email=email).first()
+@app.route("/api/item/delete/<int:item_id>", methods=["POST"])
+@admin_required
+def delete_item(item_id):
+    try:
+        item = db.session.get(Item, item_id)
 
-    if user:
-        user.password = generate_password_hash(new_password)
+        if not item:
+            return jsonify({"error": "Not found"}), 404
+
+        db.session.delete(item)
         db.session.commit()
-        flash("Password Reset Successful")
-    else:
-        flash("Email not found")
 
-    return redirect(url_for("login"))
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
-# =====================================================
-# RUN
-# =====================================================
+# ==================================================
+# LOCAL RUN
+# ==================================================
+
+# ---------- TEST EMAIL ----------
+
+@app.route("/test-email")
+def test_email():
+    send_email(
+        "vishvanth3049@gmail.com",
+        "Campus Retain Test Email",
+        "Email notifications are working successfully."
+    )
+    return "Test Email Sent"
+
+
+# ---------- TEST SMS ----------
+
+@app.route("/test-sms")
+def test_sms():
+    send_sms(
+        "+919686193049",
+        "Campus Retain SMS notifications are working."
+    )
+    return "Test SMS Sent"
+
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+
     app.run(debug=True)

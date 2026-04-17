@@ -1,350 +1,368 @@
-<!-- templates/index.html -->
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Campus Retain | Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusRetain | Alliance University</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
 
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-<style>
-body{
-    font-family:'Inter',sans-serif;
-}
-.glass{
-    background:rgba(255,255,255,.8);
-    backdrop-filter:blur(12px);
-}
-</style>
+        .glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+        }
+    </style>
 </head>
 
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-50 text-slate-900 scroll-smooth">
 
-<!-- NAVBAR -->
-<nav class="sticky top-0 z-50 border-b glass">
-<div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-
-    <div class="flex items-center gap-3 font-black text-xl">
-        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
-            C
+    <nav class="sticky top-0 z-50 border-b glass">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-2 font-bold text-xl cursor-pointer" onclick="location.reload()">
+                <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">C
+                </div>
+                <span>CampusRetain</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="hidden md:inline text-sm text-slate-500 font-medium">{{ user_email }}</span>
+                <button onclick="toggleModal('reportModal')"
+                    class="bg-indigo-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-indigo-700 transition shadow-md">Report
+                    Found</button>
+                <a href="/logout"
+                    class="text-sm font-bold text-slate-400 hover:text-rose-600 transition pl-2 border-l border-slate-200">Logout</a>
+            </div>
         </div>
-        <span>Campus Retain</span>
+    </nav>
+
+    <header class="py-16 px-6 bg-white border-b border-slate-100 text-center">
+        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight">Lost it? <span class="text-indigo-600">Find
+                it.</span></h1>
+        <div
+            class="mt-8 flex flex-col md:flex-row items-center justify-center gap-3 max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-xl border border-slate-100 transition focus-within:ring-2 ring-indigo-600">
+            <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Search (e.g. 'iPhone', 'Keys')..."
+                class="w-full px-4 py-3 outline-none rounded-xl">
+            <button
+                class="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-xl font-semibold hover:bg-slate-800 transition">Search</button>
+        </div>
+    </header>
+
+    <main id="browse" class="max-w-7xl mx-auto px-6 py-12">
+        <h2 class="text-2xl font-bold mb-8">Recently Found Items</h2>
+        <div id="itemGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for item in items %}
+            <div class="card bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition-all"
+                data-name="{{ item.name }}">
+                <div class="relative group">
+                    <img src="{{ item.image_data if item.image_data else 'https://via.placeholder.com/300?text=No+Image' }}"
+                        class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105">
+                    {% if item.status == 'Pending' %}
+                    <div class="absolute inset-0 bg-white/60 flex items-center justify-center z-10">
+                        <span
+                            class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-sm">Under
+                            Review</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="p-5">
+                    <span
+                        class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded">{{
+                        item.category }}</span>
+                    <h3 class="font-bold text-lg mt-2">{{ item.name }}</h3>
+                    <p class="text-slate-500 text-xs mt-1 truncate">📍 {{ item.location }}</p>
+                    {% if item.status == 'Available' %}
+                    <button onclick="openClaimModal('{{ item.id }}', '{{ item.name }}')"
+                        class="w-full mt-4 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-indigo-600 transition shadow-md shadow-slate-200">Claim
+                        Item</button>
+                    {% else %}
+                    <button disabled
+                        class="w-full mt-4 py-3 bg-slate-100 text-slate-400 font-bold rounded-xl cursor-not-allowed">Claimed</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="col-span-full py-12 text-center text-slate-400">
+                <p>No available items found!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Report Modal -->
+    <div id="reportModal"
+        class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl relative">
+            <button onclick="toggleModal('reportModal')"
+                class="absolute top-4 right-4 text-slate-400 hover:bg-slate-100 rounded-full p-2 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+            <h2 class="text-2xl font-bold">Report Found Item</h2>
+            <p class="text-sm font-semibold text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100 mt-2 mb-4">
+                ⚠️ IMPORTANT: All reported items must be physically handed over to the DOSS office immediately after
+                submission!
+            </p>
+            <form id="reportForm" class="space-y-4">
+                <input type="text" name="name" placeholder="Item Name *"
+                    class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
+                    required>
+                <div class="grid grid-cols-2 gap-4">
+                    <select name="category"
+                        class="border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
+                        <option>Electronics</option>
+                        <option>Accessories</option>
+                        <option>Books</option>
+                        <option>Clothing</option>
+                        <option>Other</option>
+                    </select>
+                    <input type="text" name="location" placeholder="Found Location *"
+                        class="border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
+                        required>
+                </div>
+                <textarea name="secret_detail" placeholder="Secret Identification Detail (Hidden from public)..."
+                    class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition min-h-[80px]"></textarea>
+
+                <!-- Premium Image Upload -->
+                <div class="mt-2 w-full">
+                    <label
+                        class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition relative overflow-hidden group">
+                        <div id="imagePlaceholder"
+                            class="flex flex-col items-center justify-center py-5 transition-transform group-hover:-translate-y-1">
+                            <svg class="w-8 h-8 mb-2 text-indigo-500" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            <p class="text-sm text-slate-600 font-semibold">Click to upload image</p>
+                        </div>
+                        <img id="imagePreview" src="" class="hidden absolute inset-0 w-full h-full object-cover">
+                        <input id="image" name="image" type="file" class="hidden" accept="image/*"
+                            onchange="previewImage(event)" />
+                    </label>
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button type="button" onclick="toggleModal('reportModal')"
+                        class="flex-1 font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition py-3">Cancel</button>
+                    <button id="reportSubmitBtn" type="submit"
+                        class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 flex justify-center items-center">
+                        <span>Submit Report</span>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <div class="flex items-center gap-4">
-
-        <span class="hidden md:block text-sm text-slate-500 font-semibold">
-            {{ email }}
-        </span>
-
-        <button onclick="openReport()"
-                class="px-5 py-3 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">
-            Report Found
-        </button>
-
-        <a href="/logout"
-           class="text-sm font-bold text-slate-400 hover:text-rose-600 transition">
-           Logout
-        </a>
-
+    <!-- Claim Modal -->
+    <div id="claimModal"
+        class="hidden fixed inset-0 z-[70] flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden relative">
+            <button onclick="toggleModal('claimModal')"
+                class="absolute top-4 right-4 z-10 text-slate-400 hover:bg-slate-100 rounded-full p-2 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+            <div id="claimFormContainer" class="p-8">
+                <h2 class="text-2xl font-bold mb-2">Claim Item</h2>
+                <form id="claimForm" class="space-y-4 pt-4">
+                    <input id="modalItemId" type="hidden">
+                    <input id="modalItemNameDisplay" type="text" readonly
+                        class="w-full text-center font-bold text-indigo-600 bg-indigo-50 py-2 rounded-lg border-none focus:outline-none mb-4">
+                    <input type="text" id="claimStudentId" placeholder="Student ID *"
+                        class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
+                        required>
+                    <input type="email" id="claimEmail" value="{{ user_email }}" readonly
+                        class="w-full border border-slate-200 p-3 rounded-xl bg-slate-100 text-slate-500 focus:outline-none transition">
+                    <input type="tel" id="claimPhone" placeholder="Your Phone Number *"
+                        class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
+                        required>
+                    <textarea id="claimVerification"
+                        placeholder="Tell us something only the owner knows... (e.g., 'crank is scratched on left edge')"
+                        class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition min-h-[100px]"
+                        required></textarea>
+                    <button id="claimSubmitBtn" type="submit"
+                        class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition flex justify-center items-center mt-2">
+                        <span>Submit Claim Request</span>
+                    </button>
+                </form>
+            </div>
+            <div id="claimSuccess" class="hidden p-12 text-center flex flex-col items-center">
+                <div
+                    class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Claim Submitted!</h2>
+                <p class="text-slate-500 mb-8">We've sent a confirmation to your address. We'll verify your details
+                    soon.</p>
+                <button onclick="location.reload()"
+                    class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition">Return
+                    to Home</button>
+            </div>
+        </div>
     </div>
 
-</div>
-</nav>
-
-<!-- HERO -->
-<section class="py-14 px-6 bg-white border-b">
-
-<div class="max-w-5xl mx-auto text-center">
-
-<h1 class="text-5xl md:text-6xl font-black tracking-tight">
-Lost it?
-<span class="text-indigo-600">Find it.</span>
-</h1>
-
-<p class="mt-4 text-slate-500 text-lg">
-Alliance University Lost & Found Portal
-</p>
-
-<div class="mt-8 bg-white shadow-xl border rounded-2xl p-2 flex flex-col md:flex-row gap-2">
-
-<input id="search"
-       type="text"
-       onkeyup="filterItems()"
-       placeholder="Search wallet, keys, phone..."
-       class="flex-1 px-4 py-3 rounded-xl outline-none">
-
-<button class="px-8 py-3 rounded-xl bg-slate-900 text-white font-bold">
-Search
-</button>
-
-</div>
-
-</div>
-</section>
-
-<!-- ITEMS -->
-<section class="max-w-7xl mx-auto px-6 py-12">
-
-<div class="flex items-center justify-between mb-8">
-<h2 class="text-2xl font-bold">Recently Found Items</h2>
-
-<span class="text-sm text-slate-400">
-Claims reviewed by admin
-</span>
-</div>
-
-<div id="grid"
-     class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-{% for item in items %}
-
-<div class="card bg-white rounded-3xl border shadow-sm hover:shadow-xl transition overflow-hidden"
-     data-name="{{ item.item_name }}">
-
-<div class="h-52 bg-slate-100 flex items-center justify-center">
-    <span class="text-slate-400 text-sm">No Image</span>
-</div>
-
-<div class="p-5">
-
-<div class="flex items-center justify-between gap-2">
-
-<span class="text-[10px] font-bold uppercase tracking-widest bg-indigo-50 text-indigo-600 px-2 py-1 rounded">
-{{ item.category }}
-</span>
-
-{% if item.status == "Available" %}
-<span class="text-[10px] font-bold uppercase tracking-widest bg-emerald-100 text-emerald-700 px-2 py-1 rounded">
-Available
-</span>
-{% else %}
-<span class="text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-700 px-2 py-1 rounded">
-Claimed
-</span>
-{% endif %}
-
-</div>
-
-<h3 class="text-lg font-bold mt-3">
-{{ item.item_name }}
-</h3>
-
-<p class="text-xs text-slate-500 mt-1">
-📍 {{ item.location }}
-</p>
-
-{% if item.status == "Available" %}
-
-<button onclick="openClaim('{{ item.id }}','{{ item.item_name }}')"
-        class="w-full mt-5 py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-indigo-600 transition">
-Claim Item
-</button>
-
-{% else %}
-
-<button disabled
-        class="w-full mt-5 py-3 rounded-xl bg-slate-100 text-slate-400 font-bold cursor-not-allowed">
-Already Claimed
-</button>
-
-{% endif %}
-
-</div>
-</div>
-
-{% else %}
-
-<div class="col-span-full bg-white rounded-3xl border p-12 text-center text-slate-400">
-No items found.
-</div>
-
-{% endfor %}
-
-</div>
-</section>
-
-<!-- REPORT MODAL -->
-<div id="reportModal"
-class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-
-<div class="bg-white w-full max-w-lg rounded-3xl p-8 relative">
-
-<button onclick="closeReport()"
-class="absolute top-4 right-4 text-slate-400 hover:text-black">
-✕
-</button>
-
-<h2 class="text-2xl font-bold">Report Found Item</h2>
-
-<form id="reportForm" class="space-y-4 mt-6">
-
-<input name="item_name"
-required
-placeholder="Item Name"
-class="w-full border rounded-xl px-4 py-3">
-
-<div class="grid grid-cols-2 gap-4">
-
-<select name="category"
-class="border rounded-xl px-4 py-3">
-<option>Electronics</option>
-<option>Accessories</option>
-<option>Books</option>
-<option>Clothing</option>
-<option>Other</option>
-</select>
-
-<input name="location"
-required
-placeholder="Found Location"
-class="border rounded-xl px-4 py-3">
-
-</div>
-
-<textarea name="secret_detail"
-placeholder="Secret owner detail"
-class="w-full border rounded-xl px-4 py-3 min-h-[90px]"></textarea>
-
-<button class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold">
-Submit Report
-</button>
-
-</form>
-
-</div>
-</div>
-
-<!-- CLAIM MODAL -->
-<div id="claimModal"
-class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-
-<div class="bg-white w-full max-w-lg rounded-3xl p-8 relative">
-
-<button onclick="closeClaim()"
-class="absolute top-4 right-4 text-slate-400 hover:text-black">
-✕
-</button>
-
-<h2 class="text-2xl font-bold">Claim Item</h2>
-
-<form id="claimForm" class="space-y-4 mt-6">
-
-<input id="item_id" type="hidden">
-
-<input id="item_name"
-readonly
-class="w-full bg-indigo-50 text-indigo-700 rounded-xl px-4 py-3 font-bold text-center">
-
-<input name="student_id"
-required
-placeholder="Student ID"
-class="w-full border rounded-xl px-4 py-3">
-
-<input name="phone"
-required
-placeholder="Phone Number"
-class="w-full border rounded-xl px-4 py-3">
-
-<textarea name="proof"
-required
-placeholder="Something only owner knows..."
-class="w-full border rounded-xl px-4 py-3 min-h-[100px]"></textarea>
-
-<button class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-indigo-600 transition">
-Submit Claim Request
-</button>
-
-</form>
-
-</div>
-</div>
-
-<!-- TOAST -->
-<div id="toast"
-class="hidden fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-50">
-</div>
-
-<script>
-
-function toast(msg){
-    const t=document.getElementById("toast");
-    t.innerText=msg;
-    t.classList.remove("hidden");
-    setTimeout(()=>t.classList.add("hidden"),3000);
-}
-
-function openReport(){
-    document.getElementById("reportModal").classList.remove("hidden");
-}
-
-function closeReport(){
-    document.getElementById("reportModal").classList.add("hidden");
-}
-
-function openClaim(id,name){
-    document.getElementById("item_id").value=id;
-    document.getElementById("item_name").value=name;
-    document.getElementById("claimModal").classList.remove("hidden");
-}
-
-function closeClaim(){
-    document.getElementById("claimModal").classList.add("hidden");
-}
-
-function filterItems(){
-    let val=document.getElementById("search").value.toLowerCase();
-
-    document.querySelectorAll(".card").forEach(card=>{
-        let name=card.dataset.name.toLowerCase();
-        card.style.display=name.includes(val) ? "block":"none";
-    });
-}
-
-/* Report */
-document.getElementById("reportForm").onsubmit = async(e)=>{
-    e.preventDefault();
-
-    let fd=new FormData(e.target);
-
-    let res=await fetch("/api/report",{
-        method:"POST",
-        body:fd
-    });
-
-    let txt=await res.text();
-    toast(txt);
-
-    if(res.ok){
-        closeReport();
-        setTimeout(()=>location.reload(),1000);
-    }
-};
-
-/* Claim */
-document.getElementById("claimForm").onsubmit = async(e)=>{
-    e.preventDefault();
-
-    let fd=new FormData(e.target);
-    fd.append("item_id", document.getElementById("item_id").value);
-
-    let res=await fetch("/api/claim",{
-        method:"POST",
-        body:fd
-    });
-
-    let txt=await res.text();
-    toast(txt);
-
-    if(res.ok){
-        closeClaim();
-    }
-};
-
-</script>
-
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-[80] flex flex-col gap-3"></div>
+
+    <script>
+        // Modal functions
+        function toggleModal(id) {
+            const el = document.getElementById(id);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+
+        function openClaimModal(id, name) {
+            document.getElementById('modalItemId').value = id;
+            document.getElementById('modalItemNameDisplay').value = name;
+            document.getElementById('claimForm').reset();
+            document.getElementById('claimFormContainer').classList.remove('hidden');
+            document.getElementById('claimSuccess').classList.add('hidden');
+            toggleModal('claimModal');
+        }
+
+        // Search filtering
+        function filterItems() {
+            let input = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('.card').forEach(card => {
+                let name = card.dataset.name.toLowerCase();
+                if (name.includes(input)) {
+                    card.parentElement.style.display = 'block'; // Or block? Wait, card is directly child of Grid? Yes wait no, card is the wrapper itself.
+                    card.style.display = "block";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        // Preview Image for Report Modal
+        function previewImage(event) {
+            const input = event.target;
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                    document.getElementById('imagePlaceholder').classList.add('opacity-0');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            let iconSvg = '';
+            let bgClass = '';
+
+            if (type === 'success') {
+                bgClass = 'bg-slate-900 border-l-4 border-green-500';
+                iconSvg = `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+            } else if (type === 'error') {
+                bgClass = 'bg-red-600 border-l-4 border-red-800';
+                iconSvg = `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+            } else {
+                bgClass = 'bg-indigo-600';
+                iconSvg = `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.className = `flex items-center gap-3 ${bgClass} text-white px-5 py-4 rounded-xl shadow-2xl transform translate-y-12 opacity-0 transition-all duration-300 min-w-[300px] font-medium`;
+            toast.innerHTML = `<div class="shrink-0 flex items-center justify-center">${iconSvg}</div><span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    toast.classList.remove('translate-y-12', 'opacity-0');
+                });
+            });
+
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.add('translate-y-12', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Form Submission handling
+        document.getElementById('reportForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('reportSubmitBtn');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Submitting...`;
+
+            try {
+                const response = await fetch('/api/report', { method: 'POST', body: new FormData(e.target) });
+                if (response.ok) {
+                    showToast('Reported! Please drop the item off at the DOSS office.');
+                    toggleModal('reportModal');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast('Failed to report item. Please try again.', 'error');
+                }
+            } catch (err) {
+                showToast('Network error occurred.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        };
+
+        document.getElementById('claimForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('claimSubmitBtn');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Verifying...`;
+
+            const data = {
+                item_id: document.getElementById('modalItemId').value,
+                student_id: document.getElementById('claimStudentId').value,
+                student_email: document.getElementById('claimEmail').value,
+                phone: document.getElementById('claimPhone').value,
+                proof_description: document.getElementById('claimVerification').value
+            };
+
+            try {
+                const response = await fetch('/api/claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                    showToast('Claim submitted successfully!', 'success');
+                    document.getElementById('claimFormContainer').classList.add('hidden');
+                    document.getElementById('claimSuccess').classList.remove('hidden');
+                } else {
+                    showToast('Failed to submit claim.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }
+            } catch (err) {
+                showToast('Network error occurred.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        };
+    </script>
 </body>
+
 </html>
