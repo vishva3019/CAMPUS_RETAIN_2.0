@@ -138,29 +138,43 @@ def admin_required(f):
 # --- AUTH ROUTES ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
+    try:
+        if request.method == 'POST':
+            email = request.form.get('email', '').strip().lower()
+            password = request.form.get('password', '')
 
-        if not email.endswith('@ced.alliance.edu.in'):
-            return render_template('login.html', error="Only organization emails allowed.")
+            if not email.endswith('@ced.alliance.edu.in'):
+                return render_template('login.html', error="Only organization emails allowed.")
 
-        user = User.query.filter_by(email=email).first()
+            user = User.query.filter_by(email=email).first()
 
-        if not user:
-            new_user = User(email=email, password=generate_password_hash(password))
-            db.session.add(new_user)
-            db.session.commit()
-            session['user_email'] = email
-            return redirect(url_for('index'))
+            # First time user -> auto register
+            if not user:
+                hashed_password = generate_password_hash(password)
+                new_user = User(email=email, password=hashed_password)
+                db.session.add(new_user)
+                db.session.commit()
 
-        if check_password_hash(user.password, password):
-            session['user_email'] = email
-            return redirect(url_for('index'))
+                session['user_email'] = email
+                return redirect(url_for('index'))
 
-        return render_template('login.html', error="Incorrect password.")
+            # Existing user login
+            try:
+                valid = check_password_hash(user.password, password)
+            except:
+                # fallback if old plain text password exists
+                valid = (user.password == password)
 
-    return render_template('login.html')
+            if valid:
+                session['user_email'] = email
+                return redirect(url_for('index'))
+
+            return render_template('login.html', error="Incorrect password.")
+
+        return render_template('login.html')
+
+    except Exception as e:
+        return f"Login Error: {str(e)}"
 
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
