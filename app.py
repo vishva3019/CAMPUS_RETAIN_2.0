@@ -1,14 +1,15 @@
 import os
 import smtplib
-from functools import wraps
 import base64
 from datetime import datetime
+from functools import wraps
 from email.mime.text import MIMEText
+
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# OPTIONAL: Twilio (safe import)
+# Optional Twilio
 try:
     from twilio.rest import Client
 except:
@@ -16,256 +17,418 @@ except:
 
 app = Flask(__name__)
 
-# --- SECRET KEY ---
-app.secret_key = os.environ.get('SECRET_KEY', 'fallback-secret-key')
+# ==================================================
+# CONFIG
+# ==================================================
 
-# --- DATABASE CONFIG ---
-db_url = os.environ.get('DATABASE_URL')
+app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret-key")
+
+db_url = os.environ.get("DATABASE_URL")
 
 if not db_url:
-    raise Exception("DATABASE_URL is not set. Please configure it in Vercel.")
+    raise Exception("DATABASE_URL is not set.")
 
-# Fix postgres:// issue
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["UPLOAD_FOLDER"] = "static/uploads"
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
-# --- FILE CONFIG ---
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+# Email
+MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
+MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
 
-# --- EMAIL CONFIG (SAFE) ---
-MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
-MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+# Twilio
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.environ.get("TWILIO_PHONE_NUMBER")
 
-# --- TWILIO CONFIG ---
-TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
-TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
-TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
+# Admin
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
 db = SQLAlchemy(app)
 
-# --- MODELS ---
+# ==================================================
+# MODELS
+# ==================================================
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+
 
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(120), nullable=False)
     category = db.Column(db.String(50))
-    location = db.Column(db.String(100))
+    location = db.Column(db.String(150))
     secret_detail = db.Column(db.Text)
     image_data = db.Column(db.Text)
-    status = db.Column(db.String(20), default='Available')
+    status = db.Column(db.String(30), default="Available")
     date_found = db.Column(db.DateTime, default=datetime.utcnow)
-    claims = db.relationship('Claim', backref='item', lazy=True, cascade="all, delete-orphan")
+
+    claims = db.relationship(
+        "Claim",
+        backref="item",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+
 
 class Claim(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey("item.id"), nullable=False)
     student_id = db.Column(db.String(50))
-    student_email = db.Column(db.String(100))
+    student_email = db.Column(db.String(120))
     phone = db.Column(db.String(20))
     proof_description = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-# --- EMAIL FUNCTION ---
+
+# ==================================================
+# HELPERS
+# ==================================================
+
 def send_email(receiver, subject, body):
     if not MAIL_USERNAME or not MAIL_PASSWORD:
-        print("Email not configured")
+        print("Email config missing")
         return False
 
     try:
         msg = MIMEText(body)
-        msg['Subject'] = subject
-        msg['From'] = MAIL_USERNAME
-        msg['To'] = receiver
+        msg["Subject"] = subject
+        msg["From"] = MAIL_USERNAME
+        msg["To"] = receiver
 
         with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as server:
             server.starttls()
             server.login(MAIL_USERNAME, MAIL_PASSWORD)
             server.send_message(msg)
 
+        print("Email sent")
         return True
+
     except Exception as e:
-        print(f"Mail Error: {e}")
+        print("Email Error:", str(e))
         return False
 
-# --- SMS FUNCTION ---
+
 def send_sms(receiver, body):
     if not (TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_PHONE_NUMBER and Client):
-        print("Twilio not configured")
+        print("Twilio config missing")
         return False
 
     try:
-        clean_num = ''.join(filter(str.isdigit, receiver))
-        if len(clean_num) == 10:
-            receiver = f"+91{clean_num}"
-        elif not receiver.startswith('+'):
-            receiver = f"+{clean_num}"
+        number = ''.join(filter(str.isdigit, receiver))
+
+        if len(number) == 10:
+            receiver = f"+91{number}"
+        elif not receiver.startswith("+"):
+            receiver = f"+{number}"
 
         client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-        client.messages.create(body=body, from_=TWILIO_PHONE_NUMBER, to=receiver)
 
+        client.messages.create(
+            body=body,
+            from_=TWILIO_PHONE_NUMBER,
+            to=receiver
+        )
+
+        print("SMS sent")
         return True
+
     except Exception as e:
-        print(f"SMS Error: {e}")
+        print("SMS Error:", str(e))
         return False
 
-# --- DECORATORS ---
+
+# ==================================================
+# AUTH DECORATORS
+# ==================================================
+
 def login_required(f):
     @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_email' not in session:
-            return redirect(url_for('login'))
+    def wrapper(*args, **kwargs):
+        if "user_email" not in session:
+            return redirect(url_for("login"))
         return f(*args, **kwargs)
-    return decorated_function
+    return wrapper
+
 
 def admin_required(f):
     @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if session.get('is_admin') != True:
-            return redirect(url_for('admin_login'))
+    def wrapper(*args, **kwargs):
+        if session.get("is_admin") != True:
+            return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
-    return decorated_function
+    return wrapper
 
-# --- AUTH ROUTES ---
-@app.route('/login', methods=['GET', 'POST'])
+
+# ==================================================
+# ROUTES
+# ==================================================
+
+@app.route("/")
+@login_required
+def index():
+    items = Item.query.order_by(Item.date_found.desc()).all()
+    return render_template(
+        "index.html",
+        items=items,
+        user_email=session.get("user_email")
+    )
+
+
+# ---------------- LOGIN ----------------
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
     try:
-        if request.method == 'POST':
-            email = request.form.get('email', '').strip().lower()
-            password = request.form.get('password', '')
+        if request.method == "POST":
+            email = request.form.get("email", "").strip().lower()
+            password = request.form.get("password", "")
 
-            if not email.endswith('@ced.alliance.edu.in'):
-                return render_template('login.html', error="Only organization emails allowed.")
+            if not email.endswith("@ced.alliance.edu.in"):
+                return render_template(
+                    "login.html",
+                    error="Only organization emails allowed."
+                )
 
             user = User.query.filter_by(email=email).first()
 
-            # First time user -> auto register
+            # First time register
             if not user:
-                hashed_password = generate_password_hash(password)
-                new_user = User(email=email, password=hashed_password)
+                new_user = User(
+                    email=email,
+                    password=generate_password_hash(password)
+                )
                 db.session.add(new_user)
                 db.session.commit()
 
-                session['user_email'] = email
-                return redirect(url_for('index'))
+                session["user_email"] = email
 
-            # Existing user login
+                send_email(
+                    email,
+                    "Campus Retain Registration Successful",
+                    "Welcome to Campus Retain. Your account has been created."
+                )
+
+                return redirect(url_for("index"))
+
+            # Existing user
             try:
                 valid = check_password_hash(user.password, password)
             except:
-                # fallback if old plain text password exists
                 valid = (user.password == password)
 
             if valid:
-                session['user_email'] = email
-                return redirect(url_for('index'))
+                session["user_email"] = email
+                return redirect(url_for("index"))
 
-            return render_template('login.html', error="Incorrect password.")
+            return render_template(
+                "login.html",
+                error="Incorrect password."
+            )
 
-        return render_template('login.html')
+        return render_template("login.html")
 
     except Exception as e:
         return f"Login Error: {str(e)}"
 
-@app.route('/admin_login', methods=['GET', 'POST'])
+
+# ---------------- ADMIN LOGIN ----------------
+
+@app.route("/admin_login", methods=["GET", "POST"])
 def admin_login():
-    admin_email = os.environ.get('ADMIN_EMAIL')
-    admin_password = os.environ.get('ADMIN_PASSWORD')
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
 
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
+        if email == ADMIN_EMAIL and password == ADMIN_PASSWORD:
+            session["is_admin"] = True
+            session["user_email"] = email
+            return redirect(url_for("admin_dashboard"))
 
-        if email == admin_email and password == admin_password:
-            session['is_admin'] = True
-            session['user_email'] = email
-            return redirect(url_for('admin_dashboard'))
+        return render_template(
+            "admin_login.html",
+            error="Invalid credentials."
+        )
 
-        return render_template('admin_login.html', error="Invalid credentials.")
+    return render_template("admin_login.html")
 
-    return render_template('admin_login.html')
 
-@app.route('/logout')
+@app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for("login"))
 
-# --- TEMP DATABASE INIT ROUTE ---
-@app.route('/init-db')
+
+# ---------------- DB INIT ----------------
+
+@app.route("/init-db")
 def init_db():
     try:
         db.create_all()
-        return "✅ Database initialized successfully!"
+        return "Database initialized successfully!"
     except Exception as e:
-        return f"❌ Error: {str(e)}"
+        return f"DB Error: {str(e)}"
 
-# --- MAIN ROUTES ---
-@app.route('/')
-@login_required
-def index():
-    items = Item.query.order_by(Item.date_found.desc()).all()
-    return render_template('index.html', items=items, user_email=session.get('user_email'))
 
-@app.route('/admin')
+# ---------------- ADMIN DASHBOARD ----------------
+
+@app.route("/admin")
 @admin_required
 def admin_dashboard():
     items = Item.query.order_by(Item.date_found.desc()).all()
-    return render_template('admin.html', items=items)
+    return render_template("admin.html", items=items)
 
-# --- API ROUTES ---
-@app.route('/api/report', methods=['POST'])
+
+# ==================================================
+# API ROUTES
+# ==================================================
+
+# ---------- REPORT ITEM ----------
+
+@app.route("/api/report", methods=["POST"])
 @login_required
 def report_item():
     try:
-        f = request.files.get('image')
+        f = request.files.get("image")
         image_b64 = None
 
-        if f:
-            image_b64 = "data:" + f.content_type + ";base64," + base64.b64encode(f.read()).decode()
+        if f and f.filename:
+            image_b64 = (
+                "data:" + f.content_type +
+                ";base64," +
+                base64.b64encode(f.read()).decode()
+            )
 
-        new_item = Item(
-            name=request.form['name'],
-            category=request.form.get('category', 'Other'),
-            location=request.form['location'],
-            secret_detail=request.form.get('secret_detail', ''),
+        item = Item(
+            name=request.form["name"],
+            category=request.form.get("category", "Other"),
+            location=request.form["location"],
+            secret_detail=request.form.get("secret_detail", ""),
             image_data=image_b64
         )
 
-        db.session.add(new_item)
+        db.session.add(item)
         db.session.commit()
+
+        # Optional notify admin
+        if ADMIN_EMAIL:
+            send_email(
+                ADMIN_EMAIL,
+                "New Item Reported",
+                f"A new item '{item.name}' has been reported."
+            )
+
         return jsonify({"status": "success"})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/claim', methods=['POST'])
+
+# ---------- CLAIM ITEM ----------
+
+@app.route("/api/claim", methods=["POST"])
 @login_required
 def claim_item():
     try:
         data = request.json
-        item = db.session.get(Item, data['item_id'])
 
-        if item:
-            item.status = 'Pending'
+        item = db.session.get(Item, data["item_id"])
 
-        new_claim = Claim(
-            item_id=data['item_id'],
-            student_id=data['student_id'],
-            student_email=data['student_email'],
-            phone=data.get('phone', ''),
-            proof_description=data['proof_description']
+        if not item:
+            return jsonify({"error": "Item not found"}), 404
+
+        item.status = "Pending"
+
+        claim = Claim(
+            item_id=data["item_id"],
+            student_id=data["student_id"],
+            student_email=data["student_email"],
+            phone=data.get("phone", ""),
+            proof_description=data["proof_description"]
         )
 
-        db.session.add(new_claim)
+        db.session.add(claim)
+        db.session.commit()
+
+        # Notify student
+        send_email(
+            data["student_email"],
+            "Campus Retain Claim Submitted",
+            f"Your claim request for '{item.name}' is submitted and under review."
+        )
+
+        send_sms(
+            data.get("phone", ""),
+            f"Campus Retain: Claim request for {item.name} submitted."
+        )
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- APPROVE CLAIM ----------
+
+@app.route("/api/admin/approve/<int:item_id>", methods=["POST"])
+@admin_required
+def approve_claim(item_id):
+    try:
+        item = db.session.get(Item, item_id)
+
+        if not item:
+            return jsonify({"error": "Not found"}), 404
+
+        item.status = "Claimed"
+
+        latest_claim = Claim.query.filter_by(
+            item_id=item_id
+        ).order_by(
+            Claim.timestamp.desc()
+        ).first()
+
+        db.session.commit()
+
+        if latest_claim:
+            send_email(
+                latest_claim.student_email,
+                "Campus Retain Claim Approved",
+                f"Your claim for '{item.name}' has been approved. Please collect it from office."
+            )
+
+            send_sms(
+                latest_claim.phone,
+                f"Campus Retain: Claim approved for {item.name}. Collect from office."
+            )
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- DELETE ITEM ----------
+
+@app.route("/api/item/delete/<int:item_id>", methods=["POST"])
+@admin_required
+def delete_item(item_id):
+    try:
+        item = db.session.get(Item, item_id)
+
+        if not item:
+            return jsonify({"error": "Not found"}), 404
+
+        db.session.delete(item)
         db.session.commit()
 
         return jsonify({"status": "success"})
@@ -273,34 +436,13 @@ def claim_item():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/admin/approve/<int:item_id>', methods=['POST'])
-@admin_required
-def approve_claim(item_id):
-    item = db.session.get(Item, item_id)
 
-    if not item:
-        return jsonify({"error": "Not found"}), 404
+# ==================================================
+# LOCAL RUN
+# ==================================================
 
-    item.status = 'Claimed'
-    db.session.commit()
-
-    return jsonify({"status": "success"})
-
-@app.route('/api/item/delete/<int:item_id>', methods=['POST'])
-@admin_required
-def delete_item(item_id):
-    item = db.session.get(Item, item_id)
-
-    if not item:
-        return jsonify({"error": "Not found"}), 404
-
-    db.session.delete(item)
-    db.session.commit()
-
-    return jsonify({"status": "success"})
-
-# --- LOCAL RUN ONLY ---
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+
     app.run(debug=True)
