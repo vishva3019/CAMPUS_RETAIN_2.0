@@ -185,6 +185,15 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+# --- TEMP DATABASE INIT ROUTE ---
+@app.route('/init-db')
+def init_db():
+    try:
+        db.create_all()
+        return "✅ Database initialized successfully!"
+    except Exception as e:
+        return f"❌ Error: {str(e)}"
+
 # --- MAIN ROUTES ---
 @app.route('/')
 @login_required
