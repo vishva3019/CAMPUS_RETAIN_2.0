@@ -441,6 +441,28 @@ def delete_item(item_id):
 # LOCAL RUN
 # ==================================================
 
+# ---------- TEST EMAIL ----------
+
+@app.route("/test-email")
+def test_email():
+    send_email(
+        "vishvanth3049@gmail.com",
+        "Campus Retain Test Email",
+        "Email notifications are working successfully."
+    )
+    return "Test Email Sent"
+
+
+# ---------- TEST SMS ----------
+
+@app.route("/test-sms")
+def test_sms():
+    send_sms(
+        "+919686193049",
+        "Campus Retain SMS notifications are working."
+    )
+    return "Test SMS Sent"
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
