@@ -1,56 +1,47 @@
-
 import os
 import random
 import smtplib
-import base64
 from datetime import datetime, timedelta
-from functools import wraps
 from email.mime.text import MIMEText
 
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import (
+    Flask, render_template, request, redirect,
+    session, jsonify, url_for
+)
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 
-try:
-    from twilio.rest import Client
-except:
-    Client = None
-
+# --------------------------------------------------
+# APP CONFIG
+# --------------------------------------------------
 app = Flask(__name__)
+CORS(app)
 
-# ==================================================
-# CONFIG
-# ==================================================
+app.secret_key = os.getenv("SECRET_KEY", "fallback-secret-key")
 
-app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret-key")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-db_url = os.environ.get("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-if not db_url:
-    raise Exception("DATABASE_URL not found")
-
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
-MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-
-TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
-TWILIO_PHONE_NUMBER = os.environ.get("TWILIO_PHONE_NUMBER")
-
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
 db = SQLAlchemy(app)
 
-# ==================================================
-# MODELS
-# ==================================================
+# --------------------------------------------------
+# ENV VARIABLES
+# --------------------------------------------------
+MAIL_USERNAME = os.getenv("MAIL_USERNAME")
+MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+# --------------------------------------------------
+# MODELS
+# --------------------------------------------------
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -59,24 +50,24 @@ class User(db.Model):
 
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
+    item_name = db.Column(db.String(100))
     category = db.Column(db.String(50))
     location = db.Column(db.String(100))
     secret_detail = db.Column(db.Text)
     image_data = db.Column(db.Text)
-    status = db.Column(db.String(20), default="Available")
+    status = db.Column(db.String(30), default="Available")
     date_found = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Claim(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_id = db.Column(db.Integer, db.ForeignKey("item.id"))
-    student_id = db.Column(db.String(50))
     student_email = db.Column(db.String(120))
+    student_id = db.Column(db.String(50))
     phone = db.Column(db.String(20))
     proof_description = db.Column(db.Text)
-    status = db.Column(db.String(20), default="Submitted")
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(30), default="Under Review")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class OTPReset(db.Model):
@@ -85,76 +76,50 @@ class OTPReset(db.Model):
     otp = db.Column(db.String(10))
     expiry = db.Column(db.DateTime)
 
-# ==================================================
-# HELPERS
-# ==================================================
 
+# --------------------------------------------------
+# EMAIL FUNCTION
+# --------------------------------------------------
 def send_email(receiver, subject, body):
     try:
+        if not MAIL_USERNAME or not MAIL_PASSWORD:
+            print("Mail credentials missing")
+            return False
+
         msg = MIMEText(body)
         msg["Subject"] = subject
         msg["From"] = MAIL_USERNAME
         msg["To"] = receiver
 
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(MAIL_USERNAME, MAIL_PASSWORD)
-            server.send_message(msg)
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.sendmail(MAIL_USERNAME, receiver, msg.as_string())
+        server.quit()
 
         return True
+
     except Exception as e:
-        print("Email Error:", e)
+        print("MAIL ERROR:", e)
         return False
 
 
-def send_sms(receiver, body):
-    try:
-        if not Client:
-            return False
-
-        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-
-        client.messages.create(
-            body=body,
-            from_=TWILIO_PHONE_NUMBER,
-            to=receiver
-        )
-        return True
-    except Exception as e:
-        print("SMS Error:", e)
-        return False
+# --------------------------------------------------
+# INIT DB
+# --------------------------------------------------
+@app.route("/init-db")
+def init_db():
+    db.create_all()
+    return "Database initialized successfully!"
 
 
-def login_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if "user_email" not in session:
-            return redirect("/login")
-        return f(*args, **kwargs)
-    return wrapper
-
-
-def admin_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if session.get("is_admin") != True:
-            return redirect("/admin_login")
-        return f(*args, **kwargs)
-    return wrapper
-
-# ==================================================
-# ROUTES
-# ==================================================
-
+# --------------------------------------------------
+# LOGIN / REGISTER
+# --------------------------------------------------
 @app.route("/")
-@login_required
 def home():
-    items = Item.query.order_by(Item.id.desc()).all()
-    return render_template("index.html", items=items)
+    return redirect("/login")
 
-# ==================================================
-# LOGIN
-# ==================================================
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -162,12 +127,9 @@ def login():
         email = request.form["email"].lower().strip()
         password = request.form["password"]
 
-        if not email.endswith("@ced.alliance.edu.in"):
-            return render_template("login.html", error="Use organization email")
-
         user = User.query.filter_by(email=email).first()
 
-        # AUTO REGISTER
+        # Auto register
         if not user:
             new_user = User(
                 email=email,
@@ -176,53 +138,44 @@ def login():
             db.session.add(new_user)
             db.session.commit()
 
-            send_email(
-                email,
-                "Campus Retain Account Created",
-                "Your account was automatically created."
-            )
+            session["user"] = email
+            return redirect("/dashboard")
 
-            session["user_email"] = email
-            return redirect("/")
-
-        # EXISTING USER LOGIN
+        # Existing login
         if check_password_hash(user.password, password):
-            session["user_email"] = email
-            return redirect("/")
+            session["user"] = email
+            return redirect("/dashboard")
 
-        return render_template(
-            "login.html",
-            error="Wrong password. Use Forgot Password."
-        )
+        return render_template("login.html", error="Wrong password")
 
     return render_template("login.html")
 
-# ==================================================
-# FORGOT PASSWORD
-# ==================================================
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
+
+
+# --------------------------------------------------
+# FORGOT PASSWORD
+# --------------------------------------------------
 @app.route("/forgot-password", methods=["POST"])
 def forgot_password():
     try:
-        email = request.form.get("email", "").lower().strip()
-
-        if not email:
-            return "Email is required"
+        email = request.form["email"].lower().strip()
 
         user = User.query.filter_by(email=email).first()
-
         if not user:
             return "No account found"
 
         otp = str(random.randint(100000, 999999))
 
-        # Delete old OTP if exists
         old = OTPReset.query.filter_by(email=email).first()
         if old:
             db.session.delete(old)
             db.session.commit()
 
-        # Save new OTP
         row = OTPReset(
             email=email,
             otp=otp,
@@ -232,28 +185,23 @@ def forgot_password():
         db.session.add(row)
         db.session.commit()
 
-        # Send mail
-        mail_sent = send_email(
+        send_email(
             email,
-            "Campus Retain Password Reset OTP",
-            f"Your OTP is {otp}\nValid for 10 minutes."
+            "Campus Retain OTP",
+            f"Your OTP is {otp}"
         )
-
-        if not mail_sent:
-            return "OTP created but email sending failed"
 
         return "OTP sent successfully"
 
     except Exception as e:
-        print("FORGOT PASSWORD ERROR:", str(e))
-        return f"Server Error: {str(e)}"
+        return str(e)
 
 
-@app.route("/reset-password", methods=["POST"])
-def reset_password():
-    email = request.form["email"].lower()
+@app.route("/verify-otp", methods=["POST"])
+def verify_otp():
+    email = request.form["email"].lower().strip()
     otp = request.form["otp"]
-    new_password = request.form["new_password"]
+    new_password = request.form["password"]
 
     row = OTPReset.query.filter_by(email=email, otp=otp).first()
 
@@ -261,7 +209,7 @@ def reset_password():
         return "Invalid OTP"
 
     if datetime.utcnow() > row.expiry:
-        return "OTP Expired"
+        return "OTP expired"
 
     user = User.query.filter_by(email=email).first()
     user.password = generate_password_hash(new_password)
@@ -269,166 +217,190 @@ def reset_password():
     db.session.delete(row)
     db.session.commit()
 
-    return "Password updated"
-
-# ==================================================
-# ADMIN
-# ==================================================
-
-@app.route("/admin_login", methods=["GET", "POST"])
-def admin_login():
-    if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-
-        if email == ADMIN_EMAIL and password == ADMIN_PASSWORD:
-            session["is_admin"] = True
-            return redirect("/admin")
-
-    return render_template("admin_login.html")
+    return "Password reset successful"
 
 
-@app.route("/admin")
-@admin_required
-def admin():
-    items = Item.query.all()
-    claims = Claim.query.order_by(Claim.timestamp.desc()).all()
-    return render_template("admin.html", items=items, claims=claims)
+# --------------------------------------------------
+# DASHBOARD
+# --------------------------------------------------
+@app.route("/dashboard")
+def dashboard():
+    if "user" not in session:
+        return redirect("/login")
 
-# ==================================================
+    items = Item.query.order_by(Item.id.desc()).all()
+    return render_template(
+        "index.html",
+        items=items,
+        email=session["user"]
+    )
+
+
+# --------------------------------------------------
 # REPORT ITEM
-# ==================================================
-
+# --------------------------------------------------
 @app.route("/api/report", methods=["POST"])
-@login_required
-def report():
-    f = request.files.get("image")
-    image_b64 = None
-
-    if f:
-        image_b64 = (
-            "data:" + f.content_type +
-            ";base64," +
-            base64.b64encode(f.read()).decode()
-        )
+def report_item():
+    if "user" not in session:
+        return "Login required"
 
     item = Item(
-        name=request.form["name"],
+        item_name=request.form["item_name"],
         category=request.form["category"],
         location=request.form["location"],
         secret_detail=request.form["secret_detail"],
-        image_data=image_b64
+        image_data="",
+        status="Available"
     )
 
     db.session.add(item)
     db.session.commit()
 
-    return jsonify({"status": "success"})
+    return "Item reported successfully"
 
-# ==================================================
+
+# --------------------------------------------------
 # CLAIM ITEM
-# ==================================================
-
+# --------------------------------------------------
 @app.route("/api/claim", methods=["POST"])
-@login_required
-def claim():
-    data = request.json
+def claim_item():
+    try:
+        if "user" not in session:
+            return "Login required"
 
-    item = db.session.get(Item, data["item_id"])
+        item_id = request.form["item_id"]
 
-    if item.status == "Claimed":
-        return jsonify({"error": "Already claimed"}), 400
+        item = Item.query.get(item_id)
 
-    claim = Claim(
-        item_id=data["item_id"],
-        student_id=data["student_id"],
-        student_email=data["student_email"],
-        phone=data["phone"],
-        proof_description=data["proof_description"]
+        if not item:
+            return "Item not found"
+
+        if item.status == "Claimed":
+            return "Already claimed"
+
+        claim = Claim(
+            item_id=item_id,
+            student_email=session["user"],
+            student_id=request.form["student_id"],
+            phone=request.form["phone"],
+            proof_description=request.form["proof"]
+        )
+
+        db.session.add(claim)
+        db.session.commit()
+
+        return "Claim submitted successfully"
+
+    except Exception as e:
+        return str(e)
+
+
+# --------------------------------------------------
+# ADMIN LOGIN
+# --------------------------------------------------
+@app.route("/admin_login", methods=["GET", "POST"])
+def admin_login():
+    try:
+        if request.method == "POST":
+            email = request.form["email"]
+            password = request.form["password"]
+
+            if email == ADMIN_EMAIL and password == ADMIN_PASSWORD:
+                session["admin"] = True
+                return redirect("/admin")
+
+            return render_template(
+                "admin_login.html",
+                error="Invalid credentials"
+            )
+
+        return render_template("admin_login.html")
+
+    except Exception as e:
+        return str(e)
+
+
+# --------------------------------------------------
+# ADMIN PANEL
+# --------------------------------------------------
+@app.route("/admin")
+def admin():
+    if not session.get("admin"):
+        return redirect("/admin_login")
+
+    items = Item.query.all()
+    claims = Claim.query.order_by(Claim.id.desc()).all()
+
+    return render_template(
+        "admin.html",
+        items=items,
+        claims=claims
     )
 
-    db.session.add(claim)
-    db.session.commit()
 
-    send_email(
-        data["student_email"],
-        "Claim Submitted",
-        f"Your claim for {item.name} is under review."
-    )
-
-    return jsonify({"status": "success"})
-
-# ==================================================
-# ADMIN APPROVE CLAIM
-# ==================================================
-
-@app.route("/api/admin/approve-claim/<int:claim_id>", methods=["POST"])
-@admin_required
+# --------------------------------------------------
+# APPROVE CLAIM
+# --------------------------------------------------
+@app.route("/api/admin/approve/<int:claim_id>", methods=["POST"])
 def approve_claim(claim_id):
-    claim = db.session.get(Claim, claim_id)
+    if not session.get("admin"):
+        return "Unauthorized"
 
-    if not claim:
-        return jsonify({"error": "Not found"}), 404
+    claim = Claim.query.get(claim_id)
+    item = Item.query.get(claim.item_id)
 
-    item = db.session.get(Item, claim.item_id)
-
-    # Approve selected
     claim.status = "Approved"
     item.status = "Claimed"
 
-    # Reject others
     others = Claim.query.filter(
         Claim.item_id == item.id,
         Claim.id != claim.id
     ).all()
 
-    for other in others:
-        other.status = "Rejected"
+    for c in others:
+        c.status = "Rejected"
 
         send_email(
-            other.student_email,
+            c.student_email,
             "Claim Rejected",
-            f"Your claim for {item.name} was not approved."
+            f"Your claim for {item.item_name} was rejected."
         )
 
-    # Notify approved user
     send_email(
         claim.student_email,
         "Claim Approved",
-        f"Your claim for {item.name} has been approved."
-    )
-
-    send_sms(
-        claim.phone,
-        f"Campus Retain: Claim approved for {item.name}"
+        f"Your claim for {item.item_name} is approved."
     )
 
     db.session.commit()
 
-    return jsonify({"status": "success"})
+    return "Approved"
 
-# ==================================================
-# LOGOUT
-# ==================================================
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/login")
+# --------------------------------------------------
+# REJECT CLAIM
+# --------------------------------------------------
+@app.route("/api/admin/reject/<int:claim_id>", methods=["POST"])
+def reject_claim(claim_id):
+    if not session.get("admin"):
+        return "Unauthorized"
 
-# ==================================================
-# INIT DB
-# ==================================================
+    claim = Claim.query.get(claim_id)
+    claim.status = "Rejected"
 
-@app.route("/init-db")
-def initdb():
-    db.create_all()
-    return "Database initialized"
+    send_email(
+        claim.student_email,
+        "Claim Rejected",
+        "Your claim was rejected."
+    )
 
-# ==================================================
+    db.session.commit()
 
+    return "Rejected"
+
+
+# --------------------------------------------------
+# RUN
+# --------------------------------------------------
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-
     app.run(debug=True)

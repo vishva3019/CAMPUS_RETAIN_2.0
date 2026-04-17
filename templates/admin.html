@@ -1,9 +1,11 @@
+<!-- templates/admin.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard | CampusRetain</title>
+<title>Campus Retain | Admin Dashboard</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -15,257 +17,246 @@ body{
 </style>
 </head>
 
-<body class="bg-slate-50 min-h-screen p-8">
+<body class="bg-slate-50 min-h-screen">
 
-<div class="max-w-7xl mx-auto">
+<!-- NAVBAR -->
+<nav class="bg-white border-b sticky top-0 z-50">
+<div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
 
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+    <div class="flex items-center gap-3 font-black text-xl">
+        <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+            A
+        </div>
+        <span>Admin Dashboard</span>
+    </div>
 
-        <div class="flex items-center gap-3">
-            <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
-                A
-            </div>
+    <div class="flex items-center gap-4">
+
+        <a href="/dashboard"
+           class="text-sm font-bold text-slate-500 hover:text-indigo-600 transition">
+           Student View
+        </a>
+
+        <a href="/logout"
+           class="text-sm font-bold text-rose-500 hover:text-rose-700 transition">
+           Logout
+        </a>
+
+    </div>
+
+</div>
+</nav>
+
+<!-- CONTENT -->
+<section class="max-w-7xl mx-auto px-6 py-10">
+
+<!-- Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+
+<div class="bg-white rounded-3xl border p-6 shadow-sm">
+    <p class="text-sm text-slate-400 font-semibold">Total Items</p>
+    <h2 class="text-4xl font-black mt-2">{{ items|length }}</h2>
+</div>
+
+<div class="bg-white rounded-3xl border p-6 shadow-sm">
+    <p class="text-sm text-slate-400 font-semibold">Claims</p>
+    <h2 class="text-4xl font-black mt-2">{{ claims|length }}</h2>
+</div>
+
+<div class="bg-white rounded-3xl border p-6 shadow-sm">
+    <p class="text-sm text-slate-400 font-semibold">System</p>
+    <h2 class="text-2xl font-black mt-3 text-emerald-600">Online</h2>
+</div>
+
+</div>
+
+<!-- ITEMS -->
+<h2 class="text-2xl font-black mb-6">Items & Claim Requests</h2>
+
+<div class="space-y-6">
+
+{% for item in items %}
+
+<div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
+
+    <!-- Item Header -->
+    <div class="p-6 border-b bg-slate-50">
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
             <div>
-                <h1 class="text-3xl font-extrabold text-slate-900">Admin Dashboard</h1>
-                <p class="text-sm text-slate-500">Manage claims & reported items</p>
+                <h3 class="text-xl font-black">{{ item.item_name }}</h3>
+
+                <p class="text-sm text-slate-500 mt-1">
+                    📍 {{ item.location }}
+                </p>
+
+                <p class="text-sm text-indigo-600 font-semibold mt-1">
+                    {{ item.category }}
+                </p>
             </div>
+
+            {% if item.status == "Available" %}
+            <span class="px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold uppercase">
+                Available
+            </span>
+            {% else %}
+            <span class="px-4 py-2 rounded-full bg-slate-200 text-slate-700 text-xs font-bold uppercase">
+                Claimed
+            </span>
+            {% endif %}
+
         </div>
 
-        <div class="flex gap-3">
-            <a href="/"
-               class="px-5 py-3 rounded-xl bg-white border border-slate-200 font-semibold hover:bg-slate-100 transition">
-               Site View
-            </a>
-
-            <a href="/logout"
-               class="px-5 py-3 rounded-xl bg-rose-600 text-white font-semibold hover:bg-rose-700 transition">
-               Logout
-            </a>
+        {% if item.secret_detail %}
+        <div class="mt-4 p-3 rounded-xl bg-indigo-50 text-indigo-700 text-sm">
+            Secret Detail: {{ item.secret_detail }}
         </div>
+        {% endif %}
 
     </div>
 
-    <!-- Stats -->
-    {% set total_items = items|length %}
-    {% set claimed = items | selectattr('status', 'equalto', 'Claimed') | list | length %}
-    {% set available = items | selectattr('status', 'equalto', 'Available') | list | length %}
+    <!-- Claims -->
+    <div class="p-6">
 
-    <div class="grid md:grid-cols-3 gap-5 mb-8">
+        <h4 class="font-bold text-slate-800 mb-4">
+            Claim Requests
+        </h4>
 
-        <div class="bg-white rounded-3xl p-6 shadow-sm border">
-            <div class="text-sm text-slate-500 font-semibold">Total Items</div>
-            <div class="text-4xl font-black mt-2">{{ total_items }}</div>
-        </div>
+        {% set found = false %}
 
-        <div class="bg-white rounded-3xl p-6 shadow-sm border">
-            <div class="text-sm text-slate-500 font-semibold">Available</div>
-            <div class="text-4xl font-black mt-2 text-emerald-600">{{ available }}</div>
-        </div>
+        <div class="space-y-4">
 
-        <div class="bg-white rounded-3xl p-6 shadow-sm border">
-            <div class="text-sm text-slate-500 font-semibold">Claimed</div>
-            <div class="text-4xl font-black mt-2 text-indigo-600">{{ claimed }}</div>
-        </div>
+        {% for claim in claims %}
+            {% if claim.item_id == item.id %}
 
-    </div>
+            <div class="border rounded-2xl p-5">
 
-    <!-- Items -->
-    <div class="space-y-6">
+                <div class="flex flex-col md:flex-row md:justify-between gap-4">
 
-        {% for item in items %}
+                    <div>
 
-        <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
+                        <p class="font-bold text-slate-900">
+                            {{ claim.student_id }}
+                        </p>
 
-            <!-- Item Header -->
-            <div class="p-6 border-b bg-slate-50">
+                        <p class="text-sm text-slate-500 mt-1">
+                            {{ claim.student_email }}
+                        </p>
 
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <p class="text-sm text-slate-500">
+                            {{ claim.phone }}
+                        </p>
 
-                    <div class="flex gap-4 items-center">
-
-                        <img src="{{ item.image_data if item.image_data else 'https://via.placeholder.com/80' }}"
-                             class="w-16 h-16 rounded-2xl object-cover border">
-
-                        <div>
-                            <h2 class="text-xl font-bold text-slate-900">{{ item.name }}</h2>
-                            <p class="text-sm text-slate-500 mt-1">📍 {{ item.location }}</p>
-                            <p class="text-sm text-indigo-600 font-medium mt-1">
-                                {{ item.category }}
-                            </p>
+                        <div class="mt-3 text-sm bg-slate-50 rounded-xl p-3">
+                            {{ claim.proof_description }}
                         </div>
 
                     </div>
 
-                    <div class="flex gap-2 items-center">
+                    <div class="flex flex-col gap-2 md:items-end">
 
-                        {% if item.status == "Available" %}
-                        <span class="px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold uppercase">
-                            Available
+                        {% if claim.status == "Under Review" %}
+                        <span class="px-3 py-2 rounded-full bg-amber-100 text-amber-700 text-xs font-bold uppercase">
+                            Under Review
+                        </span>
+                        {% elif claim.status == "Approved" %}
+                        <span class="px-3 py-2 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold uppercase">
+                            Approved
                         </span>
                         {% else %}
-                        <span class="px-4 py-2 rounded-full bg-slate-200 text-slate-700 text-xs font-bold uppercase">
-                            Claimed
+                        <span class="px-3 py-2 rounded-full bg-rose-100 text-rose-700 text-xs font-bold uppercase">
+                            Rejected
                         </span>
                         {% endif %}
 
-                        <button onclick="deleteItem('{{ item.id }}')"
-                                class="px-4 py-2 rounded-xl border text-rose-600 font-semibold hover:bg-rose-50 transition">
-                            Delete
+                        {% if item.status == "Available" and claim.status == "Under Review" %}
+
+                        <button onclick="approveClaim('{{ claim.id }}')"
+                                class="px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">
+                            Approve
                         </button>
 
+                        <button onclick="rejectClaim('{{ claim.id }}')"
+                                class="px-5 py-3 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 transition">
+                            Reject
+                        </button>
+
+                        {% endif %}
+
                     </div>
 
                 </div>
 
-                {% if item.secret_detail %}
-                <div class="mt-4 text-sm bg-indigo-50 text-indigo-700 p-3 rounded-xl">
-                    Secret Detail: {{ item.secret_detail }}
-                </div>
-                {% endif %}
-
             </div>
 
-            <!-- Claims -->
-            <div class="p-6">
-
-                <h3 class="font-bold text-slate-800 mb-4 text-lg">Claims</h3>
-
-                {% set item_claims = claims | selectattr('item_id', 'equalto', item.id) | list %}
-
-                {% if item_claims|length == 0 %}
-
-                    <div class="text-slate-400 text-sm">
-                        No claims submitted yet.
-                    </div>
-
-                {% else %}
-
-                    <div class="space-y-4">
-
-                    {% for claim in item_claims %}
-
-                    <div class="border rounded-2xl p-5">
-
-                        <div class="flex flex-col md:flex-row md:justify-between gap-4">
-
-                            <div class="space-y-1">
-
-                                <div class="font-bold text-slate-900">
-                                    {{ claim.student_id }}
-                                </div>
-
-                                <div class="text-sm text-slate-500">
-                                    {{ claim.student_email }}
-                                </div>
-
-                                <div class="text-sm text-slate-500">
-                                    {{ claim.phone }}
-                                </div>
-
-                                <div class="text-sm mt-2 bg-slate-50 p-3 rounded-xl">
-                                    {{ claim.proof_description }}
-                                </div>
-
-                            </div>
-
-                            <div class="flex flex-col gap-2 md:items-end">
-
-                                {% if claim.status == "Submitted" %}
-                                    <span class="px-3 py-2 rounded-full bg-amber-100 text-amber-700 text-xs font-bold uppercase">
-                                        Submitted
-                                    </span>
-                                {% elif claim.status == "Approved" %}
-                                    <span class="px-3 py-2 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold uppercase">
-                                        Approved
-                                    </span>
-                                {% else %}
-                                    <span class="px-3 py-2 rounded-full bg-rose-100 text-rose-700 text-xs font-bold uppercase">
-                                        Rejected
-                                    </span>
-                                {% endif %}
-
-                                {% if item.status != "Claimed" and claim.status == "Submitted" %}
-                                <button onclick="approveClaim('{{ claim.id }}')"
-                                        class="px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">
-                                    Approve Claim
-                                </button>
-                                {% endif %}
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    {% endfor %}
-
-                    </div>
-
-                {% endif %}
-
-            </div>
-
-        </div>
-
-        {% else %}
-
-        <div class="bg-white rounded-3xl p-10 text-center text-slate-400 border">
-            No items found.
-        </div>
-
+            {% set found = true %}
+            {% endif %}
         {% endfor %}
+
+        </div>
+
+        {% if not found %}
+        <div class="text-sm text-slate-400">
+            No claims yet.
+        </div>
+        {% endif %}
 
     </div>
 
 </div>
 
-<!-- Toast -->
+{% endfor %}
+
+</div>
+
+</section>
+
+<!-- TOAST -->
 <div id="toast"
-     class="hidden fixed bottom-6 right-6 px-6 py-4 rounded-2xl bg-slate-900 text-white shadow-2xl z-50">
+class="hidden fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-50">
 </div>
 
 <script>
 
-function showToast(msg){
-    const t = document.getElementById("toast");
-    t.innerText = msg;
+function toast(msg){
+    const t=document.getElementById("toast");
+    t.innerText=msg;
     t.classList.remove("hidden");
-
-    setTimeout(()=>{
-        t.classList.add("hidden");
-    },3000);
+    setTimeout(()=>t.classList.add("hidden"),3000);
 }
 
-async function approveClaim(claimId){
+async function approveClaim(id){
 
     if(!confirm("Approve this claim?")) return;
 
-    const res = await fetch(`/api/admin/approve-claim/${claimId}`,{
+    let res = await fetch(`/api/admin/approve/${id}`,{
         method:"POST"
     });
 
+    let txt = await res.text();
+
+    toast(txt);
+
     if(res.ok){
-        showToast("Claim approved successfully");
         setTimeout(()=>location.reload(),1000);
-    }else{
-        showToast("Failed to approve claim");
     }
 }
 
-async function deleteItem(itemId){
+async function rejectClaim(id){
 
-    if(!confirm("Delete this item?")) return;
+    if(!confirm("Reject this claim?")) return;
 
-    const res = await fetch(`/api/item/delete/${itemId}`,{
+    let res = await fetch(`/api/admin/reject/${id}`,{
         method:"POST"
     });
 
+    let txt = await res.text();
+
+    toast(txt);
+
     if(res.ok){
-        showToast("Item deleted");
         setTimeout(()=>location.reload(),1000);
-    }else{
-        showToast("Delete failed");
     }
 }
 

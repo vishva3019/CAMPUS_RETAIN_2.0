@@ -1,9 +1,11 @@
+<!-- templates/index.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CampusRetain | Alliance University</title>
+<title>Campus Retain | Dashboard</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -23,179 +25,172 @@ body{
 
 <!-- NAVBAR -->
 <nav class="sticky top-0 z-50 border-b glass">
-    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+<div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
 
-        <div class="flex items-center gap-3 font-bold text-xl cursor-pointer"
-             onclick="location.reload()">
-
-            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-                C
-            </div>
-
-            <span>CampusRetain</span>
+    <div class="flex items-center gap-3 font-black text-xl">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+            C
         </div>
+        <span>Campus Retain</span>
+    </div>
 
-        <div class="flex items-center gap-4">
+    <div class="flex items-center gap-4">
 
-            <span class="hidden md:block text-sm font-medium text-slate-500">
-                {{ user_email }}
-            </span>
+        <span class="hidden md:block text-sm text-slate-500 font-semibold">
+            {{ email }}
+        </span>
 
-            <button onclick="openModal('reportModal')"
-                    class="px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition">
-                Report Found
-            </button>
+        <button onclick="openReport()"
+                class="px-5 py-3 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition">
+            Report Found
+        </button>
 
-            <a href="/logout"
-               class="text-sm font-bold text-slate-400 hover:text-rose-600 transition">
-                Logout
-            </a>
-
-        </div>
+        <a href="/logout"
+           class="text-sm font-bold text-slate-400 hover:text-rose-600 transition">
+           Logout
+        </a>
 
     </div>
+
+</div>
 </nav>
 
 <!-- HERO -->
-<section class="py-16 px-6 bg-white border-b">
+<section class="py-14 px-6 bg-white border-b">
 
-    <div class="max-w-5xl mx-auto text-center">
+<div class="max-w-5xl mx-auto text-center">
 
-        <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight">
-            Lost it?
-            <span class="text-indigo-600">Find it.</span>
-        </h1>
+<h1 class="text-5xl md:text-6xl font-black tracking-tight">
+Lost it?
+<span class="text-indigo-600">Find it.</span>
+</h1>
 
-        <p class="mt-4 text-slate-500 text-lg">
-            Smart Lost & Found portal for campus students.
-        </p>
+<p class="mt-4 text-slate-500 text-lg">
+Alliance University Lost & Found Portal
+</p>
 
-        <div class="mt-8 bg-white border shadow-xl rounded-2xl p-2 flex flex-col md:flex-row gap-2">
+<div class="mt-8 bg-white shadow-xl border rounded-2xl p-2 flex flex-col md:flex-row gap-2">
 
-            <input id="searchInput"
-                   onkeyup="filterItems()"
-                   type="text"
-                   placeholder="Search iPhone, Keys, Wallet..."
-                   class="flex-1 px-4 py-3 rounded-xl outline-none">
+<input id="search"
+       type="text"
+       onkeyup="filterItems()"
+       placeholder="Search wallet, keys, phone..."
+       class="flex-1 px-4 py-3 rounded-xl outline-none">
 
-            <button class="px-8 py-3 rounded-xl bg-slate-900 text-white font-bold">
-                Search
-            </button>
+<button class="px-8 py-3 rounded-xl bg-slate-900 text-white font-bold">
+Search
+</button>
 
-        </div>
+</div>
 
-    </div>
-
+</div>
 </section>
 
 <!-- ITEMS -->
 <section class="max-w-7xl mx-auto px-6 py-12">
 
-    <div class="flex items-center justify-between mb-8">
-        <h2 class="text-2xl font-bold">Recently Found Items</h2>
-        <div class="text-sm text-slate-400">
-            Claim requests are reviewed by admin.
-        </div>
-    </div>
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-2xl font-bold">Recently Found Items</h2>
 
-    <div id="itemGrid"
-         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<span class="text-sm text-slate-400">
+Claims reviewed by admin
+</span>
+</div>
 
-        {% for item in items %}
+<div id="grid"
+     class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-        <div class="card bg-white rounded-3xl overflow-hidden border shadow-sm hover:shadow-xl transition"
-             data-name="{{ item.name }}">
+{% for item in items %}
 
-            <img src="{{ item.image_data if item.image_data else 'https://via.placeholder.com/300?text=No+Image' }}"
-                 class="w-full h-52 object-cover">
+<div class="card bg-white rounded-3xl border shadow-sm hover:shadow-xl transition overflow-hidden"
+     data-name="{{ item.item_name }}">
 
-            <div class="p-5">
+<div class="h-52 bg-slate-100 flex items-center justify-center">
+    <span class="text-slate-400 text-sm">No Image</span>
+</div>
 
-                <div class="flex items-center justify-between gap-2">
+<div class="p-5">
 
-                    <span class="text-[10px] uppercase tracking-widest font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
-                        {{ item.category }}
-                    </span>
+<div class="flex items-center justify-between gap-2">
 
-                    {% if item.status == "Available" %}
-                    <span class="text-[10px] uppercase tracking-widest font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded">
-                        Available
-                    </span>
-                    {% else %}
-                    <span class="text-[10px] uppercase tracking-widest font-bold text-slate-600 bg-slate-200 px-2 py-1 rounded">
-                        Claimed
-                    </span>
-                    {% endif %}
+<span class="text-[10px] font-bold uppercase tracking-widest bg-indigo-50 text-indigo-600 px-2 py-1 rounded">
+{{ item.category }}
+</span>
 
-                </div>
+{% if item.status == "Available" %}
+<span class="text-[10px] font-bold uppercase tracking-widest bg-emerald-100 text-emerald-700 px-2 py-1 rounded">
+Available
+</span>
+{% else %}
+<span class="text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-700 px-2 py-1 rounded">
+Claimed
+</span>
+{% endif %}
 
-                <h3 class="text-lg font-bold mt-3">
-                    {{ item.name }}
-                </h3>
+</div>
 
-                <p class="text-xs text-slate-500 mt-1">
-                    📍 {{ item.location }}
-                </p>
+<h3 class="text-lg font-bold mt-3">
+{{ item.item_name }}
+</h3>
 
-                {% if item.status == "Available" %}
+<p class="text-xs text-slate-500 mt-1">
+📍 {{ item.location }}
+</p>
 
-                <button onclick="openClaimModal('{{ item.id }}','{{ item.name }}')"
-                        class="w-full mt-5 py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-indigo-600 transition">
-                    Claim Item
-                </button>
+{% if item.status == "Available" %}
 
-                {% else %}
+<button onclick="openClaim('{{ item.id }}','{{ item.item_name }}')"
+        class="w-full mt-5 py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-indigo-600 transition">
+Claim Item
+</button>
 
-                <button disabled
-                        class="w-full mt-5 py-3 rounded-xl bg-slate-100 text-slate-400 font-bold cursor-not-allowed">
-                    Already Claimed
-                </button>
+{% else %}
 
-                {% endif %}
+<button disabled
+        class="w-full mt-5 py-3 rounded-xl bg-slate-100 text-slate-400 font-bold cursor-not-allowed">
+Already Claimed
+</button>
 
-            </div>
+{% endif %}
 
-        </div>
+</div>
+</div>
 
-        {% else %}
+{% else %}
 
-        <div class="col-span-full bg-white rounded-3xl p-12 text-center text-slate-400 border">
-            No items found.
-        </div>
+<div class="col-span-full bg-white rounded-3xl border p-12 text-center text-slate-400">
+No items found.
+</div>
 
-        {% endfor %}
+{% endfor %}
 
-    </div>
-
+</div>
 </section>
 
 <!-- REPORT MODAL -->
 <div id="reportModal"
-     class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center px-4">
 
 <div class="bg-white w-full max-w-lg rounded-3xl p-8 relative">
 
-<button onclick="closeModal('reportModal')"
-        class="absolute top-4 right-4 text-slate-400 hover:text-black">
+<button onclick="closeReport()"
+class="absolute top-4 right-4 text-slate-400 hover:text-black">
 ✕
 </button>
 
-<h2 class="text-2xl font-bold mb-2">Report Found Item</h2>
+<h2 class="text-2xl font-bold">Report Found Item</h2>
 
-<p class="text-sm text-rose-500 bg-rose-50 p-3 rounded-xl border mt-3 mb-5">
-Please submit item physically to DOSS office after reporting.
-</p>
+<form id="reportForm" class="space-y-4 mt-6">
 
-<form id="reportForm" class="space-y-4">
-
-<input name="name" required
-       placeholder="Item Name"
-       class="w-full border p-3 rounded-xl">
+<input name="item_name"
+required
+placeholder="Item Name"
+class="w-full border rounded-xl px-4 py-3">
 
 <div class="grid grid-cols-2 gap-4">
 
 <select name="category"
-        class="border p-3 rounded-xl">
+class="border rounded-xl px-4 py-3">
 <option>Electronics</option>
 <option>Accessories</option>
 <option>Books</option>
@@ -204,20 +199,15 @@ Please submit item physically to DOSS office after reporting.
 </select>
 
 <input name="location"
-       required
-       placeholder="Found Location"
-       class="border p-3 rounded-xl">
+required
+placeholder="Found Location"
+class="border rounded-xl px-4 py-3">
 
 </div>
 
 <textarea name="secret_detail"
-          placeholder="Secret owner detail"
-          class="w-full border p-3 rounded-xl min-h-[90px]"></textarea>
-
-<input type="file"
-       name="image"
-       accept="image/*"
-       class="w-full border p-3 rounded-xl">
+placeholder="Secret owner detail"
+class="w-full border rounded-xl px-4 py-3 min-h-[90px]"></textarea>
 
 <button class="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold">
 Submit Report
@@ -230,44 +220,39 @@ Submit Report
 
 <!-- CLAIM MODAL -->
 <div id="claimModal"
-     class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center px-4">
 
 <div class="bg-white w-full max-w-lg rounded-3xl p-8 relative">
 
-<button onclick="closeModal('claimModal')"
-        class="absolute top-4 right-4 text-slate-400 hover:text-black">
+<button onclick="closeClaim()"
+class="absolute top-4 right-4 text-slate-400 hover:text-black">
 ✕
 </button>
 
-<h2 class="text-2xl font-bold mb-4">Claim Item</h2>
+<h2 class="text-2xl font-bold">Claim Item</h2>
 
-<form id="claimForm" class="space-y-4">
+<form id="claimForm" class="space-y-4 mt-6">
 
-<input id="modalItemId" type="hidden">
+<input id="item_id" type="hidden">
 
-<input id="modalItemName"
-       readonly
-       class="w-full bg-indigo-50 text-indigo-700 p-3 rounded-xl font-bold text-center">
+<input id="item_name"
+readonly
+class="w-full bg-indigo-50 text-indigo-700 rounded-xl px-4 py-3 font-bold text-center">
 
-<input id="claimStudentId"
-       required
-       placeholder="Student ID"
-       class="w-full border p-3 rounded-xl">
+<input name="student_id"
+required
+placeholder="Student ID"
+class="w-full border rounded-xl px-4 py-3">
 
-<input id="claimEmail"
-       readonly
-       value="{{ user_email }}"
-       class="w-full border p-3 rounded-xl bg-slate-100">
+<input name="phone"
+required
+placeholder="Phone Number"
+class="w-full border rounded-xl px-4 py-3">
 
-<input id="claimPhone"
-       required
-       placeholder="Phone Number"
-       class="w-full border p-3 rounded-xl">
-
-<textarea id="claimProof"
-          required
-          placeholder="Tell something only owner knows"
-          class="w-full border p-3 rounded-xl min-h-[100px]"></textarea>
+<textarea name="proof"
+required
+placeholder="Something only owner knows..."
+class="w-full border rounded-xl px-4 py-3 min-h-[100px]"></textarea>
 
 <button class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-indigo-600 transition">
 Submit Claim Request
@@ -280,88 +265,82 @@ Submit Claim Request
 
 <!-- TOAST -->
 <div id="toast"
-     class="hidden fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-50">
+class="hidden fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-50">
 </div>
 
 <script>
 
-function showToast(msg){
+function toast(msg){
     const t=document.getElementById("toast");
     t.innerText=msg;
     t.classList.remove("hidden");
-
-    setTimeout(()=>{
-        t.classList.add("hidden");
-    },3000);
+    setTimeout(()=>t.classList.add("hidden"),3000);
 }
 
-function openModal(id){
-    document.getElementById(id).classList.remove("hidden");
+function openReport(){
+    document.getElementById("reportModal").classList.remove("hidden");
 }
 
-function closeModal(id){
-    document.getElementById(id).classList.add("hidden");
+function closeReport(){
+    document.getElementById("reportModal").classList.add("hidden");
 }
 
-function openClaimModal(id,name){
-    document.getElementById("modalItemId").value=id;
-    document.getElementById("modalItemName").value=name;
-    openModal("claimModal");
+function openClaim(id,name){
+    document.getElementById("item_id").value=id;
+    document.getElementById("item_name").value=name;
+    document.getElementById("claimModal").classList.remove("hidden");
+}
+
+function closeClaim(){
+    document.getElementById("claimModal").classList.add("hidden");
 }
 
 function filterItems(){
-    const value=document.getElementById("searchInput").value.toLowerCase();
+    let val=document.getElementById("search").value.toLowerCase();
 
     document.querySelectorAll(".card").forEach(card=>{
-        const txt=card.dataset.name.toLowerCase();
-        card.style.display=txt.includes(value) ? "block":"none";
+        let name=card.dataset.name.toLowerCase();
+        card.style.display=name.includes(val) ? "block":"none";
     });
 }
 
-/* REPORT */
+/* Report */
 document.getElementById("reportForm").onsubmit = async(e)=>{
     e.preventDefault();
 
-    const res = await fetch("/api/report",{
+    let fd=new FormData(e.target);
+
+    let res=await fetch("/api/report",{
         method:"POST",
-        body:new FormData(e.target)
+        body:fd
     });
 
+    let txt=await res.text();
+    toast(txt);
+
     if(res.ok){
-        showToast("Item reported successfully");
-        closeModal("reportModal");
+        closeReport();
         setTimeout(()=>location.reload(),1000);
-    }else{
-        showToast("Failed to report item");
     }
 };
 
-/* CLAIM */
+/* Claim */
 document.getElementById("claimForm").onsubmit = async(e)=>{
     e.preventDefault();
 
-    const data = {
-        item_id: document.getElementById("modalItemId").value,
-        student_id: document.getElementById("claimStudentId").value,
-        student_email: document.getElementById("claimEmail").value,
-        phone: document.getElementById("claimPhone").value,
-        proof_description: document.getElementById("claimProof").value
-    };
+    let fd=new FormData(e.target);
+    fd.append("item_id", document.getElementById("item_id").value);
 
-    const res = await fetch("/api/claim",{
+    let res=await fetch("/api/claim",{
         method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify(data)
+        body:fd
     });
 
+    let txt=await res.text();
+    toast(txt);
+
     if(res.ok){
-        showToast("Claim submitted for admin review");
-        closeModal("claimModal");
-    }else{
-        const x = await res.json();
-        showToast(x.error || "Claim failed");
+        closeClaim();
     }
 };
 
