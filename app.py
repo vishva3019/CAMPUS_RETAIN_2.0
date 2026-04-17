@@ -203,36 +203,50 @@ def login():
 
 @app.route("/forgot-password", methods=["POST"])
 def forgot_password():
-    email = request.form["email"].lower()
+    try:
+        email = request.form.get("email", "").lower().strip()
 
-    user = User.query.filter_by(email=email).first()
+        if not email:
+            return "Email is required"
 
-    if not user:
-        return "No account found"
+        user = User.query.filter_by(email=email).first()
 
-    otp = str(random.randint(100000, 999999))
+        if not user:
+            return "No account found"
 
-    old = OTPReset.query.filter_by(email=email).first()
-    if old:
-        db.session.delete(old)
+        otp = str(random.randint(100000, 999999))
+
+        # Delete old OTP if exists
+        old = OTPReset.query.filter_by(email=email).first()
+        if old:
+            db.session.delete(old)
+            db.session.commit()
+
+        # Save new OTP
+        row = OTPReset(
+            email=email,
+            otp=otp,
+            expiry=datetime.utcnow() + timedelta(minutes=10)
+        )
+
+        db.session.add(row)
         db.session.commit()
 
-    row = OTPReset(
-        email=email,
-        otp=otp,
-        expiry=datetime.utcnow() + timedelta(minutes=10)
-    )
+        # Send mail
+        mail_sent = send_email(
+            email,
+            "Campus Retain Password Reset OTP",
+            f"Your OTP is {otp}\nValid for 10 minutes."
+        )
 
-    db.session.add(row)
-    db.session.commit()
+        if not mail_sent:
+            return "OTP created but email sending failed"
 
-    send_email(
-        email,
-        "Campus Retain Password Reset OTP",
-        f"Your OTP is {otp}"
-    )
+        return "OTP sent successfully"
 
-    return "OTP sent"
+    except Exception as e:
+        print("FORGOT PASSWORD ERROR:", str(e))
+        return f"Server Error: {str(e)}"
 
 
 @app.route("/reset-password", methods=["POST"])
