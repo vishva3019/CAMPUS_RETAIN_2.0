@@ -1,6 +1,5 @@
 Flask
-Flask-SQLAlchemy
-Werkzeug
-twilio
-python-dotenv
+gunicorn
 psycopg2-binary
+Werkzeug
+requests
