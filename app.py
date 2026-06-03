@@ -1,7 +1,8 @@
 import os
 import smtplib
 import base64
-from datetime import datetime
+import random
+from datetime import datetime, timedelta
 from functools import wraps
 from email.mime.text import MIMEText
 
@@ -185,7 +186,7 @@ def index():
     )
 
 
-# ---------------- LOGIN ----------------
+# ---------------- LOGIN / REGISTER ----------------
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -216,7 +217,7 @@ def login():
                 send_email(
                     email,
                     "Campus Retain Registration Successful",
-                    "Welcome to Campus Retain. Your account has been created."
+                    "Welcome to Campus Retain. Your account has been created successfully."
                 )
 
                 return redirect(url_for("index"))
@@ -233,13 +234,85 @@ def login():
 
             return render_template(
                 "login.html",
-                error="Incorrect password."
+                error="Incorrect password. Click 'Forgot Password?' to reset it."
             )
 
         return render_template("login.html")
 
     except Exception as e:
         return f"Login Error: {str(e)}"
+
+
+# ---------------- FORGOT PASSWORD (OTP GENERATION) ----------------
+
+@app.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    try:
+        email = request.form.get("email", "").strip().lower()
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            return render_template("login.html", error="This email is not registered yet.")
+            
+        # Generate clean 6-digit secure numerical token
+        otp = str(random.randint(100000, 999999))
+        
+        # Save validation metrics inside safe encrypted server session
+        session["reset_email"] = email
+        session["reset_otp"] = otp
+        session["reset_expiry"] = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
+        
+        # Dispatch the verification parameters
+        email_body = f"Hello,\n\nYou requested a password reset for Campus Retain.\nYour 6-digit verification OTP is: {otp}\n\nThis OTP is valid for 10 minutes. If you did not make this request, please secure your account credentials immediately."
+        send_email(email, "Campus Retain - Password Reset Verification OTP", email_body)
+        
+        return render_template("reset_password.html", email=email, message="Verification code has been systematically delivered to your organization inbox.")
+        
+    except Exception as e:
+        return render_template("login.html", error=f"Reset Initialization Fault: {str(e)}")
+
+
+# ---------------- RESET PASSWORD (OTP VERIFICATION) ----------------
+
+@app.route("/reset-password", methods=["POST"])
+def reset_password():
+    try:
+        email = session.get("reset_email")
+        session_otp = session.get("reset_otp")
+        expiry_str = session.get("reset_expiry")
+        
+        input_otp = request.form.get("otp", "").strip()
+        new_password = request.form.get("new_password", "")
+        
+        if not email or not session_otp or not expiry_str:
+            return render_template("login.html", error="Session expired. Please initialize password recovery sequence again.")
+            
+        # Check time expiration
+        expiry_time = datetime.fromisoformat(expiry_str)
+        if datetime.utcnow() > expiry_time:
+            return render_template("login.html", error="Verification code has expired. Please try again.")
+            
+        # Check token validity
+        if input_otp != session_otp:
+            return render_template("reset_password.html", email=email, error="Invalid verification code parameters. Please recheck.")
+            
+        # Save clean hashed parameters
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.password = generate_password_hash(new_password)
+            db.session.commit()
+            
+            # Clear temporary keys from session
+            session.pop("reset_email", None)
+            session.pop("reset_otp", None)
+            session.pop("reset_expiry", None)
+            
+            return render_template("login.html", success="Password updated smoothly! You can now log in.")
+            
+        return render_template("login.html", error="System user validation lookup failure.")
+        
+    except Exception as e:
+        return render_template("login.html", error=f"Password Restructuring Error: {str(e)}")
 
 
 # ---------------- ADMIN LOGIN ----------------
@@ -293,8 +366,6 @@ def admin_dashboard():
 # API ROUTES
 # ==================================================
 
-# ---------- REPORT ITEM ----------
-
 @app.route("/api/report", methods=["POST"])
 @login_required
 def report_item():
@@ -320,7 +391,6 @@ def report_item():
         db.session.add(item)
         db.session.commit()
 
-        # Optional notify admin
         if ADMIN_EMAIL:
             send_email(
                 ADMIN_EMAIL,
@@ -333,8 +403,6 @@ def report_item():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# ---------- CLAIM ITEM ----------
 
 @app.route("/api/claim", methods=["POST"])
 @login_required
@@ -360,7 +428,6 @@ def claim_item():
         db.session.add(claim)
         db.session.commit()
 
-        # Notify student
         send_email(
             data["student_email"],
             "Campus Retain Claim Submitted",
@@ -377,8 +444,6 @@ def claim_item():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# ---------- APPROVE CLAIM ----------
 
 @app.route("/api/admin/approve/<int:item_id>", methods=["POST"])
 @admin_required
@@ -417,8 +482,6 @@ def approve_claim(item_id):
         return jsonify({"error": str(e)}), 500
 
 
-# ---------- REJECT CLAIM ----------
-
 @app.route("/api/admin/reject/<int:item_id>", methods=["POST"])
 @admin_required
 def reject_claim(item_id):
@@ -432,10 +495,8 @@ def reject_claim(item_id):
         if not item:
             return jsonify({"error": "Not found"}), 404
 
-        # Revert status back to Available so others can claim it
         item.status = "Available"
 
-        # Get the latest claim to notify the student
         latest_claim = Claim.query.filter_by(
             item_id=item_id
         ).order_by(
@@ -445,14 +506,12 @@ def reject_claim(item_id):
         db.session.commit()
 
         if latest_claim:
-            # Send Email Notification
             send_email(
                 latest_claim.student_email,
                 "Campus Retain Claim Rejected",
                 f"Your claim request for '{item.name}' has been rejected.\nReason/Remarks from Admin: {remarks}\n\nIf you believe this is an error, please visit the DOSS office."
             )
 
-            # Send SMS Notification
             send_sms(
                 latest_claim.phone,
                 f"Campus Retain: Claim rejected for {item.name}. Remarks: {remarks}"
@@ -463,8 +522,6 @@ def reject_claim(item_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# ---------- DELETE ITEM ----------
 
 @app.route("/api/item/delete/<int:item_id>", methods=["POST"])
 @admin_required
@@ -484,34 +541,7 @@ def delete_item(item_id):
         return jsonify({"error": str(e)}), 500
 
 
-# ==================================================
-# LOCAL RUN
-# ==================================================
-
-# ---------- TEST EMAIL ----------
-
-@app.route("/test-email")
-def test_email():
-    send_email(
-        "vishvanth3049@gmail.com",
-        "Campus Retain Test Email",
-        "Email notifications are working successfully."
-    )
-    return "Test Email Sent"
-
-
-# ---------- TEST SMS ----------
-
-@app.route("/test-sms")
-def test_sms():
-    send_sms(
-        "+919686193049",
-        "Campus Retain SMS notifications are working."
-    )
-    return "Test SMS Sent"
-
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-
     app.run(debug=True)
