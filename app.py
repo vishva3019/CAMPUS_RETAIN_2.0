@@ -491,12 +491,12 @@ def approve_claim(item_id):
             send_email(
                 latest_claim.student_email,
                 "Campus Retain Claim Approved 🎉",
-                f"Congratulations! Your ownership verification profile parameters for '{item.name}' matched our requirements. Please physically retrieve the item asset at the office desk counter."
+                f"Congratulations! Your ownership verification profile parameters for '{item.name}' matched our requirements. Please physically retrieve the item asset at the DOSS office."
             )
 
             send_sms(
                 latest_claim.phone,
-                f"Campus Retain Notice: Claim approved for asset {item.name}. Visit office counter desk for cleanup."
+                f"Campus Retain Notice: Claim approved for asset {item.name}. Visit DOSS office for claim."
             )
 
         return jsonify({"status": "success"})
@@ -534,7 +534,7 @@ def reject_claim(item_id):
             send_email(
                 latest_claim.student_email,
                 "Campus Verification Update - Claim Rejected",
-                f"Your claim request query for item entry '{item.name}' was evaluated and rejected.\n\nFeedback/Remarks from Admin: {remarks}\n\nIf you have further questions, visit the desk office counter."
+                f"Your claim request query for item entry '{item.name}' was evaluated and rejected.\n\nFeedback/Remarks from Admin: {remarks}\n\nIf you have further questions, visit the DOSS office for more."
             )
 
             send_sms(
