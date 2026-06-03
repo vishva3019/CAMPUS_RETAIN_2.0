@@ -31,9 +31,9 @@
 
     <nav class="sticky top-0 z-50 border-b border-slate-100 glass-nav transition-all duration-300">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="flex items-center space-x-3 font-extrabold text-xl cursor-pointer group" onclick="location.reload()">
-                <div class="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-[0_4px_12px_rgba(109,40,217,0.3)] transform transition duration-300 group-hover:scale-110 group-hover:rotate-3">C</div>
-                <span class="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">CampusRetain</span>
+            <!-- Brand Layout updated to dynamically render Option 2's logo.svg asset file -->
+            <div class="flex items-center cursor-pointer group" onclick="location.reload()">
+                <img src="{{ url_for('static', filename='logo.svg') }}" alt="CampusRetain Logo" class="h-10 w-auto transform transition duration-300 group-hover:scale-105">
             </div>
             <div class="flex items-center gap-5">
                 <span class="hidden md:inline text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200/60 px-3.5 py-1.5 rounded-full shadow-inner">{{ user_email }}</span>
