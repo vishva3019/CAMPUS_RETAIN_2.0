@@ -221,7 +221,7 @@ def login():
 
                 return redirect(url_for("index"))
 
-            # Existing user
+            # Existing user verification
             try:
                 valid = check_password_hash(user.password, password)
             except:
@@ -258,7 +258,7 @@ def admin_login():
         return render_template(
             "admin_login.html",
             error="Invalid credentials."
-            )
+        )
 
     return render_template("admin_login.html")
 
@@ -424,7 +424,9 @@ def approve_claim(item_id):
 def reject_claim(item_id):
     try:
         data = request.json or {}
-        remarks = data.get("remarks", "No reason provided.")
+        remarks = data.get("remarks", "").strip()
+        if not remarks:
+            remarks = "Verification details provided did not match item specifications."
         
         item = db.session.get(Item, item_id)
         if not item:
