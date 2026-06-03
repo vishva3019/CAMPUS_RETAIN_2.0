@@ -59,7 +59,7 @@ db = SQLAlchemy(app)
 # ==================================================
 # Change this flag to True to instantly lock public user paths and render
 # the clean 3-dot loading maintenance page during codebase upgrades.
-IS_MAINTENANCE = True
+IS_MAINTENANCE = False
 
 
 # ==================================================
