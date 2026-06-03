@@ -71,19 +71,26 @@ Campus-Retain-2.0/
 │
 └── static/
     └── uploads/
+
+
+    
 ⚙️ Installation (Local Setup)
+
 1️⃣ Clone Repository
 Bash
 git clone [https://github.com/vishva3019/CAMPUS_RETAIN_2.0.git](https://github.com/vishva3019/CAMPUS_RETAIN_2.0.git)
 cd CAMPUS_RETAIN_2.0
+
 2️⃣ Establish Virtual Environment
 Bash
 python -m venv .venv
 source .venv/bin/activate       # Mac/Linux
 .venv\Scripts\activate          # Windows
+
 3️⃣ Install Dependencies
 Bash
 pip install -r requirements.txt
+
 4️⃣ Inject Environment Variables
 Create a .env file within your root project directory and declare your infrastructure credentials:
 
@@ -99,9 +106,11 @@ MAIL_PASSWORD=your_app_password
 TWILIO_ACCOUNT_SID=your_sid
 TWILIO_AUTH_TOKEN=your_token
 TWILIO_PHONE_NUMBER=your_number
+
 5️⃣ Run the Application Locally
 Bash
 python app.py
+
 🌐 Deployment on Vercel
 Commit and push code updates to your remote GitHub repository.
 
