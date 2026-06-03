@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-12 h-12">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#4f46e5" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <path d="M40,40 L160,40 C160,40 160,110 100,165 C40,110 40,40 40,40 Z" 
+        fill="url(#logoGrad)" 
+        filter="url(#glow)"/>
+
+  <path d="M115,75 C95,75 80,90 80,110 C80,130 95,145 115,145 M115,110 L140,135" 
+        fill="none" 
+        stroke="#ffffff" 
+        stroke-width="12" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+        
+  <circle cx="115" cy="110" r="10" fill="#ffffff" />
+</svg>
