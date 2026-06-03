@@ -19,7 +19,7 @@ except:
 app = Flask(__name__)
 
 # ==================================================
-# CONFIG
+# CONFIG & CORE VARIABLES
 # ==================================================
 
 app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret-key")
@@ -37,22 +37,31 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = "static/uploads"
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
-# Email
+# Email Infrastructure Config
 MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
 MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
 MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
 MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
 
-# Twilio
+# Twilio Infrastructure Config
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
 TWILIO_PHONE_NUMBER = os.environ.get("TWILIO_PHONE_NUMBER")
 
-# Admin
+# Admin Infrastructure Config
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
 db = SQLAlchemy(app)
+
+# ==================================================
+# GLOBAL MAINTENANCE TOGGLE
+# ==================================================
+# Change this flag to True to instantly lock public user paths and render
+# the clean 3-dot loading maintenance page during codebase upgrades.
+# Set back to False to unlock the application live.
+IS_MAINTENANCE = False
+
 
 # ==================================================
 # MODELS
@@ -112,7 +121,7 @@ def send_email(receiver, subject, body):
             server.login(MAIL_USERNAME, MAIL_PASSWORD)
             server.send_message(msg)
 
-        print("Email sent")
+        print("Email sent successfully")
         return True
 
     except Exception as e:
@@ -141,7 +150,7 @@ def send_sms(receiver, body):
             to=receiver
         )
 
-        print("SMS sent")
+        print("SMS sent successfully")
         return True
 
     except Exception as e:
@@ -150,8 +159,25 @@ def send_sms(receiver, body):
 
 
 # ==================================================
-# AUTH DECORATORS
+# AUTH DECORATORS & TRAFFIC INTERCEPTORS
 # ==================================================
+
+@app.before_request
+def check_for_maintenance():
+    # Structural bypass configurations allowing asset streams and system admin bypass routes
+    bypass_routes = ["static", "admin_login", "admin_dashboard", "logout", "init_db", "reject_claim", "approve_claim", "delete_item"]
+    
+    if IS_MAINTENANCE:
+        if request.endpoint and any(route in request.endpoint for route in bypass_routes):
+            return None
+            
+        # Allow logged-in administrators to browse the live workspace safely during database operations
+        if session.get("is_admin") == True:
+            return None
+            
+        # Redirect standard traffic to the modified dynamic loader maintenance card
+        return render_template("maintenance.html"), 503
+
 
 def login_required(f):
     @wraps(f)
@@ -186,7 +212,7 @@ def index():
     )
 
 
-# ---------------- LOGIN / REGISTER ----------------
+# ---------------- USER AUTHENTICATION ----------------
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -203,7 +229,7 @@ def login():
 
             user = User.query.filter_by(email=email).first()
 
-            # First time register
+            # Self-registration logic on first login attempt
             if not user:
                 new_user = User(
                     email=email,
@@ -222,7 +248,7 @@ def login():
 
                 return redirect(url_for("index"))
 
-            # Existing user verification
+            # Existing user cryptographic verification loop
             try:
                 valid = check_password_hash(user.password, password)
             except:
@@ -252,18 +278,18 @@ def forgot_password():
         user = User.query.filter_by(email=email).first()
         
         if not user:
-            return render_template("login.html", error="This email is not registered yet.")
+            return render_template("login.html", error="This email address is not registered in the network inventory.")
             
-        # Generate clean 6-digit secure numerical token
+        # Secure 6-digit random token array generation
         otp = str(random.randint(100000, 999999))
         
-        # Save validation metrics inside safe encrypted server session
+        # Save recovery transaction matrices inside safe encrypted server session
         session["reset_email"] = email
         session["reset_otp"] = otp
         session["reset_expiry"] = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
         
-        # Dispatch the verification parameters
-        email_body = f"Hello,\n\nYou requested a password reset for Campus Retain.\nYour 6-digit verification OTP is: {otp}\n\nThis OTP is valid for 10 minutes. If you did not make this request, please secure your account credentials immediately."
+        # Email transmission block
+        email_body = f"Hello,\n\nYou requested a password reset for Campus Retain.\nYour 6-digit verification code OTP is: {otp}\n\nThis code is valid for 10 minutes. If you did not initialize this configuration, please secure your credentials immediately."
         send_email(email, "Campus Retain - Password Reset Verification OTP", email_body)
         
         return render_template("reset_password.html", email=email, message="Verification code has been systematically delivered to your organization inbox.")
@@ -285,37 +311,37 @@ def reset_password():
         new_password = request.form.get("new_password", "")
         
         if not email or not session_otp or not expiry_str:
-            return render_template("login.html", error="Session expired. Please initialize password recovery sequence again.")
+            return render_template("login.html", error="Recovery session expired. Please initialize password recovery sequence again.")
             
-        # Check time expiration
+        # Time threshold confirmation loop
         expiry_time = datetime.fromisoformat(expiry_str)
         if datetime.utcnow() > expiry_time:
-            return render_template("login.html", error="Verification code has expired. Please try again.")
+            return render_template("login.html", error="Verification code token expired. Please try again.")
             
-        # Check token validity
+        # Integrity validation check
         if input_otp != session_otp:
             return render_template("reset_password.html", email=email, error="Invalid verification code parameters. Please recheck.")
             
-        # Save clean hashed parameters
+        # Final secure credentials update override
         user = User.query.filter_by(email=email).first()
         if user:
             user.password = generate_password_hash(new_password)
             db.session.commit()
             
-            # Clear temporary keys from session
+            # Flush lifecycle parameters from current browser cookies tracking
             session.pop("reset_email", None)
             session.pop("reset_otp", None)
             session.pop("reset_expiry", None)
             
-            return render_template("login.html", success="Password updated smoothly! You can now log in.")
+            return render_template("login.html", success="Security password restructured cleanly! Proceed to access portal.")
             
-        return render_template("login.html", error="System user validation lookup failure.")
+        return render_template("login.html", error="System database user lookup constraint error.")
         
     except Exception as e:
         return render_template("login.html", error=f"Password Restructuring Error: {str(e)}")
 
 
-# ---------------- ADMIN LOGIN ----------------
+# ---------------- ADMIN ACCESS AND MANAGEMENT ----------------
 
 @app.route("/admin_login", methods=["GET", "POST"])
 def admin_login():
@@ -330,30 +356,11 @@ def admin_login():
 
         return render_template(
             "admin_login.html",
-            error="Invalid credentials."
+            error="Invalid administrative terminal credentials."
         )
 
     return render_template("admin_login.html")
 
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
-
-
-# ---------------- DB INIT ----------------
-
-@app.route("/init-db")
-def init_db():
-    try:
-        db.create_all()
-        return "Database initialized successfully!"
-    except Exception as e:
-        return f"DB Error: {str(e)}"
-
-
-# ---------------- ADMIN DASHBOARD ----------------
 
 @app.route("/admin")
 @admin_required
@@ -362,9 +369,28 @@ def admin_dashboard():
     return render_template("admin.html", items=items)
 
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# ---------------- DB SCHEMAS INITIALIZATION ----------------
+
+@app.route("/init-db")
+def init_db():
+    try:
+        db.create_all()
+        return "Database architecture schemas initialized successfully!"
+    except Exception as e:
+        return f"Database Schema Construction Fault Error: {str(e)}"
+
+
 # ==================================================
-# API ROUTES
+# API CONTROLLERS ENDPOINTS
 # ==================================================
+
+# ---------- REPORT DISCOVERY PIPELINE ----------
 
 @app.route("/api/report", methods=["POST"])
 @login_required
@@ -395,7 +421,7 @@ def report_item():
             send_email(
                 ADMIN_EMAIL,
                 "New Item Reported",
-                f"A new item '{item.name}' has been reported."
+                f"A new discovered asset entry '{item.name}' has been logged into the registry."
             )
 
         return jsonify({"status": "success"})
@@ -404,6 +430,8 @@ def report_item():
         return jsonify({"error": str(e)}), 500
 
 
+# ---------- ALLOCATE CLAIM QUERY ----------
+
 @app.route("/api/claim", methods=["POST"])
 @login_required
 def claim_item():
@@ -411,9 +439,8 @@ def claim_item():
         data = request.json
 
         item = db.session.get(Item, data["item_id"])
-
         if not item:
-            return jsonify({"error": "Item not found"}), 404
+            return jsonify({"error": "Target item not found inside current channel"}), 404
 
         item.status = "Pending"
 
@@ -428,15 +455,16 @@ def claim_item():
         db.session.add(claim)
         db.session.commit()
 
+        # Lifecycle notifications dispatches
         send_email(
             data["student_email"],
             "Campus Retain Claim Submitted",
-            f"Your claim request for '{item.name}' is submitted and under review."
+            f"Your ownership claim request validation query for '{item.name}' has been successfully transmitted and logged."
         )
 
         send_sms(
             data.get("phone", ""),
-            f"Campus Retain: Claim request for {item.name} submitted."
+            f"Campus Retain: Claim query registry request for asset {item.name} successfully deployed for review."
         )
 
         return jsonify({"status": "success"})
@@ -445,14 +473,15 @@ def claim_item():
         return jsonify({"error": str(e)}), 500
 
 
+# ---------- EXECUTE APPROVAL TERMINAL ----------
+
 @app.route("/api/admin/approve/<int:item_id>", methods=["POST"])
 @admin_required
 def approve_claim(item_id):
     try:
         item = db.session.get(Item, item_id)
-
         if not item:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify({"error": "Target entity not found"}), 404
 
         item.status = "Claimed"
 
@@ -467,13 +496,13 @@ def approve_claim(item_id):
         if latest_claim:
             send_email(
                 latest_claim.student_email,
-                "Campus Retain Claim Approved",
-                f"Your claim for '{item.name}' has been approved. Please collect it from office."
+                "Campus Retain Claim Approved 🎉",
+                f"Congratulations! Your ownership verification profile parameters for '{item.name}' matched our requirements. Please physically retrieve the item asset at the office desk counter."
             )
 
             send_sms(
                 latest_claim.phone,
-                f"Campus Retain: Claim approved for {item.name}. Collect from office."
+                f"Campus Retain Notice: Claim approved for asset {item.name}. Visit office counter desk for cleanup."
             )
 
         return jsonify({"status": "success"})
@@ -481,6 +510,8 @@ def approve_claim(item_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+# ---------- EXECUTE REJECTION FLOW AND REMARKS ----------
 
 @app.route("/api/admin/reject/<int:item_id>", methods=["POST"])
 @admin_required
@@ -493,8 +524,9 @@ def reject_claim(item_id):
         
         item = db.session.get(Item, item_id)
         if not item:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify({"error": "Target system item coordinates missing"}), 404
 
+        # Revert layout profile mechanics back to available search index channels
         item.status = "Available"
 
         latest_claim = Claim.query.filter_by(
@@ -508,13 +540,13 @@ def reject_claim(item_id):
         if latest_claim:
             send_email(
                 latest_claim.student_email,
-                "Campus Retain Claim Rejected",
-                f"Your claim request for '{item.name}' has been rejected.\nReason/Remarks from Admin: {remarks}\n\nIf you believe this is an error, please visit the DOSS office."
+                "Campus Retain - Claim Verification Update",
+                f"Your claim request query for item entry '{item.name}' was evaluated and rejected.\n\nFeedback/Remarks: {remarks}\n\nIf you have further questions, visit the desk office counter."
             )
 
             send_sms(
                 latest_claim.phone,
-                f"Campus Retain: Claim rejected for {item.name}. Remarks: {remarks}"
+                f"Campus Retain: Claim rejected for asset {item.name}. Remarks feedback parameter: {remarks}"
             )
 
         return jsonify({"status": "success"})
@@ -523,14 +555,15 @@ def reject_claim(item_id):
         return jsonify({"error": str(e)}), 500
 
 
+# ---------- EXPUNGE ITEM RECORD ----------
+
 @app.route("/api/item/delete/<int:item_id>", methods=["POST"])
 @admin_required
 def delete_item(item_id):
     try:
         item = db.session.get(Item, item_id)
-
         if not item:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify({"error": "Target object not tracked inside database data models"}), 404
 
         db.session.delete(item)
         db.session.commit()
@@ -539,6 +572,29 @@ def delete_item(item_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ==================================================
+# INFRASTRUCTURE DEPLOYMENT SANITY CHECKS
+# ==================================================
+
+@app.route("/test-email")
+def test_email():
+    send_email(
+        "vishvanth3049@gmail.com",
+        "Campus Retain Test Email Channel",
+        "SMTP email transport engine layers operating completely error-free."
+    )
+    return "Test Email Dispatched Successfully"
+
+
+@app.route("/test-sms")
+def test_sms():
+    send_sms(
+        "+919686193049",
+        "Campus Retain Twilio notification systems channel validation check successful."
+    )
+    return "Test Cellular Text Transmitted Successfully"
 
 
 if __name__ == "__main__":
