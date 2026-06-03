@@ -258,7 +258,7 @@ def admin_login():
         return render_template(
             "admin_login.html",
             error="Invalid credentials."
-        )
+            )
 
     return render_template("admin_login.html")
 
@@ -409,6 +409,51 @@ def approve_claim(item_id):
             send_sms(
                 latest_claim.phone,
                 f"Campus Retain: Claim approved for {item.name}. Collect from office."
+            )
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- REJECT CLAIM ----------
+
+@app.route("/api/admin/reject/<int:item_id>", methods=["POST"])
+@admin_required
+def reject_claim(item_id):
+    try:
+        data = request.json or {}
+        remarks = data.get("remarks", "No reason provided.")
+        
+        item = db.session.get(Item, item_id)
+        if not item:
+            return jsonify({"error": "Not found"}), 404
+
+        # Revert status back to Available so others can claim it
+        item.status = "Available"
+
+        # Get the latest claim to notify the student
+        latest_claim = Claim.query.filter_by(
+            item_id=item_id
+        ).order_by(
+            Claim.timestamp.desc()
+        ).first()
+
+        db.session.commit()
+
+        if latest_claim:
+            # Send Email Notification
+            send_email(
+                latest_claim.student_email,
+                "Campus Retain Claim Rejected",
+                f"Your claim request for '{item.name}' has been rejected.\nReason/Remarks from Admin: {remarks}\n\nIf you believe this is an error, please visit the DOSS office."
+            )
+
+            # Send SMS Notification
+            send_sms(
+                latest_claim.phone,
+                f"Campus Retain: Claim rejected for {item.name}. Remarks: {remarks}"
             )
 
         return jsonify({"status": "success"})
