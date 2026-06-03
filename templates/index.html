@@ -31,10 +31,19 @@
 
     <nav class="sticky top-0 z-50 border-b border-slate-100 glass-nav transition-all duration-300">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <!-- Brand Layout updated to dynamically render Option 2's logo.svg asset file -->
-            <div class="flex items-center cursor-pointer group" onclick="location.reload()">
-                <img src="{{ url_for('static', filename='logo.svg') }}" alt="CampusRetain Logo" class="h-10 w-auto transform transition duration-300 group-hover:scale-105">
+            <!-- Brand Layout: Renders the graphical icon emblem alongside the stylized brand name text -->
+            <div class="flex items-center space-x-3 cursor-pointer group" onclick="location.reload()">
+                <div class="relative w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-[0_4px_12px_rgba(109,40,217,0.3)] transform transition duration-300 group-hover:scale-110 group-hover:rotate-3">
+                    <!-- Inline vector shield for clean crisp pixel independent layout rendering -->
+                    <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent transform transition duration-300 group-hover:translate-x-0.5">
+                    Campus<span class="text-violet-600">Retain</span>
+                </span>
             </div>
+            
             <div class="flex items-center gap-5">
                 <span class="hidden md:inline text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200/60 px-3.5 py-1.5 rounded-full shadow-inner">{{ user_email }}</span>
                 <button onclick="toggleModal('reportModal')"
