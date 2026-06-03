@@ -3,46 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | CampusRetain</title>
+    <title>Login | Campus Retain</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <style>
+        body {  
+            font-family: 'Inter', sans-serif; 
+        }
+        /* High-end ambient backdrop animation */
+        @keyframes meshGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .vibrant-bg {
+            background: linear-gradient(-45deg, #eef2ff, #f5f3ff, #f9b4ed, #f0fdf4);
+            background-size: 300% 300%;
+            animation: meshGradient 12s ease infinite;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 h-screen flex items-center justify-center p-6">
-    <div class="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
-        <div class="p-8 pb-6 bg-indigo-600 text-center text-white">
-            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-indigo-600 font-bold text-3xl mx-auto mb-4 shadow-lg shrink-0">C</div>
-            <h1 class="text-2xl font-bold tracking-tight">CampusRetain</h1>
-            <p class="text-indigo-200 text-sm mt-1">Student Portal Login</p>
+<body class="vibrant-bg h-screen flex items-center justify-center p-6">
+
+    <!-- Card Container with subtle frosted glass border reflection -->
+    <div class="w-full max-w-md bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-[0_30px_70px_rgba(109,40,217,0.12)] overflow-hidden border border-white/60 transform transition-all duration-500 hover:shadow-[0_40px_80px_rgba(109,40,217,0.18)] animate__animated animate__fadeInUp">
+        
+        <!-- Bright Premium Gradient Header Banner -->
+        <div class="p-9 pb-8 bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-700 text-center text-white relative overflow-hidden">
+            <!-- Neon Abstract Accents -->
+            <div class="absolute -top-6 -right-6 w-36 h-36 bg-amber-400 rounded-full opacity-20 blur-xl animate-pulse"></div>
+            <div class="absolute -bottom-10 -left-6 w-36 h-36 bg-fuchsia-400 rounded-full opacity-30 blur-2xl"></div>
+            
+            <!-- Branding App Icon with unique inner shadow and floating animation -->
+            <div class="w-16 h-16 bg-white text-transparent bg-clip-text bg-gradient-to-br from-violet-600 to-purple-600 rounded-2xl flex items-center justify-center font-black text-3xl mx-auto mb-4 shadow-[0_8px_20px_rgba(0,0,0,0.15)] transform transition duration-500 hover:scale-110 hover:rotate-6 cursor-default animate__animated animate__float">
+                C
+            </div>
+            <h1 class="text-2xl font-extrabold tracking-tight relative z-10 bg-gradient-to-b from-white to-indigo-100 text-transparent bg-clip-text">Campus Retain</h1>
+            <p class="text-indigo-200/90 text-xs font-semibold uppercase tracking-widest mt-1.5 relative z-10">Student Portal</p>
         </div>
         
-        <div class="p-8">
+        <!-- Form Fields Container -->
+        <div class="p-9">
             {% if error %}
-            <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-6 text-sm font-medium flex items-center gap-2">
-                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                {{ error }}
+            <!-- Alert styled with deep rose color profile -->
+            <div class="bg-rose-50 border border-rose-100 text-rose-600 px-4 py-3.5 rounded-2xl mb-6 text-sm font-semibold flex items-center gap-3 animate__animated animate__shakeX">
+                <div class="p-1 rounded-lg bg-rose-500 text-white shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </div>
+                <span>{{ error }}</span>
             </div>
             {% endif %}
 
             <form action="/login" method="POST" class="space-y-5">
-                <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-2">Organization Email</label>
-                    <input type="email" name="email" placeholder="student@ced.alliance.edu.in" required class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
+                <!-- Username Input Box -->
+                <div class="animate__animated animate__fadeIn animate__delay-1s">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Organization Email</label>
+                    <input type="email" name="email" placeholder="student@ced.alliance.edu.in" required 
+                           class="w-full border border-slate-200/80 p-3.5 rounded-xl bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-300 text-slate-700 font-medium placeholder:text-slate-400/80 shadow-inner">
                 </div>
-                <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-2">Password</label>
-                    <input type="password" name="password" placeholder="••••••••" required class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
+
+                <!-- Password Input Box -->
+                <div class="animate__animated animate__fadeIn animate__delay-1s">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required 
+                           class="w-full border border-slate-200/80 p-3.5 rounded-xl bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-300 text-slate-700 font-medium placeholder:text-slate-400/80 shadow-inner">
                 </div>
                 
-                <button type="submit" class="w-full py-3 mt-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-indigo-600 transition shadow-lg shadow-slate-200 flex justify-center items-center">
-                    Login / Register
+                <!-- Radiant Action Submit Button with gradient morph -->
+                <button type="submit" 
+                        class="w-full py-4 mt-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 shadow-[0_10px_25px_rgba(109,40,217,0.25)] hover:shadow-[0_12px_30px_rgba(109,40,217,0.4)] flex justify-center items-center transform active:scale-[0.98] text-sm tracking-wide group animate__animated animate__fadeInUp animate__delay-1s">
+                    <span>Login or Register</span>
+                    <svg class="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
                 </button>
             </form>
             
-            <div class="mt-8 pt-6 border-t border-slate-100 text-center">
-                <a href="/admin_login" class="text-sm font-semibold text-slate-400 hover:text-indigo-600 transition">Are you an Admin? Login here</a>
+            <!-- Styled Decorative Bottom Anchor Layout -->
+            <div class="mt-8 pt-6 border-t border-slate-100/80 text-center animate__animated animate__fadeIn animate__delay-1s">
+                <a href="/admin_login" class="inline-block text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-violet-600 transition-colors duration-300 decoration-2 underline-offset-4 hover:underline">
+                    Administrative Terminal Access
+                </a>
             </div>
         </div>
     </div>
+
 </body>
 </html>
