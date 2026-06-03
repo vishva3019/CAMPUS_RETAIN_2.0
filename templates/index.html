@@ -1,229 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CampusRetain | Alliance University</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        body { font-family: 'Inter', sans-serif; }
+        .vibrant-bg {
+            background: linear-gradient(-45deg, #eef2ff, #f5f3ff, #fdf2f8, #f0fdf4);
+            background-size: 400% 400%;
+            animation: meshGradient 15s ease infinite;
         }
-
-        .glass {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
+        @keyframes meshGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
     </style>
 </head>
+<body class="bg-slate-50/50 text-slate-900 scroll-smooth min-h-screen flex flex-col">
 
-<body class="bg-slate-50 text-slate-900 scroll-smooth">
-
-    <nav class="sticky top-0 z-50 border-b glass">
+    <nav class="sticky top-0 z-50 border-b border-slate-100 glass-nav transition-all duration-300">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="flex items-center space-x-2 font-bold text-xl cursor-pointer" onclick="location.reload()">
-                <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">C
-                </div>
-                <span>CampusRetain</span>
+            <div class="flex items-center space-x-3 font-extrabold text-xl cursor-pointer group" onclick="location.reload()">
+                <div class="w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-[0_4px_12px_rgba(109,40,217,0.3)] transform transition duration-300 group-hover:scale-110 group-hover:rotate-3">C</div>
+                <span class="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">CampusRetain</span>
             </div>
-            <div class="flex items-center gap-4">
-                <span class="hidden md:inline text-sm text-slate-500 font-medium">{{ user_email }}</span>
+            <div class="flex items-center gap-5">
+                <span class="hidden md:inline text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200/60 px-3.5 py-1.5 rounded-full shadow-inner">{{ user_email }}</span>
                 <button onclick="toggleModal('reportModal')"
-                    class="bg-indigo-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-indigo-700 transition shadow-md">Report
-                    Found</button>
+                    class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-6 py-2.5 rounded-full font-bold text-sm hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 shadow-[0_4px_15px_rgba(109,40,217,0.25)] hover:shadow-[0_6px_20px_rgba(109,40,217,0.4)] transform active:scale-[0.98]">Report Found</button>
                 <a href="/logout"
-                    class="text-sm font-bold text-slate-400 hover:text-rose-600 transition pl-2 border-l border-slate-200">Logout</a>
+                    class="text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-rose-600 transition pl-3 border-l border-slate-200">Logout</a>
             </div>
         </div>
     </nav>
 
-    <header class="py-16 px-6 bg-white border-b border-slate-100 text-center">
-        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight">Lost it? <span class="text-indigo-600">Find
-                it.</span></h1>
-        <div
-            class="mt-8 flex flex-col md:flex-row items-center justify-center gap-3 max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-xl border border-slate-100 transition focus-within:ring-2 ring-indigo-600">
-            <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Search (e.g. 'iPhone', 'Keys')..."
-                class="w-full px-4 py-3 outline-none rounded-xl">
-            <button
-                class="w-full md:w-auto bg-slate-900 text-white px-8 py-3 rounded-xl font-semibold hover:bg-slate-800 transition">Search</button>
+    <header class="py-20 px-6 vibrant-bg border-b border-slate-200/50 text-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent"></div>
+        <h1 class="text-4xl md:text-6xl font-black tracking-tight text-slate-900 relative z-10 animate__animated animate__fadeInDown">
+            Lost it? <span class="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Find it.</span>
+        </h1>
+        <p class="mt-3 text-slate-500 font-medium text-sm md:text-base relative z-10 animate__animated animate__fadeIn animate__delay-1s">Alliance University Lost and Found Management System</p>
+        
+        <div class="mt-10 flex flex-col md:flex-row items-center justify-center gap-3 max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100/80 transition-all duration-300 focus-within:ring-2 ring-violet-500 focus-within:shadow-[0_20px_50px_rgba(109,40,217,0.1)] relative z-10 animate__animated animate__fadeInUp">
+            <div class="flex items-center w-full px-3 gap-2">
+                <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Search items by name (e.g. 'iPhone', 'Keys')..." class="w-full py-3 outline-none rounded-xl text-sm font-medium text-slate-700 placeholder:text-slate-400">
+            </div>
+            <button class="w-full md:w-auto bg-slate-950 text-white px-8 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition shadow-md shrink-0">Search</button>
         </div>
     </header>
 
-    <main id="browse" class="max-w-7xl mx-auto px-6 py-12">
-        <h2 class="text-2xl font-bold mb-8">Recently Found Items</h2>
+    <main id="browse" class="max-w-7xl mx-auto px-6 py-16 flex-grow w-full">
+        <h2 class="text-2xl font-extrabold tracking-tight text-slate-800 mb-8 flex items-center gap-2">
+            <span class="w-2.5 h-6 bg-violet-600 rounded-full inline-block"></span>
+            Recently Found Items
+        </h2>
+        
         <div id="itemGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {% for item in items %}
-            <div class="card bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition-all"
-                data-name="{{ item.name }}">
-                <div class="relative group">
-                    <img src="{{ item.image_data if item.image_data else 'https://via.placeholder.com/300?text=No+Image' }}"
-                        class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105">
+            <div class="card bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgba(109,40,217,0.06)] transform transition-all duration-300 hover:-translate-y-1 group" data-name="{{ item.name }}">
+                <div class="relative overflow-hidden aspect-[4/3] bg-slate-50">
+                    <img src="{{ item.image_data if item.image_data else 'https://via.placeholder.com/400x300?text=No+Image+Provided' }}"
+                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                     {% if item.status == 'Pending' %}
-                    <div class="absolute inset-0 bg-white/60 flex items-center justify-center z-10">
-                        <span
-                            class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-sm">Under
-                            Review</span>
+                    <div class="absolute inset-0 bg-white/70 backdrop-blur-xs flex items-center justify-center z-10 animate__animated animate__fadeIn">
+                        <span class="bg-amber-500 text-white px-4 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest shadow-md border border-amber-400">Under Review</span>
                     </div>
                     {% endif %}
                 </div>
-                <div class="p-5">
-                    <span
-                        class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded">{{
-                        item.category }}</span>
-                    <h3 class="font-bold text-lg mt-2">{{ item.name }}</h3>
-                    <p class="text-slate-500 text-xs mt-1 truncate">📍 {{ item.location }}</p>
+                <div class="p-6">
+                    <span class="text-[9px] font-extrabold text-violet-600 uppercase tracking-widest bg-violet-50 border border-violet-100/50 px-2.5 py-1 rounded-md inline-block shadow-xs">{{ item.category }}</span>
+                    <h3 class="font-bold text-slate-800 text-lg mt-2.5 group-hover:text-violet-600 transition-colors duration-300 truncate">{{ item.name }}</h3>
+                    <p class="text-slate-400 text-xs mt-1 font-medium flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                        <span class="truncate">{{ item.location }}</span>
+                    </p>
+                    
                     {% if item.status == 'Available' %}
                     <button onclick="openClaimModal('{{ item.id }}', '{{ item.name }}')"
-                        class="w-full mt-4 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-indigo-600 transition shadow-md shadow-slate-200">Claim
-                        Item</button>
+                        class="w-full mt-5 py-3 bg-slate-950 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-violet-600 transition-all duration-300 shadow-md group-hover:shadow-[0_8px_20px_rgba(109,40,217,0.2)] flex items-center justify-center gap-1 transform active:scale-[0.98]">
+                        Claim Property
+                    </button>
                     {% else %}
-                    <button disabled
-                        class="w-full mt-4 py-3 bg-slate-100 text-slate-400 font-bold rounded-xl cursor-not-allowed">Claimed</button>
+                    <button disabled class="w-full mt-5 py-3 bg-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider rounded-xl cursor-not-allowed border border-slate-200/30">Claimed</button>
                     {% endif %}
                 </div>
             </div>
             {% else %}
-            <div class="col-span-full py-12 text-center text-slate-400">
-                <p>No available items found!</p>
+            <div class="col-span-full py-20 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl bg-white/50 animate__animated animate__fadeIn">
+                <svg class="w-16 h-16 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                <p class="text-lg font-bold text-slate-600">No active discoveries listed</p>
+                <p class="text-xs font-medium text-slate-400 mt-0.5">When items are recorded on campus, they will appear in this channel.</p>
             </div>
             {% endfor %}
         </div>
     </main>
 
-    <!-- Report Modal -->
-    <div id="reportModal"
-        class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
-        <div class="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl relative">
-            <button onclick="toggleModal('reportModal')"
-                class="absolute top-4 right-4 text-slate-400 hover:bg-slate-100 rounded-full p-2 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
-            <h2 class="text-2xl font-bold">Report Found Item</h2>
-            <p class="text-sm font-semibold text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100 mt-2 mb-4">
-                ⚠️ IMPORTANT: All reported items must be physically handed over to the DOSS office immediately after
-                submission!
-            </p>
+    <div id="reportModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-950/40 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white w-full max-w-lg rounded-[2rem] p-8 shadow-2xl relative border border-slate-100 animate__animated animate__zoomIn animate__fast">
+            <button onclick="toggleModal('reportModal')" class="absolute top-5 right-5 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-colors duration-300"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Report Found Item</h2>
+            <p class="text-xs font-semibold text-rose-600 bg-rose-50 p-3.5 rounded-xl border border-rose-100 mt-3 mb-5 flex gap-2"><span class="shrink-0">⚠️</span><span><strong>IMPORTANT:</strong> Hand discovered items over to the DOSS office physical counter immediately following dispatch parameters.</span></p>
+            
             <form id="reportForm" class="space-y-4">
-                <input type="text" name="name" placeholder="Item Name *"
-                    class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
-                    required>
+                <input type="text" name="name" placeholder="Item Name *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
                 <div class="grid grid-cols-2 gap-4">
-                    <select name="category"
-                        class="border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
-                        <option>Electronics</option>
-                        <option>Accessories</option>
-                        <option>Books</option>
-                        <option>Clothing</option>
-                        <option>Other</option>
+                    <select name="category" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-semibold text-sm text-slate-600">
+                        <option>Electronics</option><option>Accessories</option><option>Books</option><option>Clothing</option><option>Other</option>
                     </select>
-                    <input type="text" name="location" placeholder="Found Location *"
-                        class="border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
-                        required>
+                    <input type="text" name="location" placeholder="Found Location *" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
                 </div>
-                <textarea name="secret_detail" placeholder="Secret Identification Detail (Hidden from public)..."
-                    class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition min-h-[80px]"></textarea>
+                <textarea name="secret_detail" placeholder="Secret Identification Detail (Hidden from general public view)..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all text-sm font-medium min-h-[90px]"></textarea>
 
-                <!-- Premium Image Upload -->
-                <div class="mt-2 w-full">
-                    <label
-                        class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition relative overflow-hidden group">
-                        <div id="imagePlaceholder"
-                            class="flex flex-col items-center justify-center py-5 transition-transform group-hover:-translate-y-1">
-                            <svg class="w-8 h-8 mb-2 text-indigo-500" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                </path>
-                            </svg>
-                            <p class="text-sm text-slate-600 font-semibold">Click to upload image</p>
-                        </div>
+                <div class="mt-1 w-full">
+                    <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100/70 transition-all relative overflow-hidden group">
+                        <div id="imagePlaceholder" class="flex flex-col items-center justify-center py-5 group-hover:-translate-y-0.5 transition-transform"><svg class="w-8 h-8 mb-1.5 text-violet-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><p class="text-xs text-slate-600 font-bold">Upload Snapshot Verification</p></div>
                         <img id="imagePreview" src="" class="hidden absolute inset-0 w-full h-full object-cover">
-                        <input id="image" name="image" type="file" class="hidden" accept="image/*"
-                            onchange="previewImage(event)" />
+                        <input id="image" name="image" type="file" class="hidden" accept="image/*" onchange="previewImage(event)"/>
                     </label>
                 </div>
 
-                <div class="flex gap-4 pt-4">
-                    <button type="button" onclick="toggleModal('reportModal')"
-                        class="flex-1 font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition py-3">Cancel</button>
-                    <button id="reportSubmitBtn" type="submit"
-                        class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 flex justify-center items-center">
-                        <span>Submit Report</span>
-                    </button>
+                <div class="flex gap-3 pt-3">
+                    <button type="button" onclick="toggleModal('reportModal')" class="flex-1 font-bold text-slate-500 text-sm hover:bg-slate-100 rounded-xl transition py-3.5">Cancel</button>
+                    <button id="reportSubmitBtn" type="submit" class="flex-1 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:from-violet-700 hover:to-indigo-700 transition shadow-lg shadow-violet-100 flex justify-center items-center"><span>Submit Registry</span></button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Claim Modal -->
-    <div id="claimModal"
-        class="hidden fixed inset-0 z-[70] flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
-        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden relative">
-            <button onclick="toggleModal('claimModal')"
-                class="absolute top-4 right-4 z-10 text-slate-400 hover:bg-slate-100 rounded-full p-2 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
+    <div id="claimModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center px-4 bg-slate-950/40 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden relative border border-slate-100 animate__animated animate__zoomIn animate__fast">
+            <button onclick="toggleModal('claimModal')" class="absolute top-5 right-5 z-10 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             <div id="claimFormContainer" class="p-8">
-                <h2 class="text-2xl font-bold mb-2">Claim Item</h2>
-                <form id="claimForm" class="space-y-4 pt-4">
+                <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Claim Item</h2>
+                <form id="claimForm" class="space-y-4 pt-3">
                     <input id="modalItemId" type="hidden">
-                    <input id="modalItemNameDisplay" type="text" readonly
-                        class="w-full text-center font-bold text-indigo-600 bg-indigo-50 py-2 rounded-lg border-none focus:outline-none mb-4">
-                    <input type="text" id="claimStudentId" placeholder="Student ID *"
-                        class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
-                        required>
-                    <input type="email" id="claimEmail" value="{{ user_email }}" readonly
-                        class="w-full border border-slate-200 p-3 rounded-xl bg-slate-100 text-slate-500 focus:outline-none transition">
-                    <input type="tel" id="claimPhone" placeholder="Your Phone Number *"
-                        class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
-                        required>
-                    <textarea id="claimVerification"
-                        placeholder="Tell us something only the owner knows... (e.g., 'crank is scratched on left edge')"
-                        class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition min-h-[100px]"
-                        required></textarea>
-                    <button id="claimSubmitBtn" type="submit"
-                        class="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition flex justify-center items-center mt-2">
-                        <span>Submit Claim Request</span>
-                    </button>
+                    <input id="modalItemNameDisplay" type="text" readonly class="w-full text-center font-bold text-sm text-violet-600 bg-violet-50/60 border border-violet-100 py-2.5 rounded-xl focus:outline-none mb-2 cursor-default">
+                    <input type="text" id="claimStudentId" placeholder="Student ID *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm font-medium" required>
+                    <input type="email" id="claimEmail" value="{{ user_email }}" readonly class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-100 text-slate-400 focus:outline-none transition text-sm font-semibold shadow-inner">
+                    <input type="tel" id="claimPhone" placeholder="Your Active Phone Number *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm font-medium" required>
+                    <textarea id="claimVerification" placeholder="Tell us unique identifier attributes validation matching (e.g., 'back cover contains custom sticker left edge')..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm font-medium min-h-[100px]" required></textarea>
+                    <button id="claimSubmitBtn" type="submit" class="w-full py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-100 hover:from-violet-700 hover:to-indigo-700 transition flex justify-center items-center mt-3 transform active:scale-[0.98]"><span>Dispatch Claim Request</span></button>
                 </form>
             </div>
             <div id="claimSuccess" class="hidden p-12 text-center flex flex-col items-center">
-                <div
-                    class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                </div>
-                <h2 class="text-2xl font-bold mb-2">Claim Submitted!</h2>
-                <p class="text-slate-500 mb-8">We've sent a confirmation to your address. We'll verify your details
-                    soon.</p>
-                <button onclick="location.reload()"
-                    class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition">Return
-                    to Home</button>
+                <div class="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full border border-emerald-100 flex items-center justify-center mb-5 shadow-inner"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
+                <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Claim Registered Successfully!</h2>
+                <p class="text-slate-400 text-sm font-medium mt-1 max-w-xs mx-auto">We've delivered confirmation coordinates to your organization inbox. Evaluations are pending.</p>
+                <button onclick="location.reload()" class="w-full mt-8 py-3.5 bg-slate-950 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition shadow-md">Return to Inventory</button>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notifications Container -->
     <div id="toastContainer" class="fixed bottom-6 right-6 z-[80] flex flex-col gap-3"></div>
 
     <script>
-        // Modal functions
         function toggleModal(id) {
             const el = document.getElementById(id);
-            if (el.classList.contains('hidden')) {
-                el.classList.remove('hidden');
-            } else {
-                el.classList.add('hidden');
-            }
+            el.classList.toggle('hidden');
         }
 
         function openClaimModal(id, name) {
@@ -235,21 +180,14 @@
             toggleModal('claimModal');
         }
 
-        // Search filtering
         function filterItems() {
             let input = document.getElementById('searchInput').value.toLowerCase();
             document.querySelectorAll('.card').forEach(card => {
                 let name = card.dataset.name.toLowerCase();
-                if (name.includes(input)) {
-                    card.parentElement.style.display = 'block'; // Or block? Wait, card is directly child of Grid? Yes wait no, card is the wrapper itself.
-                    card.style.display = "block";
-                } else {
-                    card.style.display = "none";
-                }
+                card.style.display = name.includes(input) ? "block" : "none";
             });
         }
 
-        // Preview Image for Report Modal
         function previewImage(event) {
             const input = event.target;
             if (input.files && input.files[0]) {
@@ -263,51 +201,28 @@
             }
         }
 
-        // Toast Notification System
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
+            let iconSvg = type === 'success' ? `<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>` : `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+            let bgClass = type === 'success' ? 'bg-slate-950 border-l-4 border-emerald-500' : 'bg-rose-600 border-l-4 border-rose-800';
 
-            let iconSvg = '';
-            let bgClass = '';
-
-            if (type === 'success') {
-                bgClass = 'bg-slate-900 border-l-4 border-green-500';
-                iconSvg = `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
-            } else if (type === 'error') {
-                bgClass = 'bg-red-600 border-l-4 border-red-800';
-                iconSvg = `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
-            } else {
-                bgClass = 'bg-indigo-600';
-                iconSvg = `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-            }
-
-            toast.className = `flex items-center gap-3 ${bgClass} text-white px-5 py-4 rounded-xl shadow-2xl transform translate-y-12 opacity-0 transition-all duration-300 min-w-[300px] font-medium`;
+            toast.className = `flex items-center gap-3 ${bgClass} text-white px-5 py-4 rounded-xl shadow-2xl transform translate-y-12 opacity-0 transition-all duration-300 min-w-[300px] font-semibold text-sm animate__animated animate__fadeInUp animate__fast`;
             toast.innerHTML = `<div class="shrink-0 flex items-center justify-center">${iconSvg}</div><span>${message}</span>`;
 
             container.appendChild(toast);
-
-            // Animate in
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    toast.classList.remove('translate-y-12', 'opacity-0');
-                });
-            });
-
-            // Animate out and remove
             setTimeout(() => {
                 toast.classList.add('translate-y-12', 'opacity-0');
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
         }
 
-        // Form Submission handling
         document.getElementById('reportForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('reportSubmitBtn');
             const originalContent = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Submitting...`;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
             try {
                 const response = await fetch('/api/report', { method: 'POST', body: new FormData(e.target) });
@@ -315,15 +230,9 @@
                     showToast('Reported! Please drop the item off at the DOSS office.');
                     toggleModal('reportModal');
                     setTimeout(() => location.reload(), 1500);
-                } else {
-                    showToast('Failed to report item. Please try again.', 'error');
-                }
-            } catch (err) {
-                showToast('Network error occurred.', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalContent;
-            }
+                } else { showToast('Failed to execute report pipeline.', 'error'); }
+            } catch (err) { showToast('Network error occurred.', 'error'); }
+            finally { btn.disabled = false; btn.innerHTML = originalContent; }
         };
 
         document.getElementById('claimForm').onsubmit = async (e) => {
@@ -331,7 +240,7 @@
             const btn = document.getElementById('claimSubmitBtn');
             const originalContent = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Verifying...`;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
             const data = {
                 item_id: document.getElementById('modalItemId').value,
@@ -348,21 +257,15 @@
                     body: JSON.stringify(data)
                 });
                 if (response.ok) {
-                    showToast('Claim submitted successfully!', 'success');
+                    showToast('Claim query successfully registered!', 'success');
                     document.getElementById('claimFormContainer').classList.add('hidden');
                     document.getElementById('claimSuccess').classList.remove('hidden');
                 } else {
-                    showToast('Failed to submit claim.', 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = originalContent;
+                    showToast('Failed to deploy claim properties.', 'error');
+                    btn.disabled = false; btn.innerHTML = originalContent;
                 }
-            } catch (err) {
-                showToast('Network error occurred.', 'error');
-                btn.disabled = false;
-                btn.innerHTML = originalContent;
-            }
+            } catch (err) { showToast('Network error encountered.', 'error'); btn.disabled = false; btn.innerHTML = originalContent; }
         };
     </script>
 </body>
-
 </html>
