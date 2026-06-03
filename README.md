@@ -1,147 +1,122 @@
 # Campus Retain 2.0 🎒
 **To Access The Website:** [https://campus-retain-2-0.vercel.app/](https://campus-retain-2-0.vercel.app/)
 
-Campus Retain 2.0 is a robust **Lost and Found Management System** tailored for university campuses. It streamlines the lifecycle of lost belongings by giving students an easy reporting interface and giving administrators complete tracking and notification governance.
+Campus Retain 2.0 is a premium, high-performance **Lost and Found Management System** tailored for university campuses. Built with an elegant, modern UI featuring ambient mesh gradients and glassmorphism, it allows students and administrators to efficiently report, search, audit, and claim lost belongings.
 
-This platform bridges the communication gap between students and administrative services while optimizing inventory turnover.
+This platform bridges the communication gap on campus, significantly reducing the turnaround time required to return items to their rightful owners.
 
 ---
 
 ## 🚀 Features
 
-### 👨‍🎓 Student Features
-- **Secure Authentication:** Identity verification strictly enforced through organization emails (`@ced.alliance.edu.in`).
-- **Discovery Registration:** Instantly report found items with detailed metadata and location tagging.
-- **Visual Uploads:** Snap or upload asset photos natively encoded directly into storage.
-- **Claim Ecosystem:** Submit unique possession validation proofs and verification parameters to confirm property ownership.
-- **Traceability:** Automatic status adjustments (Available / Review / Claimed) visible site-wide.
+### 👨‍🎓 Student Portal Features
+- **Secure Domain Authentication:** Identity protection strictly matching campus organization emails (`@ced.alliance.edu.in`).
+- **Discovery Registry:** Instantly report found items with detailed descriptive metadata, categories, and specific locations.
+- **Visual Image Previews:** Upload item photographs encoded instantly into base64 storage strings.
+- **Dynamic Inventory Search:** High-performance, character-matching search filter bar to browse available items instantly.
+- **Possession Claim Pipeline:** Submit unique identifier attributes (proof description) that only the true owner would know.
+- **Forgot Password Recovery:** Secure email-based OTP (One-Time Password) workflow to cleanly reset account credentials if forgotten.
 
-### 👨‍💼 Admin Features
-- **Centralized Dashboard:** Real-time summary statistics tracking entire inventory quantities, pending evaluations, and resolved handovers.
-- **Dynamic Decision Pipeline:** Fully active individual decision buttons for every unique query:
-  - **Approve Claim:** Resolves validation ownership and transitions state parameters to `Claimed`.
-  - **Reject Claim (New):** Prompt-driven system to pass diagnostic feedback remarks directly to claimants while reverting the status to `Available` for active discovery.
-- **Claim History Log (New):** Scrollable chronological audit feeds showing historical attempts, contact contexts, and validation summaries per item profile.
-- **Resolution Cleanup:** Permanent destructive item deletion capabilities once administrative claims conclude.
+### 👨‍💼 Administration Features
+- **Cyber-Dark Operations Terminal:** Premium dark-themed administrative dashboard giving real-time tracking metrics (Total Records, Pending Reviews, Successfully Claimed).
+- **Dual Decision Engine:** Distinct interactive operations for pending claims:
+  - **Approve Claim:** Marks an asset as securely handed over and locks its public status to `Claimed`.
+  - **Reject Claim:** Prompts the admin for custom rationale remarks, instantly alerts the student, and returns the asset to `Available` status for public discovery.
+- **Claim History Audit Logs:** A clean chronological feed showing past claim attempts, historical proof inputs, and user coordinates for every item.
+- **Resolution Cleanup:** Permanent destructive item deletion capabilities to manage active warehouse inventory.
 
-### 🔔 Automated Notifications
-- **Email Alerts:** Handled by secure SMTP integrations alerting students during lifecycle transitions (Registration, Approval, and Rejections).
-- **SMS Integration:** Embedded Twilio API pipeline dispatching immediate cellular alerts with precise management feedback details.
+### 🔔 Integrated Notifications
+- **Email Dispatch Pipeline:** Automated secure SMTP notifications triggering on Account Registration, Claim Submissions, Approvals, and Rejections (including admin remarks).
+- **Cellular SMS alerts:** Twilio API integration providing immediate SMS alerts straight to the student's phone.
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- HTML5
-- CSS3 (Tailwind CSS framework)
-- JavaScript (Fetch API integration)
+- **HTML5 & Vanilla JavaScript** (Fetch API integration for server transactions)
+- **Tailwind CSS** (Modern utility-first styling layout configurations)
+- **Animate.css** (Hardware-accelerated micro-interaction entry effects)
 
 ### Backend
-- Python
-- Flask framework
+- **Python / Flask** (Application layer architecture)
 
 ### Database & Storage
-- PostgreSQL (Neon DB Engine)
-- SQLAlchemy ORM wrapper
-- Base64 internal string encoding for binary image blobs
+- **PostgreSQL / Neon DB Engine** (Production relational database)
+- **SQLAlchemy ORM** (Model mapping and relational table routing)
+- **Base64 String Encoding** (Embedded asset image persistence mapping)
 
 ### Deployment
-- Vercel Serverless Architecture
-
-### External Services
-- Twilio REST API
-- Secured SMTP Transport Engine
+- **Vercel** (Serverless cloud build optimization)
 
 ---
 
 ## 📂 Project Structure
 
-
+```text
 Campus-Retain-2.0/
-│── app.py
-│── requirements.txt
-│── vercel.json
+│── app.py                 # Core Flask Backend, API Pipelines, and Database Models
+│── requirements.txt       # Production System Dependencies
+│── vercel.json            # Vercel Deployment & Route Configuration
 │
-├── templates/
-│   ├── login.html
-│   ├── admin_login.html
-│   ├── index.html
-│   └── admin.html
+├── templates/             # Jinja2 Layout Visual Blueprints
+│   ├── login.html         # Student Authentication & Forgot Password Interface
+│   ├── reset_password.html# Code OTP Password Reset Form
+│   ├── admin_login.html   # Cyber-Dark Administrative Gateway
+│   ├── index.html         # Main Student Search Feed & Form Modals
+│   └── admin.html         # Master Administration Control Panel
 │
-└── static/
-    └── uploads/
+└── static/                # Static Resource Management Channels
+    └── uploads/           # Legacy local storage asset space
 
 
-    
-⚙️ Installation (Local Setup)
 
-1️⃣ Clone Repository
+⚙️ Installation & Local Setup
+1️⃣ Clone the Repository
 Bash
 git clone [https://github.com/vishva3019/CAMPUS_RETAIN_2.0.git](https://github.com/vishva3019/CAMPUS_RETAIN_2.0.git)
 cd CAMPUS_RETAIN_2.0
-
-2️⃣ Establish Virtual Environment
+2️⃣ Establish a Virtual Environment
 Bash
 python -m venv .venv
 source .venv/bin/activate       # Mac/Linux
 .venv\Scripts\activate          # Windows
-
 3️⃣ Install Dependencies
 Bash
 pip install -r requirements.txt
-
 4️⃣ Inject Environment Variables
-Create a .env file within your root project directory and declare your infrastructure credentials:
+Create an absolute environment configuration file named .env inside your root project directory:
 
 Ini, TOML
-DATABASE_URL=your_postgresql_url
-SECRET_KEY=your_secret_key
-ADMIN_EMAIL=admin@college.edu
-ADMIN_PASSWORD=your_password
+DATABASE_URL=your_postgresql_or_neon_db_url
+SECRET_KEY=your_secure_flask_session_secret_key
+ADMIN_EMAIL=admin_account@college.edu
+ADMIN_PASSWORD=your_secure_admin_password
 
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_app_password
+MAIL_USERNAME=your_gmail_or_smtp_account@gmail.com
+MAIL_PASSWORD=your_smtp_app_specific_password
 
-TWILIO_ACCOUNT_SID=your_sid
-TWILIO_AUTH_TOKEN=your_token
-TWILIO_PHONE_NUMBER=your_number
-
-5️⃣ Run the Application Locally
+TWILIO_ACCOUNT_SID=your_twilio_sid_token
+TWILIO_AUTH_TOKEN=your_twilio_secret_auth_token
+TWILIO_PHONE_NUMBER=your_allocated_twilio_phone_number
+5️⃣ Boot the Application Locally
 Bash
 python app.py
+Open http://127.0.0.1:5000 in your web browser.
 
 🌐 Deployment on Vercel
-Commit and push code updates to your remote GitHub repository.
+Commit and push your code updates to your remote GitHub repository.
 
-Link and import the corresponding repository into your Vercel Dashboard.
+Link and import the corresponding repository inside your Vercel Dashboard.
 
-Replicate all credentials found inside your .env configuration file straight into Vercel's Environment Variables console settings.
+Replicate all configuration parameters declared inside your local .env profile into Vercel's Environment Variables console settings.
 
 Trigger the live Deploy engine.
 
-🔐 System Administration Login
-Access administrative governance tools directly via the management dashboard by applying the specific criteria embedded into your environment settings:
-
-ADMIN_EMAIL: Declared inside your environment profile
-
-ADMIN_PASSWORD: Declared inside your environment profile
-
-📌 Future Improvements
-QR code item generation for quick identification.
-
-AI image-matching capabilities to pair lost items with found reports automatically.
-
-Live administrative telemetry analytics.
-
-Cross-platform native mobile build variations.
+Database Table Synchronization: On your initial live deployment run, manually navigate to https://your-app-name.vercel.app/init-db in your web browser to automatically build and map your PostgreSQL table schemas.
 
 👨‍💻 Author
-VISHVANTH
-
-B.Tech Student | Developer | Problem Solver
-
-GitHub: https://github.com/vishva3019
+VISHVANTH B.Tech Student in Computer Science and Engineering | Full-Stack Developer | Problem Solver - GitHub: https://github.com/vishva3019
 
 📄 License
-This repository is reserved strictly for academic and educational evaluations.
+This repository is reserved strictly for academic evaluations and educational campus implementations.
