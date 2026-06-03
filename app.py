@@ -59,9 +59,7 @@ db = SQLAlchemy(app)
 # ==================================================
 # Change this flag to True to instantly lock public user paths and render
 # the clean 3-dot loading maintenance page during codebase upgrades.
-# Set back to False to unlock the application live.
 IS_MAINTENANCE = False
-
 
 
 # ==================================================
@@ -114,7 +112,9 @@ def send_email(receiver, subject, body):
     try:
         msg = MIMEText(body)
         msg["Subject"] = subject
-        msg["From"] = MAIL_USERNAME
+        
+        # FIXED: Explicit Display Name configuration added to clear enterprise gateway spam filters
+        msg["From"] = f"CampusRetain Portal <{MAIL_USERNAME}>"
         msg["To"] = receiver
 
         with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as server:
@@ -165,18 +165,15 @@ def send_sms(receiver, body):
 
 @app.before_request
 def check_for_maintenance():
-    # Structural bypass configurations allowing asset streams and system admin bypass routes
-    bypass_routes = ["static", "admin_login", "admin_dashboard", "logout", "init_db", "reject_claim", "approve_claim", "delete_item"]
+    bypass_routes = ["static", "admin_login", "admin_dashboard", "logout", "init_db", "reject_claim", "approve_claim", "delete_item", "test_email"]
     
     if IS_MAINTENANCE:
         if request.endpoint and any(route in request.endpoint for route in bypass_routes):
             return None
             
-        # Allow logged-in administrators to browse the live workspace safely during database operations
         if session.get("is_admin") == True:
             return None
             
-        # Redirect standard traffic to the modified dynamic loader maintenance card
         return render_template("maintenance.html"), 503
 
 
@@ -230,7 +227,6 @@ def login():
 
             user = User.query.filter_by(email=email).first()
 
-            # Self-registration logic on first login attempt
             if not user:
                 new_user = User(
                     email=email,
@@ -249,7 +245,6 @@ def login():
 
                 return redirect(url_for("index"))
 
-            # Existing user cryptographic verification loop
             try:
                 valid = check_password_hash(user.password, password)
             except:
@@ -281,15 +276,12 @@ def forgot_password():
         if not user:
             return render_template("login.html", error="This email address is not registered in the network inventory.")
             
-        # Secure 6-digit random token array generation
         otp = str(random.randint(100000, 999999))
         
-        # Save recovery transaction matrices inside safe encrypted server session
         session["reset_email"] = email
         session["reset_otp"] = otp
         session["reset_expiry"] = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
         
-        # Email transmission block
         email_body = f"Hello,\n\nYou requested a password reset for Campus Retain.\nYour 6-digit verification code OTP is: {otp}\n\nThis code is valid for 10 minutes. If you did not initialize this configuration, please secure your credentials immediately."
         send_email(email, "Campus Retain - Password Reset Verification OTP", email_body)
         
@@ -314,22 +306,18 @@ def reset_password():
         if not email or not session_otp or not expiry_str:
             return render_template("login.html", error="Recovery session expired. Please initialize password recovery sequence again.")
             
-        # Time threshold confirmation loop
         expiry_time = datetime.fromisoformat(expiry_str)
         if datetime.utcnow() > expiry_time:
             return render_template("login.html", error="Verification code token expired. Please try again.")
             
-        # Integrity validation check
         if input_otp != session_otp:
             return render_template("reset_password.html", email=email, error="Invalid verification code parameters. Please recheck.")
             
-        # Final secure credentials update override
         user = User.query.filter_by(email=email).first()
         if user:
             user.password = generate_password_hash(new_password)
             db.session.commit()
             
-            # Flush lifecycle parameters from current browser cookies tracking
             session.pop("reset_email", None)
             session.pop("reset_otp", None)
             session.pop("reset_expiry", None)
@@ -456,16 +444,21 @@ def claim_item():
         db.session.add(claim)
         db.session.commit()
 
-        # Lifecycle notifications dispatches
+        # 1. Notify Student Lifecycle
         send_email(
             data["student_email"],
             "Campus Retain Claim Submitted",
-            f"Your ownership claim request validation query for '{item.name}' has been successfully transmitted and logged."
+            f"Your claim request for '{item.name}' is submitted and under review."
         )
+
+        # 2. FIXED: Administrative copy alert now triggers properly inside your primary workspace
+        if ADMIN_EMAIL:
+            admin_body = f"Hello Admin,\n\nA new claim request has been submitted for item: '{item.name}'.\n\nStudent ID: {data['student_id']}\nProof Description: {data['proof_description']}\n\nPlease review this inside your Admin Management dashboard."
+            send_email(ADMIN_EMAIL, "Alert: New Claim Submitted", admin_body)
 
         send_sms(
             data.get("phone", ""),
-            f"Campus Retain: Claim query registry request for asset {item.name} successfully deployed for review."
+            f"Campus Retain: Claim request for {item.name} submitted."
         )
 
         return jsonify({"status": "success"})
@@ -527,7 +520,6 @@ def reject_claim(item_id):
         if not item:
             return jsonify({"error": "Target system item coordinates missing"}), 404
 
-        # Revert layout profile mechanics back to available search index channels
         item.status = "Available"
 
         latest_claim = Claim.query.filter_by(
@@ -541,8 +533,8 @@ def reject_claim(item_id):
         if latest_claim:
             send_email(
                 latest_claim.student_email,
-                "Campus Retain - Claim Verification Update",
-                f"Your claim request query for item entry '{item.name}' was evaluated and rejected.\n\nFeedback/Remarks: {remarks}\n\nIf you have further questions, visit the desk office counter."
+                "Campus Verification Update - Claim Rejected",
+                f"Your claim request query for item entry '{item.name}' was evaluated and rejected.\n\nFeedback/Remarks from Admin: {remarks}\n\nIf you have further questions, visit the desk office counter."
             )
 
             send_sms(
@@ -581,12 +573,24 @@ def delete_item(item_id):
 
 @app.route("/test-email")
 def test_email():
-    send_email(
-        "vishvanth3049@gmail.com",
-        "Campus Retain Test Email Channel",
-        "SMTP email transport engine layers operating completely error-free."
-    )
-    return "Test Email Dispatched Successfully"
+    if not MAIL_USERNAME or not MAIL_PASSWORD:
+        return "Configuration Error: MAIL_USERNAME or MAIL_PASSWORD is completely empty in your Vercel Dashboard!"
+
+    try:
+        msg = MIMEText("Testing SMTP transport layer connections from CampusRetain.")
+        msg["Subject"] = "Campus Retain Diagnostic Check"
+        msg["From"] = f"CampusRetain Portal <{MAIL_USERNAME}>"
+        msg["To"] = ADMIN_EMAIL if ADMIN_EMAIL else "vishvanth3049@gmail.com"
+
+        server = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        
+        return "Success! Connection authorized and test email sent smoothly to your administrator address."
+    except Exception as e:
+        return f"SMTP Connection Failed! The exact error message from Google is: <br><br><strong>{str(e)}</strong>"
 
 
 @app.route("/test-sms")
