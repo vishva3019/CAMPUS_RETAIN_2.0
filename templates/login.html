@@ -101,12 +101,13 @@
                 <span class="text-slate-400 font-semibold">Alliance University</span>
             </div>
             
+            <!-- Updated links to call the modal engine instead of hard routing -->
             <div class="flex gap-4 items-center justify-center text-slate-400 font-semibold">
-                <a href="/privacy" class="hover:text-violet-600 transition">Privacy Policy</a>
+                <button type="button" onclick="openLegalModal('privacy')" class="hover:text-violet-600 transition focus:outline-none">Privacy Policy</button>
                 <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
-                <a href="/terms" class="hover:text-violet-600 transition">Terms of Service</a>
+                <button type="button" onclick="openLegalModal('terms')" class="hover:text-violet-600 transition focus:outline-none">Terms of Service</button>
                 <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
-                <a href="/support" class="hover:text-violet-600 transition">DOSS Support Counter</a>
+                <button type="button" onclick="openLegalModal('support')" class="hover:text-violet-600 transition focus:outline-none">DOSS Support Counter</button>
             </div>
             
             <div class="text-[10px] text-slate-400/80 font-bold uppercase tracking-wider">
@@ -115,7 +116,91 @@
         </div>
     </footer>
 
+    <!-- DYNAMIC LEGAL MODAL CONTAINER -->
+    <div id="legalModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-950/40 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 animate__animated animate__zoomIn animate__fast flex flex-col max-h-[80vh]">
+            
+            <!-- Modal Header -->
+            <div class="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex justify-between items-center shrink-0">
+                <h3 id="modalTitle" class="text-lg font-bold tracking-tight">Document View</h3>
+                <button type="button" onclick="closeLegalModal()" class="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Modal Content (Scrollable Text Area) -->
+            <div id="modalContent" class="p-8 overflow-y-auto text-sm text-slate-600 space-y-4 font-medium leading-relaxed">
+                <!-- Injected dynamically by JavaScript -->
+            </div>
+            
+            <!-- Modal Footer Button -->
+            <div class="p-5 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+                <button type="button" onclick="closeLegalModal()" class="px-5 py-2 bg-slate-950 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-slate-800 transition shadow-md">
+                    Acknowledge
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Content Storage Matrix for Modal Injection
+        const legalContent = {
+            privacy: {
+                title: "Privacy Policy",
+                html: `
+                    <p class="font-bold text-slate-800 text-base">Data Processing Parameters</p>
+                    <p>Campus Retain operates exclusively within the Alliance University ecosystem to cross-reference reported verification items with student identity structures.</p>
+                    <p class="font-bold text-slate-800 mt-4">Information We Log</p>
+                    <ul class="list-disc pl-5 space-y-1 text-xs">
+                        <li>Official student organization email endpoints mapped during authentication routing.</li>
+                        <li>Claim property telemetry validation descriptions supplied intentionally by claimants.</li>
+                        <li>Internal platform activity counters monitored directly by our deployment cluster.</li>
+                    </ul>
+                    <p class="font-bold text-slate-800 mt-4">Data Persistence</p>
+                    <p>All recorded registry entries, snapshot files, and security metadata are processed and hosted safely within cloud database environments. Access is stringently gatekept.</p>
+                `
+            },
+            terms: {
+                title: "Terms of Service",
+                html: `
+                    <p class="font-bold text-slate-800 text-base">Organizational Scope & Usage Guidelines</p>
+                    <p>By accessing the Campus Retain portal infrastructure, you agree to comply explicitly with the system parameters established for campus asset verification.</p>
+                    <p class="font-bold text-slate-800 mt-4">User Liabilities</p>
+                    <p>Students must guarantee that all item data, descriptions, and verification files uploaded to the ecosystem are entirely valid and physically accurate. Fabricating data logs is strictly subject to institutional review panels.</p>
+                    <p class="font-bold text-slate-800 mt-4">Property Handling</p>
+                    <p>This application operates as a discovery tracking and matching log engine. The official chain of custody and real-world physical delivery parameters remain completely under the execution of the physical DOSS desk operations.</p>
+                `
+            },
+            support: {
+                title: "DOSS Support Counter",
+                html: `
+                    <p class="font-bold text-slate-800 text-base">Physical Counter Operations</p>
+                    <p>If you have questions about matching attributes or need to execute an immediate handoff for high-value discoveries, please visit the counter directly.</p>
+                    <p class="font-bold text-slate-800 mt-4">Desk Framework Coordinates</p>
+                    <p><strong>Office:</strong> Department of Student Services (DOSS), Central Administration Wing</p>
+                    <p><strong>Working Hours:</strong> 9:00 AM – 5:00 PM (Monday through Friday)</p>
+                    <p class="font-bold text-slate-800 mt-4">System Desk Contact</p>
+                    <p>For application infrastructure maintenance requests or credential reset bugs, reach out to the platform administration cluster directly at: <span class="text-violet-600 font-semibold">support@campusretain.in</span></p>
+                `
+            }
+        };
+
+        // Modal Action Scripts
+        function openLegalModal(documentKey) {
+            const data = legalContent[documentKey];
+            if (!data) return;
+
+            document.getElementById('modalTitle').innerText = data.title;
+            document.getElementById('modalContent').innerHTML = data.html;
+            
+            const modal = document.getElementById('legalModal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeLegalModal() {
+            document.getElementById('legalModal').classList.add('hidden');
+        }
+
         // Soft front-end UI mutation script to transition cleanly into recovery mode
         function switchToForgotMode() {
             const form = document.getElementById('authForm');
@@ -124,19 +209,14 @@
             const headerTitle = document.getElementById('headerTitle');
             const headerSubtitle = document.getElementById('headerSubtitle');
             
-            // Adjust endpoints
             form.action = "/forgot-password";
-            
-            // Remove parameters safely
             passwordContainer.style.display = "none";
             document.getElementById('loginPassword').required = false;
             
-            // Reconfigure UI texts smoothly
             headerTitle.innerText = "Recovery Console";
             headerSubtitle.innerText = "Request Verification Token";
             btnText.innerText = "Send Verification OTP";
             
-            // Add a clean return link under the button if it doesn't exist
             if(!document.getElementById('backToLoginBtn')) {
                 const returnLink = document.createElement('button');
                 returnLink.type = "button";
