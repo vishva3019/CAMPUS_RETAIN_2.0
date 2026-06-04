@@ -35,8 +35,11 @@
                 <div class="absolute -top-6 -right-6 w-36 h-36 bg-amber-400 rounded-full opacity-20 blur-xl animate-pulse"></div>
                 <div class="absolute -bottom-10 -left-6 w-36 h-36 bg-fuchsia-400 rounded-full opacity-30 blur-2xl"></div>
                 
-                <div class="w-16 h-16 bg-white text-transparent bg-clip-text bg-gradient-to-br from-violet-600 to-purple-600 rounded-2xl flex items-center justify-center font-black text-3xl mx-auto mb-4 shadow-[0_8px_20px_rgba(0,0,0,0.15)] transform transition duration-500 hover:scale-110 hover:rotate-6 cursor-default animate__animated animate__float">
-                    C
+                <!-- Fixed Section: Swapped text placeholder 'C' for the official vector shield emblem -->
+                <div class="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_8px_20px_rgba(0,0,0,0.1)] transform transition duration-500 hover:scale-110 hover:rotate-3 cursor-default animate__animated animate__float">
+                    <svg class="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(255,255,255,0.3)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
                 </div>
                 <h1 id="headerTitle" class="text-2xl font-extrabold tracking-tight relative z-10 bg-gradient-to-b from-white to-indigo-100 text-transparent bg-clip-text">Campus Retain</h1>
                 <p id="headerSubtitle" class="text-indigo-200/90 text-xs font-semibold uppercase tracking-widest mt-1.5 relative z-10">Student Portal</p>
@@ -101,7 +104,6 @@
                 <span class="text-slate-400 font-semibold">Alliance University</span>
             </div>
             
-            <!-- Updated links to call the modal engine instead of hard routing -->
             <div class="flex gap-4 items-center justify-center text-slate-400 font-semibold">
                 <button type="button" onclick="openLegalModal('privacy')" class="hover:text-violet-600 transition focus:outline-none">Privacy Policy</button>
                 <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
@@ -143,7 +145,6 @@
     </div>
 
     <script>
-        // Content Storage Matrix for Modal Injection
         const legalContent = {
             privacy: {
                 title: "Privacy Policy",
@@ -185,7 +186,6 @@
             }
         };
 
-        // Modal Action Scripts
         function openLegalModal(documentKey) {
             const data = legalContent[documentKey];
             if (!data) return;
@@ -201,7 +201,6 @@
             document.getElementById('legalModal').classList.add('hidden');
         }
 
-        // Soft front-end UI mutation script to transition cleanly into recovery mode
         function switchToForgotMode() {
             const form = document.getElementById('authForm');
             const passwordContainer = document.getElementById('passwordFieldContainer');
