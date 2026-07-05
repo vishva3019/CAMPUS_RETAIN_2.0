@@ -46,9 +46,7 @@
                 <span class="hidden md:inline text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200/60 px-3.5 py-1.5 rounded-full shadow-inner">{{ user_email }}</span>
                 <button onclick="toggleModal('reportModal')"
                     class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-6 py-2.5 rounded-full font-bold text-sm hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 shadow-[0_4px_15px_rgba(109,40,217,0.25)] hover:shadow-[0_6px_20px_rgba(109,40,217,0.4)] transform active:scale-[0.98]">Report Found</button>
-                <a href="/logout"
-                    class="text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-rose-600 transition pl-3 border-l border-slate-200">Logout</a>
-            </div>
+                <a href="{{ url_for('logout') }}" class="text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-rose-600 transition pl-3 border-l border-slate-200">Logout</a>
         </div>
     </nav>
 
