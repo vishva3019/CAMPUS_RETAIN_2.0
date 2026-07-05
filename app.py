@@ -57,8 +57,6 @@ db = SQLAlchemy(app)
 # ==================================================
 # GLOBAL MAINTENANCE TOGGLE
 # ==================================================
-# Change this flag to True to instantly lock public user paths and render
-# the clean 3-dot loading maintenance page during codebase upgrades.
 IS_MAINTENANCE = False
 
 
@@ -112,8 +110,6 @@ def send_email(receiver, subject, body):
     try:
         msg = MIMEText(body)
         msg["Subject"] = subject
-        
-        # FIXED: Explicit Display Name configuration added to clear enterprise gateway spam filters
         msg["From"] = f"CampusRetain Portal <{MAIL_USERNAME}>"
         msg["To"] = receiver
 
@@ -165,7 +161,7 @@ def send_sms(receiver, body):
 
 @app.before_request
 def check_for_maintenance():
-    bypass_routes = ["static", "admin_login", "admin_dashboard", "logout", "init_db", "reject_claim", "approve_claim", "delete_item", "test_email"]
+    bypass_routes = ["static", "login", "admin_login", "admin_dashboard", "logout", "init_db", "reject_claim", "approve_claim", "delete_item", "test_email", "forgot_password", "reset_password"]
     
     if IS_MAINTENANCE:
         if request.endpoint and any(route in request.endpoint for route in bypass_routes):
@@ -199,12 +195,23 @@ def admin_required(f):
 # ROUTES
 # ==================================================
 
+# 1. NEW: Public Marketing Landing Page (The "Front Door")
 @app.route("/")
-@login_required
 def index():
+    if "user_email" in session:
+        if session.get("is_admin") == True:
+            return redirect(url_for("admin_dashboard"))
+        return redirect(url_for("dashboard"))
+    return render_template("index.html")
+
+
+# 2. UPDATED: Internal Authenticated Student Dashboard (Your Original UI)
+@app.route("/dashboard")
+@login_required
+def dashboard():
     items = Item.query.order_by(Item.date_found.desc()).all()
     return render_template(
-        "index.html",
+        "dashboard.html",
         items=items,
         user_email=session.get("user_email")
     )
@@ -215,6 +222,9 @@ def index():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     try:
+        if "user_email" in session:
+            return redirect(url_for("dashboard"))
+
         if request.method == "POST":
             email = request.form.get("email", "").strip().lower()
             password = request.form.get("password", "")
@@ -236,14 +246,7 @@ def login():
                 db.session.commit()
 
                 session["user_email"] = email
-
-                send_email(
-                    email,
-                    "Campus Retain Registration Successful",
-                    "Welcome to Campus Retain. Your account has been created successfully."
-                )
-
-                return redirect(url_for("index"))
+                return redirect(url_for("dashboard"))
 
             try:
                 valid = check_password_hash(user.password, password)
@@ -252,7 +255,7 @@ def login():
 
             if valid:
                 session["user_email"] = email
-                return redirect(url_for("index"))
+                return redirect(url_for("dashboard"))
 
             return render_template(
                 "login.html",
@@ -282,7 +285,7 @@ def forgot_password():
         session["reset_otp"] = otp
         session["reset_expiry"] = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
         
-        email_body = f"Hello,\n\nYou requested a password reset for Campus Retain.\nYour 6-digit verification code OTP is: {otp}\n\nThis code is valid for 10 minutes. If you did not initialize this configuration, please secure your credentials immediately."
+        email_body = f"Hello,\n\nYou requested a password reset for Campus Retain.\nYour 6-digit verification code OTP is: {otp}\n\nThis code is valid for 10 minutes."
         send_email(email, "Campus Retain - Password Reset Verification OTP", email_body)
         
         return render_template("reset_password.html", email=email, message="Verification code has been systematically delivered to your organization inbox.")
@@ -361,7 +364,7 @@ def admin_dashboard():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    return redirect(url_for("index"))
 
 
 # ---------------- DB SCHEMAS INITIALIZATION ----------------
@@ -378,8 +381,6 @@ def init_db():
 # ==================================================
 # API CONTROLLERS ENDPOINTS
 # ==================================================
-
-# ---------- REPORT DISCOVERY PIPELINE ----------
 
 @app.route("/api/report", methods=["POST"])
 @login_required
@@ -419,8 +420,6 @@ def report_item():
         return jsonify({"error": str(e)}), 500
 
 
-# ---------- ALLOCATE CLAIM QUERY ----------
-
 @app.route("/api/claim", methods=["POST"])
 @login_required
 def claim_item():
@@ -444,16 +443,14 @@ def claim_item():
         db.session.add(claim)
         db.session.commit()
 
-        # 1. Notify Student Lifecycle
         send_email(
             data["student_email"],
             "Campus Retain Claim Submitted",
             f"Your claim request for '{item.name}' is submitted and under review."
         )
 
-        # 2. FIXED: Administrative copy alert now triggers properly inside your primary workspace
         if ADMIN_EMAIL:
-            admin_body = f"Hello Admin,\n\nA new claim request has been submitted for item: '{item.name}'.\n\nStudent ID: {data['student_id']}\nProof Description: {data['proof_description']}\n\nPlease review this inside your Admin Management dashboard."
+            admin_body = f"Hello Admin,\n\nA new claim request has been submitted for item: '{item.name}'.\n\nStudent ID: {data['student_id']}\nProof Description: {data['proof_description']}"
             send_email(ADMIN_EMAIL, "Alert: New Claim Submitted", admin_body)
 
         send_sms(
@@ -466,8 +463,6 @@ def claim_item():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# ---------- EXECUTE APPROVAL TERMINAL ----------
 
 @app.route("/api/admin/approve/<int:item_id>", methods=["POST"])
 @admin_required
@@ -505,8 +500,6 @@ def approve_claim(item_id):
         return jsonify({"error": str(e)}), 500
 
 
-# ---------- EXECUTE REJECTION FLOW AND REMARKS ----------
-
 @app.route("/api/admin/reject/<int:item_id>", methods=["POST"])
 @admin_required
 def reject_claim(item_id):
@@ -534,7 +527,7 @@ def reject_claim(item_id):
             send_email(
                 latest_claim.student_email,
                 "Campus Verification Update - Claim Rejected",
-                f"Your claim request query for item entry '{item.name}' was evaluated and rejected.\n\nFeedback/Remarks from Admin: {remarks}\n\nIf you have further questions, visit the DOSS office for more."
+                f"Your claim request query for item entry '{item.name}' was evaluated and rejected.\n\nFeedback/Remarks from Admin: {remarks}"
             )
 
             send_sms(
@@ -547,8 +540,6 @@ def reject_claim(item_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# ---------- EXPUNGE ITEM RECORD ----------
 
 @app.route("/api/item/delete/<int:item_id>", methods=["POST"])
 @admin_required
@@ -568,7 +559,7 @@ def delete_item(item_id):
 
 
 # ==================================================
-# INFRASTRUCTURE DEPLOYMENT SANITY CHECKS
+# DIAGNOSTICS
 # ==================================================
 
 @app.route("/test-email")
