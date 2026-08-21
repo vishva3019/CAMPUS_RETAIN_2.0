@@ -11,6 +11,7 @@ from abc import ABC, abstractmethod
 import base64
 import json
 import logging
+import random
 import re
 import time
 from typing import Any
@@ -117,55 +118,68 @@ class GoogleGeminiProvider(BaseAIProvider):
 
     def _execute_request(self, payload: dict[str, Any]) -> dict[str, Any]:
         url = self._get_url()
-        start_time = time.time()
-        try:
-            response = requests.post(
-                url,
-                json=payload,
-                headers={
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": self.api_key,
-                },
-                timeout=self.timeout,
-            )
-            duration = round(time.time() - start_time, 2)
-        except requests.exceptions.Timeout as exc:
-            duration = round(time.time() - start_time, 2)
-            logger.warning(
-                f"Google Gemini request timed out: provider=google, model={self.model}, "
-                f"timeout={self.timeout}s, duration={duration}s, status=timeout, category=timeout"
-            )
-            raise AITimeoutError(
-                f"Google Gemini request timed out after {self.timeout}s.",
-                user_safe_message="AI analysis timed out. Please try again."
-            ) from exc
-        except requests.exceptions.RequestException as exc:
-            duration = round(time.time() - start_time, 2)
-            logger.warning(
-                f"Google Gemini network fault: provider=google, model={self.model}, "
-                f"duration={duration}s, err={exc}, category=network_error"
-            )
-            raise AIProviderError(
-                f"Network communication fault with Google Gemini: {exc}",
-                user_safe_message="AI provider is temporarily unavailable. Standard reporting is still available."
-            ) from exc
+        max_retries = 1
+        attempt = 0
+        response = None
+        duration = 0.0
 
-        # Extract sanitized message from upstream error payload
-        err_msg = ""
-        category = "unknown"
-        if response.status_code == 200:
-            category = "success"
-            logger.info(
-                f"Gemini vision request success: provider=google, model={self.model}, "
-                f"duration={duration}s, status=200, category=success"
-            )
-        else:
+        while attempt <= max_retries:
+            start_time = time.time()
+            try:
+                response = requests.post(
+                    url,
+                    json=payload,
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": self.api_key,
+                    },
+                    timeout=self.timeout,
+                )
+                duration = round(time.time() - start_time, 2)
+            except requests.exceptions.Timeout as exc:
+                duration = round(time.time() - start_time, 2)
+                logger.warning(
+                    f"Google Gemini request timed out: provider=google, model={self.model}, "
+                    f"timeout={self.timeout}s, duration={duration}s, status=timeout, category=timeout"
+                )
+                raise AITimeoutError(
+                    f"Google Gemini request timed out after {self.timeout}s.",
+                    user_safe_message="AI analysis timed out. Please try again."
+                ) from exc
+            except requests.exceptions.RequestException as exc:
+                duration = round(time.time() - start_time, 2)
+                logger.warning(
+                    f"Google Gemini network fault: provider=google, model={self.model}, "
+                    f"duration={duration}s, err={exc}, category=network_error"
+                )
+                raise AIProviderError(
+                    f"Network communication fault with Google Gemini: {exc}",
+                    user_safe_message="AI provider is temporarily unavailable. Standard reporting is still available."
+                ) from exc
+
+            # If successful, log and proceed
+            if response.status_code == 200:
+                if attempt > 0:
+                    logger.info(
+                        f"Gemini vision retry succeeded: model={self.model}, "
+                        f"duration={duration}s, status=200"
+                    )
+                else:
+                    logger.info(
+                        f"Gemini vision request success: provider=google, model={self.model}, "
+                        f"duration={duration}s, status=200, category=success"
+                    )
+                break
+
+            # Handle non-200 responses
+            err_msg = ""
             try:
                 err_body = response.json()
                 err_msg = err_body.get("error", {}).get("message", response.text)
             except Exception:
                 err_msg = response.text[:200]
 
+            category = "unknown"
             if response.status_code in (401, 403):
                 category = "authentication_error"
             elif response.status_code == 404:
@@ -177,10 +191,28 @@ class GoogleGeminiProvider(BaseAIProvider):
             elif response.status_code >= 500:
                 category = "upstream_server_error"
 
-            logger.warning(
-                f"Gemini vision request failed: provider=google, model={self.model}, "
-                f"duration={duration}s, status={response.status_code}, category={category}, msg={err_msg}"
-            )
+            # Retry transient capacity / quota spike errors (503 and 429 only)
+            if response.status_code in (503, 429) and attempt < max_retries:
+                attempt += 1
+                logger.warning(
+                    f"Gemini vision request failed: provider=google, model={self.model}, "
+                    f"duration={duration}s, status={response.status_code}, category={category}, "
+                    f"retry={attempt}/{max_retries}, msg={err_msg}"
+                )
+                time.sleep(1.0 + random.uniform(0.1, 0.3))
+                continue
+            else:
+                if attempt > 0:
+                    logger.warning(
+                        f"Gemini vision retry failed: model={self.model}, "
+                        f"duration={duration}s, status={response.status_code}, msg={err_msg}"
+                    )
+                else:
+                    logger.warning(
+                        f"Gemini vision request failed: provider=google, model={self.model}, "
+                        f"duration={duration}s, status={response.status_code}, category={category}, msg={err_msg}"
+                    )
+                break
 
         if response.status_code in (401, 403):
             raise AIAuthenticationError(

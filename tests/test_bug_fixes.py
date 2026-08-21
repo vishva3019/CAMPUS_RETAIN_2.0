@@ -555,13 +555,14 @@ class TestBug1And2Regression(unittest.TestCase):
         # Case A: 429 Rate Limit
         mock_429 = MagicMock()
         mock_429.status_code = 429
-        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-3.6-flash"}, clear=True):
-            with patch("requests.post", return_value=mock_429):
-                resp = self.client.post("/api/ai/analyze-image", json={"image": f"data:image/png;base64,{base64.b64encode(SAMPLE_PNG_BYTES).decode('utf-8')}"})
-                self.assertEqual(resp.status_code, 200)
-                data = resp.get_json()
-                self.assertFalse(data["success"])
-                self.assertIn("rate limit", data["error"].lower())
+        with patch("time.sleep", return_value=None):
+            with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-3.6-flash"}, clear=True):
+                with patch("requests.post", return_value=mock_429):
+                    resp = self.client.post("/api/ai/analyze-image", json={"image": f"data:image/png;base64,{base64.b64encode(SAMPLE_PNG_BYTES).decode('utf-8')}"})
+                    self.assertEqual(resp.status_code, 200)
+                    data = resp.get_json()
+                    self.assertFalse(data["success"])
+                    self.assertIn("rate limit", data["error"].lower())
 
         # Case B: 500 Server Error
         mock_500 = MagicMock()
@@ -727,6 +728,108 @@ class TestBug1And2Regression(unittest.TestCase):
             self.assertEqual(AIConfig.get_timeout(), 25)
             client = get_ai_client(require_configured=True)
             self.assertEqual(client.timeout, 25)
+
+    # TEST 25: 503 triggers exactly one retry and succeeds on second attempt
+    def test_25_gemini_503_triggers_retry_and_succeeds(self):
+        from ai.client import GoogleGeminiProvider
+
+        provider = GoogleGeminiProvider(api_key="secret_test_key", model="gemini-3.6-flash")
+
+        mock_503 = MagicMock()
+        mock_503.status_code = 503
+        mock_503.text = "Model experiencing high demand"
+        mock_503.json.return_value = {"error": {"message": "Model experiencing high demand"}}
+
+        mock_200 = MagicMock()
+        mock_200.status_code = 200
+        mock_200.json.return_value = {
+            "candidates": [{"content": {"parts": [{"text": json.dumps({"category": "electronics", "brand": "Apple"})}]}}]
+        }
+
+        with patch("time.sleep", return_value=None):
+            with patch("requests.post", side_effect=[mock_503, mock_200]) as mock_post:
+                res = provider.analyze_multimodal("analyze charger", SAMPLE_PNG_BYTES, "image/jpeg")
+                self.assertEqual(mock_post.call_count, 2)
+                self.assertEqual(res["category"], "electronics")
+                self.assertEqual(res["brand"], "Apple")
+
+    # TEST 26: 503 triggers exactly one retry and fails cleanly after max 1 retry
+    def test_26_gemini_503_triggers_retry_and_fails_after_max_retries(self):
+        from ai.client import GoogleGeminiProvider
+        from ai.exceptions import AIProviderError
+
+        provider = GoogleGeminiProvider(api_key="secret_test_key", model="gemini-3.6-flash")
+
+        mock_503_1 = MagicMock()
+        mock_503_1.status_code = 503
+        mock_503_1.text = "High demand attempt 1"
+        mock_503_1.json.return_value = {"error": {"message": "High demand attempt 1"}}
+
+        mock_503_2 = MagicMock()
+        mock_503_2.status_code = 503
+        mock_503_2.text = "High demand attempt 2"
+        mock_503_2.json.return_value = {"error": {"message": "High demand attempt 2"}}
+
+        with patch("time.sleep", return_value=None):
+            with patch("requests.post", side_effect=[mock_503_1, mock_503_2]) as mock_post:
+                with self.assertRaises(AIProviderError):
+                    provider.analyze_multimodal("analyze charger", SAMPLE_PNG_BYTES, "image/jpeg")
+                # Exactly 2 attempts (initial + 1 retry)
+                self.assertEqual(mock_post.call_count, 2)
+
+    # TEST 27: 429 triggers exactly one retry and succeeds
+    def test_27_gemini_429_triggers_retry(self):
+        from ai.client import GoogleGeminiProvider
+
+        provider = GoogleGeminiProvider(api_key="secret_test_key", model="gemini-3.6-flash")
+
+        mock_429 = MagicMock()
+        mock_429.status_code = 429
+        mock_429.text = "Quota spike"
+        mock_429.json.return_value = {"error": {"message": "Quota spike"}}
+
+        mock_200 = MagicMock()
+        mock_200.status_code = 200
+        mock_200.json.return_value = {
+            "candidates": [{"content": {"parts": [{"text": json.dumps({"category": "charger"})}]}}]
+        }
+
+        with patch("time.sleep", return_value=None):
+            with patch("requests.post", side_effect=[mock_429, mock_200]) as mock_post:
+                res = provider.analyze_multimodal("analyze charger", SAMPLE_PNG_BYTES, "image/jpeg")
+                self.assertEqual(mock_post.call_count, 2)
+                self.assertEqual(res["category"], "charger")
+
+    # TEST 28: Non-retryable errors (400, 401, 403, 404) do NOT retry
+    def test_28_gemini_non_retryable_errors_do_not_retry(self):
+        from ai.client import GoogleGeminiProvider
+        from ai.exceptions import AIAuthenticationError, AIModelNotFoundError, AIRequestError
+
+        provider = GoogleGeminiProvider(api_key="secret_test_key", model="gemini-3.6-flash")
+
+        # 400 Bad Request
+        mock_400 = MagicMock(status_code=400, text="Bad request")
+        mock_400.json.return_value = {"error": {"message": "Bad request"}}
+        with patch("requests.post", return_value=mock_400) as mock_post:
+            with self.assertRaises(AIRequestError):
+                provider.analyze_multimodal("test", SAMPLE_PNG_BYTES, "image/jpeg")
+            self.assertEqual(mock_post.call_count, 1)
+
+        # 401 Unauthorized
+        mock_401 = MagicMock(status_code=401, text="Unauthorized")
+        mock_401.json.return_value = {"error": {"message": "Unauthorized"}}
+        with patch("requests.post", return_value=mock_401) as mock_post:
+            with self.assertRaises(AIAuthenticationError):
+                provider.analyze_multimodal("test", SAMPLE_PNG_BYTES, "image/jpeg")
+            self.assertEqual(mock_post.call_count, 1)
+
+        # 404 Model Not Found
+        mock_404 = MagicMock(status_code=404, text="Model not found")
+        mock_404.json.return_value = {"error": {"message": "Model not found"}}
+        with patch("requests.post", return_value=mock_404) as mock_post:
+            with self.assertRaises(AIModelNotFoundError):
+                provider.analyze_multimodal("test", SAMPLE_PNG_BYTES, "image/jpeg")
+            self.assertEqual(mock_post.call_count, 1)
 
 
 if __name__ == "__main__":
