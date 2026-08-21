@@ -11,6 +11,7 @@ from email.mime.text import MIMEText
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
+from sqlalchemy.orm import selectinload, joinedload
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from ai.vision import analyze_item_image
@@ -432,16 +433,25 @@ def index():
         else []
     )
 
-    # Attach match counts for badge display
+    # Fetch active match counts in single grouped queries instead of N+1 individual queries
+    found_match_counts = dict(
+        db.session.query(ItemMatch.found_item_id, db.func.count(ItemMatch.id))
+        .filter(ItemMatch.status == "active")
+        .group_by(ItemMatch.found_item_id)
+        .all()
+    )
+    lost_match_counts = dict(
+        db.session.query(ItemMatch.lost_item_id, db.func.count(ItemMatch.id))
+        .filter(ItemMatch.status == "active")
+        .group_by(ItemMatch.lost_item_id)
+        .all()
+    )
+
     for item in items:
-        item.match_count = ItemMatch.query.filter_by(
-            found_item_id=item.id, status="active"
-        ).count()
+        item.match_count = found_match_counts.get(item.id, 0)
 
     for item in my_lost_items:
-        item.match_count = ItemMatch.query.filter_by(
-            lost_item_id=item.id, status="active"
-        ).count()
+        item.match_count = lost_match_counts.get(item.id, 0)
 
     return render_template(
         "index.html",
@@ -467,15 +477,24 @@ def dashboard():
         else []
     )
 
+    found_match_counts = dict(
+        db.session.query(ItemMatch.found_item_id, db.func.count(ItemMatch.id))
+        .filter(ItemMatch.status == "active")
+        .group_by(ItemMatch.found_item_id)
+        .all()
+    )
+    lost_match_counts = dict(
+        db.session.query(ItemMatch.lost_item_id, db.func.count(ItemMatch.id))
+        .filter(ItemMatch.status == "active")
+        .group_by(ItemMatch.lost_item_id)
+        .all()
+    )
+
     for item in items:
-        item.match_count = ItemMatch.query.filter_by(
-            found_item_id=item.id, status="active"
-        ).count()
+        item.match_count = found_match_counts.get(item.id, 0)
 
     for item in my_lost_items:
-        item.match_count = ItemMatch.query.filter_by(
-            lost_item_id=item.id, status="active"
-        ).count()
+        item.match_count = lost_match_counts.get(item.id, 0)
 
     return render_template(
         "dashboard.html",
@@ -632,9 +651,17 @@ def admin_login():
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
-    items = Item.query.order_by(Item.date_found.desc()).all()
+    items = (
+        Item.query.options(selectinload(Item.claims))
+        .order_by(Item.date_found.desc())
+        .all()
+    )
     matches = (
-        ItemMatch.query.filter_by(status="active")
+        ItemMatch.query.options(
+            joinedload(ItemMatch.lost_item),
+            joinedload(ItemMatch.found_item),
+        )
+        .filter_by(status="active")
         .order_by(ItemMatch.match_score.desc())
         .all()
     )
@@ -1388,15 +1415,29 @@ def delete_item(item_id):
     try:
         item = db.session.get(Item, item_id)
         if not item:
-            return jsonify({"error": "Target object not tracked inside database data models"}), 404
+            return jsonify({"status": "error", "error": "Item not found."}), 404
 
+        # Safely remove all dependent AI match records referencing this item (lost or found)
+        ItemMatch.query.filter(
+            (ItemMatch.lost_item_id == item_id) | (ItemMatch.found_item_id == item_id)
+        ).delete(synchronize_session=False)
+
+        # Safely remove all dependent Claim records referencing this item
+        Claim.query.filter_by(item_id=item_id).delete(synchronize_session=False)
+
+        # Remove the item
         db.session.delete(item)
         db.session.commit()
 
-        return jsonify({"status": "success"})
+        app.logger.info(f"Item #{item_id} successfully deleted by admin {session.get('admin_email') or session.get('user_email')}")
+        return jsonify({"status": "success", "message": f"Item #{item_id} deleted successfully."})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        db.session.rollback()
+        app.logger.error(
+            f"Item deletion failed: item_id={item_id}, error_type={type(e).__name__}, reason={str(e)}"
+        )
+        return jsonify({"status": "error", "error": "Unable to delete this item. Please try again."}), 500
 
 
 # ==================================================

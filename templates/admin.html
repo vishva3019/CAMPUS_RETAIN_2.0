@@ -116,12 +116,9 @@
 
                 <div>
 
-                    <h1 class="text-xl font-black tracking-tight text-white flex items-center gap-2">
-
-                        Campus<span class="text-cyan-400">Retain</span>
-
+                    <h1 class="text-xl font-black tracking-tight flex items-center gap-2">
+                        <span class="text-[#172554] font-black">Campus</span><span class="text-cyan-400">Retain</span>
                         <span class="text-[9px] uppercase bg-cyan-950/80 text-cyan-400 font-bold px-2 py-0.5 rounded-full border border-cyan-800">Admin Control</span>
-
                     </h1>
 
                     <p class="text-[10px] font-semibold text-slate-500 tracking-wider uppercase -mt-0.5">Alliance University DOSS</p>
@@ -705,45 +702,29 @@
 
 
                 try {
-
                     const res = await fetch(endpoint, {
-
                         method: 'POST',
-
                         headers: {'Content-Type': 'application/json'},
-
                         body: requestBody
-
                     });
 
-                    if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
 
+                    if (res.ok && (data.status === 'success' || data.success)) {
                         showToast(`Action ${action} completed!`, 'success');
-
                         setTimeout(() => location.reload(), 1000);
-
                     } else {
-
-                        showToast(`Action failed.`, 'error');
-
+                        const errMsg = data.error || data.message || `Unable to ${action} this item. Please try again.`;
+                        showToast(errMsg, 'error');
                         btnElement.disabled = false;
-
                         btnElement.innerHTML = originalHtml;
-
                     }
-
                 } catch (e) {
-
-                    showToast('Network error.', 'error');
-
+                    showToast('Unable to complete request. Please check your connection and try again.', 'error');
                     btnElement.disabled = false;
-
                     btnElement.innerHTML = originalHtml;
-
                 }
-
             }
-
         }
 
     </script>

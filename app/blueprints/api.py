@@ -11,7 +11,7 @@ from __future__ import annotations
 from flask import Blueprint, current_app, jsonify, request
 
 from app.extensions import db
-from app.models import Claim, ClaimStatus, Item, ItemStatus, utcnow
+from app.models import Claim, ClaimStatus, Item, ItemMatch, ItemStatus, utcnow
 from app.security import (
     admin_required,
     current_user_email,
@@ -250,19 +250,32 @@ def reject_claim(claim_id: int):
 @bp.post("/admin/items/<int:item_id>/delete")
 @admin_required
 def delete_item(item_id: int):
-    item = db.session.get(Item, item_id)
-    if item is None:
-        return _error("That item no longer exists.", 404)
+    try:
+        item = db.session.get(Item, item_id)
+        if item is None:
+            return _error("That item no longer exists.", 404)
 
-    # Remove the stored image too, otherwise deleted items leave orphaned files
-    # consuming the storage quota forever.
-    public_id = item.image_public_id
-    if public_id:
-        try:
-            get_storage().delete(public_id)
-        except StorageError:
-            current_app.logger.warning("Could not delete stored image %s", public_id)
+        # Remove the stored image too, otherwise deleted items leave orphaned files
+        # consuming the storage quota forever.
+        public_id = item.image_public_id
+        if public_id:
+            try:
+                get_storage().delete(public_id)
+            except StorageError:
+                current_app.logger.warning("Could not delete stored image %s", public_id)
 
-    db.session.delete(item)
-    db.session.commit()
-    return _ok()
+        # Safely remove dependent AI match records
+        ItemMatch.query.filter(
+            (ItemMatch.lost_item_id == item_id) | (ItemMatch.found_item_id == item_id)
+        ).delete(synchronize_session=False)
+
+        # Safely remove dependent Claim records
+        Claim.query.filter_by(item_id=item_id).delete(synchronize_session=False)
+
+        db.session.delete(item)
+        db.session.commit()
+        return _ok()
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.error("Item deletion failed for item %s: %s", item_id, exc)
+        return _error("Unable to delete this item. Please try again.", 500)

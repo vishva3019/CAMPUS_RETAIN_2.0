@@ -832,5 +832,194 @@ class TestBug1And2Regression(unittest.TestCase):
             self.assertEqual(mock_post.call_count, 1)
 
 
+    # TEST 29: Admin delete item with no dependencies succeeds and removes item from DB
+    def test_29_delete_item_no_dependencies_success(self):
+        Item = self.app_module.Item
+        db = self.app_module.db
+
+        with self.app.app_context():
+            item = Item(name="Test Keys", location="Library", category="Keys", status="Available")
+            db.session.add(item)
+            db.session.commit()
+            item_id = item.id
+
+        with self.client.session_transaction() as sess:
+            sess["is_admin"] = True
+            sess["admin_email"] = "admin@ced.alliance.edu.in"
+
+        resp = self.client.post(f"/api/item/delete/{item_id}")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertEqual(data["status"], "success")
+
+        # Confirm item is actually deleted from DB
+        with self.app.app_context():
+            self.assertIsNone(db.session.get(Item, item_id))
+
+    # TEST 30: Admin delete item with claims and AI match records succeeds without foreign key error
+    def test_30_delete_item_with_claims_and_matches_success(self):
+        Item = self.app_module.Item
+        Claim = self.app_module.Claim
+        ItemMatch = self.app_module.ItemMatch
+        db = self.app_module.db
+
+        with self.app.app_context():
+            # Create found item (e.g. item 16) and lost item
+            found_item = Item(name="iPhone Charger", location="Auditorium", category="Electronics", status="Available", item_type="found")
+            lost_item = Item(name="Lost Apple Charger", location="Auditorium", category="Electronics", status="Available", item_type="lost")
+            db.session.add_all([found_item, lost_item])
+            db.session.commit()
+
+            found_id = found_item.id
+            lost_id = lost_item.id
+
+            # Create Claim on found item
+            claim = Claim(
+                item_id=found_id,
+                student_id="STD12345",
+                student_email="claimant@ced.alliance.edu.in",
+                proof_description="White 20W adapter with USB-C",
+            )
+            # Create ItemMatch between lost and found item
+            match_rec = ItemMatch(
+                lost_item_id=lost_id,
+                found_item_id=found_id,
+                match_score=95,
+                confidence="High",
+                matching_attributes=["category", "brand"],
+                status="active"
+            )
+            db.session.add_all([claim, match_rec])
+            db.session.commit()
+            claim_id = claim.id
+            match_id = match_rec.id
+
+        with self.client.session_transaction() as sess:
+            sess["is_admin"] = True
+            sess["admin_email"] = "admin@ced.alliance.edu.in"
+
+        # Delete found item (which has dependent Claim and ItemMatch)
+        resp = self.client.post(f"/api/item/delete/{found_id}")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertEqual(data["status"], "success")
+
+        # Verify found item is removed from database
+        with self.app.app_context():
+            self.assertIsNone(db.session.get(Item, found_id))
+            # Verify dependent claim was safely deleted
+            self.assertIsNone(db.session.get(Claim, claim_id))
+            # Verify dependent match was safely deleted
+            self.assertIsNone(db.session.get(ItemMatch, match_id))
+            # Verify lost item remains intact
+            self.assertIsNotNone(db.session.get(Item, lost_id))
+
+    # TEST 31: Delete nonexistent item returns 404
+    def test_31_delete_nonexistent_item_returns_404(self):
+        with self.client.session_transaction() as sess:
+            sess["is_admin"] = True
+            sess["admin_email"] = "admin@ced.alliance.edu.in"
+
+        resp = self.client.post("/api/item/delete/999999")
+        self.assertEqual(resp.status_code, 404)
+        data = resp.get_json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("not found", data["error"].lower())
+
+    # TEST 32: Non-admin user cannot delete items
+    def test_32_delete_unauthorized_user_rejected(self):
+        Item = self.app_module.Item
+        db = self.app_module.db
+
+        with self.app.app_context():
+            item = Item(name="Protected Item", location="Library", category="Electronics", status="Available")
+            db.session.add(item)
+            db.session.commit()
+            item_id = item.id
+
+        # Case A: Unauthenticated request
+        resp = self.client.post(f"/api/item/delete/{item_id}")
+        self.assertIn(resp.status_code, (302, 401, 403))
+
+        # Case B: Authenticated as normal student (non-admin)
+        with self.client.session_transaction() as sess:
+            sess["user_email"] = "student@ced.alliance.edu.in"
+            sess["is_admin"] = False
+
+        resp2 = self.client.post(f"/api/item/delete/{item_id}")
+        self.assertIn(resp2.status_code, (302, 401, 403))
+
+        # Confirm item is still intact in DB
+        with self.app.app_context():
+            self.assertIsNotNone(db.session.get(Item, item_id))
+
+    # TEST 33: Database failure triggers rollback and leaves item in DB
+    def test_33_delete_failure_triggers_rollback_and_item_remains(self):
+        Item = self.app_module.Item
+        db = self.app_module.db
+
+        with self.app.app_context():
+            item = Item(name="Rollback Test Item", location="Lab", category="Electronics", status="Available")
+            db.session.add(item)
+            db.session.commit()
+            item_id = item.id
+
+        with self.client.session_transaction() as sess:
+            sess["is_admin"] = True
+            sess["admin_email"] = "admin@ced.alliance.edu.in"
+
+        with patch.object(db.session, "commit", side_effect=Exception("Database lock error")):
+            resp = self.client.post(f"/api/item/delete/{item_id}")
+            self.assertEqual(resp.status_code, 500)
+            data = resp.get_json()
+            self.assertEqual(data["status"], "error")
+            self.assertEqual(data["error"], "Unable to delete this item. Please try again.")
+            # Verify internal DB stack trace is NOT exposed
+            self.assertNotIn("Database lock error", str(data))
+
+        # Verify item was not deleted due to rollback
+        with self.app.app_context():
+            self.assertIsNotNone(db.session.get(Item, item_id))
+
+    # TEST 34: Admin header branding has dark navy Campus (#172554) and cyan Retain
+    def test_34_admin_header_brand_color(self):
+        with self.client.session_transaction() as sess:
+            sess["is_admin"] = True
+            sess["admin_email"] = "admin@ced.alliance.edu.in"
+
+        resp = self.client.get("/admin")
+        self.assertEqual(resp.status_code, 200)
+        html = resp.data.decode("utf-8")
+        self.assertIn("#172554", html)
+        self.assertIn("Campus", html)
+        self.assertIn("Retain", html)
+
+    # TEST 35: Index and Dashboard batch match counts performance
+    def test_35_index_and_dashboard_performance_optimization(self):
+        Item = self.app_module.Item
+        ItemMatch = self.app_module.ItemMatch
+        db = self.app_module.db
+
+        with self.app.app_context():
+            found1 = Item(name="Found Item 1", location="Room 101", category="Books", item_type="found")
+            found2 = Item(name="Found Item 2", location="Room 102", category="Electronics", item_type="found")
+            lost1 = Item(name="Lost Item 1", location="Room 101", category="Books", item_type="lost", reported_by="student@ced.alliance.edu.in")
+            db.session.add_all([found1, found2, lost1])
+            db.session.commit()
+
+            match1 = ItemMatch(lost_item_id=lost1.id, found_item_id=found1.id, match_score=90, confidence="High", status="active")
+            db.session.add(match1)
+            db.session.commit()
+
+        with self.client.session_transaction() as sess:
+            sess["user_email"] = "student@ced.alliance.edu.in"
+
+        resp = self.client.get("/")
+        self.assertEqual(resp.status_code, 200)
+
+        resp2 = self.client.get("/dashboard")
+        self.assertEqual(resp2.status_code, 200)
+
+
 if __name__ == "__main__":
     unittest.main()
