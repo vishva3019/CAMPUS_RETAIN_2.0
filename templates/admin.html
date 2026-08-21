@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard | CampusRetain AI</title>
-   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
@@ -40,7 +40,7 @@
             </div>
             
             <div class="flex gap-3 items-center w-full sm:w-auto">
-                <a href="/" class="flex-1 sm:flex-initial text-center text-cyan-400 font-bold text-xs uppercase tracking-wider border border-cyan-500/30 hover:bg-cyan-500/10 px-6 py-3 rounded-xl transition duration-300">← Public View</a>
+                <a href="{{ url_for('index') }}" class="flex-1 sm:flex-initial text-center text-cyan-400 font-bold text-xs uppercase tracking-wider border border-cyan-500/30 hover:bg-cyan-500/10 px-6 py-3 rounded-xl transition duration-300">← Public View</a>
                 <a href="/logout" class="flex-1 sm:flex-initial text-center text-rose-400 font-bold text-xs uppercase tracking-wider border border-rose-500/20 bg-rose-950/20 hover:bg-rose-900/30 px-6 py-3 rounded-xl transition duration-300">Logout</a>
             </div>
         </div>
@@ -165,6 +165,7 @@
                     <p class="text-xs text-slate-400 font-medium">All recorded lost reports and found asset items</p>
                 </div>
             </div>
+
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-slate-950/80 border-b border-slate-800 text-[10px] uppercase tracking-widest text-slate-400 font-bold">
@@ -173,7 +174,7 @@
                             <th class="p-5">Type / Category</th>
                             <th class="p-5">Verification Coordinates</th>
                             <th class="p-5">Claim Logs & AI Assistance</th>
-                            <th class="p-5">Status</th>
+                            <th class="p-5">Operational Status</th>
                             <th class="p-5 text-right">System Actions</th>
                         </tr>
                     </thead>

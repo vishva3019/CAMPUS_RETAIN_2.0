@@ -3,6 +3,7 @@ import smtplib
 import base64
 import json
 import random
+from typing import Any
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from email.mime.text import MIMEText
@@ -66,8 +67,6 @@ db = SQLAlchemy(app)
 # ==================================================
 # GLOBAL MAINTENANCE TOGGLE
 # ==================================================
-# Change this flag to True to instantly lock public user paths and render
-# the clean 3-dot loading maintenance page during codebase upgrades.
 IS_MAINTENANCE = False
 
 
@@ -86,32 +85,28 @@ class Item(db.Model):
     name = db.Column(db.String(120), nullable=False)
     category = db.Column(db.String(50))
     location = db.Column(db.String(150))
-    secret_detail = db.Column(db.Text)
+    secret_detail = db.Column(db.String(255))
     image_data = db.Column(db.Text)
-    item_type = db.Column(db.String(20), default="found", nullable=False)  # 'found' or 'lost'
-    status = db.Column(db.String(30), default="Available")
-    date_found = db.Column(db.DateTime, default=utcnow)
+    status = db.Column(db.String(50), default="Available")
+    item_type = db.Column(db.String(20), default="found")
     reported_by = db.Column(db.String(120), nullable=True)
+    date_found = db.Column(db.DateTime, default=utcnow)
+    date_lost = db.Column(db.DateTime, nullable=True)
 
-    # AI Visual & Metadata Fields
+    # Phase 3: AI Vision Metadata
     ai_category = db.Column(db.String(50), nullable=True)
-    ai_primary_color = db.Column(db.String(50), nullable=True)
+    ai_primary_color = db.Column(db.String(30), nullable=True)
     ai_secondary_colors = db.Column(db.JSON, nullable=True)
-    ai_brand = db.Column(db.String(100), nullable=True)
-    ai_model = db.Column(db.String(100), nullable=True)
+    ai_brand = db.Column(db.String(50), nullable=True)
+    ai_model = db.Column(db.String(50), nullable=True)
     ai_visible_text = db.Column(db.JSON, nullable=True)
     ai_distinctive_features = db.Column(db.JSON, nullable=True)
     ai_condition = db.Column(db.String(30), nullable=True)
     ai_confidence = db.Column(db.Float, nullable=True)
-    ai_analysis_status = db.Column(db.String(30), default="pending")
+    ai_analysis_status = db.Column(db.String(20), default="not_applicable")
     ai_analyzed_at = db.Column(db.DateTime, nullable=True)
 
-    claims = db.relationship(
-        "Claim",
-        backref="item",
-        lazy=True,
-        cascade="all, delete-orphan"
-    )
+    claims = db.relationship("Claim", backref="item", lazy=True, cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
@@ -121,10 +116,11 @@ class Item(db.Model):
             "location": self.location,
             "secret_detail": self.secret_detail,
             "image_data": self.image_data,
-            "item_type": self.item_type or "found",
             "status": self.status,
-            "date_found": self.date_found.isoformat() if self.date_found else None,
+            "item_type": self.item_type or "found",
             "reported_by": self.reported_by,
+            "date_found": self.date_found.isoformat() if self.date_found else None,
+            "date_lost": self.date_lost.isoformat() if self.date_lost else None,
             "ai_category": self.ai_category,
             "ai_primary_color": self.ai_primary_color,
             "ai_secondary_colors": self.ai_secondary_colors,
@@ -135,26 +131,8 @@ class Item(db.Model):
             "ai_condition": self.ai_condition,
             "ai_confidence": self.ai_confidence,
             "ai_analysis_status": self.ai_analysis_status,
+            "ai_analyzed_at": self.ai_analyzed_at.isoformat() if self.ai_analyzed_at else None,
         }
-
-
-class ItemMatch(db.Model):
-    __tablename__ = "item_matches"
-    id = db.Column(db.Integer, primary_key=True)
-    lost_item_id = db.Column(db.Integer, db.ForeignKey("item.id", ondelete="CASCADE"), nullable=False, index=True)
-    found_item_id = db.Column(db.Integer, db.ForeignKey("item.id", ondelete="CASCADE"), nullable=False, index=True)
-    match_score = db.Column(db.Integer, nullable=False)
-    confidence = db.Column(db.String(20), nullable=False)  # "high", "medium", "low"
-    matching_attributes = db.Column(db.JSON, nullable=True)
-    differences = db.Column(db.JSON, nullable=True)
-    explanation = db.Column(db.Text, nullable=True)
-    status = db.Column(db.String(20), default="active")  # "active", "dismissed", "confirmed"
-    created_at = db.Column(db.DateTime, default=utcnow, index=True)
-    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
-
-    lost_item = db.relationship("Item", foreign_keys=[lost_item_id], backref=db.backref("matches_as_lost", cascade="all, delete-orphan"))
-    found_item = db.relationship("Item", foreign_keys=[found_item_id], backref=db.backref("matches_as_found", cascade="all, delete-orphan"))
-
 
 
 class Claim(db.Model):
@@ -168,15 +146,15 @@ class Claim(db.Model):
 
     # Phase 6: AI-Assisted Claim Verification Metadata
     ai_confidence_score = db.Column(db.Integer, nullable=True)
-    ai_confidence_level = db.Column(db.String(20), nullable=True)  # "high", "medium", "low"
+    ai_confidence_level = db.Column(db.String(20), nullable=True)
     ai_matching_factors = db.Column(db.JSON, nullable=True)
     ai_conflicting_factors = db.Column(db.JSON, nullable=True)
     ai_explanation = db.Column(db.Text, nullable=True)
     ai_recommendation = db.Column(db.String(50), default="manual_review")
-    ai_analysis_status = db.Column(db.String(20), default="pending")  # "pending", "completed", "failed"
+    ai_analysis_status = db.Column(db.String(20), default="pending")
     ai_analyzed_at = db.Column(db.DateTime, nullable=True)
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self):
         return {
             "id": self.id,
             "item_id": self.item_id,
@@ -186,30 +164,60 @@ class Claim(db.Model):
             "proof_description": self.proof_description,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
             "ai_confidence_score": self.ai_confidence_score,
-            "ai_confidence_level": self.ai_confidence_level or "low",
-            "ai_matching_factors": self.ai_matching_factors or [],
-            "ai_conflicting_factors": self.ai_conflicting_factors or [],
-            "ai_explanation": self.ai_explanation or "",
+            "ai_confidence_level": self.ai_confidence_level,
+            "ai_matching_factors": self.ai_matching_factors,
+            "ai_conflicting_factors": self.ai_conflicting_factors,
+            "ai_explanation": self.ai_explanation,
             "ai_recommendation": self.ai_recommendation or "manual_review",
-            "ai_analysis_status": self.ai_analysis_status or "pending",
+            "ai_analysis_status": self.ai_analysis_status,
             "ai_analyzed_at": self.ai_analyzed_at.isoformat() if self.ai_analyzed_at else None,
         }
 
 
+class ItemMatch(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    lost_item_id = db.Column(db.Integer, db.ForeignKey("item.id"), nullable=False)
+    found_item_id = db.Column(db.Integer, db.ForeignKey("item.id"), nullable=False)
+    match_score = db.Column(db.Integer, nullable=False)
+    confidence = db.Column(db.String(20), nullable=False)
+    matching_attributes = db.Column(db.JSON, nullable=True)
+    differences = db.Column(db.JSON, nullable=True)
+    explanation = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default="active")
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    lost_item = db.relationship("Item", foreign_keys=[lost_item_id], backref="lost_matches")
+    found_item = db.relationship("Item", foreign_keys=[found_item_id], backref="found_matches")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "lost_item_id": self.lost_item_id,
+            "found_item_id": self.found_item_id,
+            "match_score": self.match_score,
+            "confidence": self.confidence,
+            "matching_attributes": self.matching_attributes or [],
+            "differences": self.differences or [],
+            "explanation": self.explanation,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 # ==================================================
-# HELPERS
+# UTILITIES: NOTIFICATIONS
 # ==================================================
 
 def send_email(receiver, subject, body):
-    if not MAIL_USERNAME or not MAIL_PASSWORD:
+    if not (MAIL_USERNAME and MAIL_PASSWORD):
         print("Email config missing")
         return False
 
     try:
         msg = MIMEText(body)
         msg["Subject"] = subject
-        
-        # FIXED: Explicit Display Name configuration added to clear enterprise gateway spam filters
         msg["From"] = f"CampusRetain Portal <{MAIL_USERNAME}>"
         msg["To"] = receiver
 
@@ -261,7 +269,11 @@ def send_sms(receiver, body):
 
 @app.before_request
 def check_for_maintenance():
-    bypass_routes = ["static", "admin_login", "admin_dashboard", "logout", "init_db", "reject_claim", "approve_claim", "delete_item", "test_email"]
+    bypass_routes = [
+        "static", "login", "admin_login", "admin_dashboard", "logout",
+        "init_db", "reject_claim", "approve_claim", "delete_item", "test_email",
+        "forgot_password", "reset_password"
+    ]
     
     if IS_MAINTENANCE:
         if request.endpoint and any(route in request.endpoint for route in bypass_routes):
@@ -285,7 +297,7 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if session.get("is_admin") != True:
+        if not session.get("is_admin"):
             return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
     return wrapper
@@ -296,7 +308,6 @@ def admin_required(f):
 # ==================================================
 
 @app.route("/")
-@login_required
 def index():
     user_email = session.get("user_email")
 
@@ -333,12 +344,48 @@ def index():
     )
 
 
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    user_email = session.get("user_email")
+    items = Item.query.filter(
+        (Item.item_type == "found") | (Item.item_type == None)
+    ).order_by(Item.date_found.desc()).all()
+
+    my_lost_items = (
+        Item.query.filter_by(item_type="lost", reported_by=user_email)
+        .order_by(Item.date_found.desc())
+        .all()
+        if user_email
+        else []
+    )
+
+    for item in items:
+        item.match_count = ItemMatch.query.filter_by(
+            found_item_id=item.id, status="active"
+        ).count()
+
+    for item in my_lost_items:
+        item.match_count = ItemMatch.query.filter_by(
+            lost_item_id=item.id, status="active"
+        ).count()
+
+    return render_template(
+        "dashboard.html",
+        items=items,
+        my_lost_items=my_lost_items,
+        user_email=user_email,
+    )
+
 
 # ---------------- USER AUTHENTICATION ----------------
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     try:
+        if "user_email" in session:
+            return redirect(url_for("index"))
+
         if request.method == "POST":
             email = request.form.get("email", "").strip().lower()
             password = request.form.get("password", "")
@@ -487,7 +534,6 @@ def admin_dashboard():
     return render_template("admin.html", items=items, matches=matches)
 
 
-
 @app.route("/logout")
 def logout():
     session.clear()
@@ -505,52 +551,69 @@ def init_db():
         return f"Database Schema Construction Fault Error: {str(e)}"
 
 
-# ==================================================
-# API CONTROLLERS ENDPOINTS
-# ==================================================
-
-# ---------- AI IMAGE ANALYSIS PIPELINE ----------
+# ---------- AI MULTIMODAL IMAGE ANALYSIS ENDPOINT ----------
 
 @app.route("/api/ai/analyze-image", methods=["POST"])
 @login_required
-def api_analyze_image():
-    """Endpoint for instant asynchronous AI item image analysis."""
+def api_ai_analyze_image():
     try:
-        image_input = None
-        if "image" in request.files and request.files["image"].filename:
-            image_input = request.files["image"]
-        elif request.is_json and request.json:
-            image_input = request.json.get("image")
-        elif "image" in request.form and request.form.get("image"):
-            image_input = request.form.get("image")
+        image_bytes = None
+        mime_type = "image/jpeg"
 
-        if not image_input:
+        if request.files and "image" in request.files:
+            f = request.files["image"]
+            if f and f.filename:
+                image_bytes = f.read()
+                mime_type = f.content_type or "image/jpeg"
+
+        if not image_bytes and request.is_json:
+            raw_img = request.json.get("image")
+            if raw_img:
+                if raw_img.startswith("data:"):
+                    header, data = raw_img.split(",", 1)
+                    if "image/" in header:
+                        mime_type = header.split(";")[0].replace("data:", "")
+                    image_bytes = base64.b64decode(data)
+                else:
+                    image_bytes = base64.b64decode(raw_img)
+
+        if not image_bytes and request.form.get("image"):
+            raw_img = request.form.get("image")
+            if raw_img:
+                if raw_img.startswith("data:"):
+                    header, data = raw_img.split(",", 1)
+                    if "image/" in header:
+                        mime_type = header.split(";")[0].replace("data:", "")
+                    image_bytes = base64.b64decode(data)
+                else:
+                    image_bytes = base64.b64decode(raw_img)
+
+        if not image_bytes:
             return jsonify({
                 "success": False,
-                "error": "No image payload provided for analysis.",
+                "error": "No image file provided in upload request.",
                 "data": None
             }), 400
 
-        result = analyze_item_image(image_input)
-        status_code = 200 if result.get("success") else 400
-        return jsonify(result), status_code
+        res = analyze_item_image(image_bytes)
+        return jsonify(res)
 
     except Exception as e:
         app.logger.exception("AI image analysis endpoint error")
         return jsonify({
             "success": False,
-            "error": "AI analysis is temporarily unavailable.",
+            "error": "AI vision analysis is temporarily unavailable.",
             "data": None
         }), 200
 
 
-def sync_item_matches(target_item):
-    """Executes matching for target_item against opposing inventory and updates ItemMatch table."""
-    try:
-        is_lost = (target_item.item_type == "lost")
-        opposing_type = "found" if is_lost else "lost"
+# ---------- AI MATCHING HELPER & ENDPOINTS ----------
 
-        # Query candidates of opposing type
+def sync_item_matches(target_item: Item) -> list[dict]:
+    try:
+        target_dict = target_item.to_dict()
+        opposing_type = "lost" if (target_item.item_type or "found") == "found" else "found"
+
         candidates = Item.query.filter(
             Item.item_type == opposing_type,
             Item.id != target_item.id,
@@ -560,48 +623,65 @@ def sync_item_matches(target_item):
         if not candidates:
             return []
 
-        target_dict = target_item.to_dict()
         candidate_dicts = [c.to_dict() for c in candidates]
-
-        res = find_potential_matches(target_dict, candidate_dicts, top_n=8)
-        matches_data = res.get("data", {}).get("matches", []) if res.get("success") else []
+        match_response = find_potential_matches(target_dict, candidate_dicts)
+        match_results = (
+            match_response.get("data", {}).get("matches", [])
+            if isinstance(match_response, dict)
+            else match_response
+        )
 
         saved_matches = []
-        for m in matches_data:
-            score = m["match_score"]
-            if score < 40:
+        for m in match_results:
+            cand_id = m.get("candidate_id") or m.get("matched_item_id")
+            if not cand_id:
                 continue
 
-            cand_id = m["candidate_id"]
-            lost_id = target_item.id if is_lost else cand_id
-            found_id = cand_id if is_lost else target_item.id
+            lost_id = target_item.id if target_item.item_type == "lost" else cand_id
+            found_id = cand_id if target_item.item_type == "lost" else target_item.id
 
             existing = ItemMatch.query.filter_by(
-                lost_item_id=lost_id, found_item_id=found_id
+                lost_item_id=lost_id,
+                found_item_id=found_id
             ).first()
 
             if existing:
-                existing.match_score = score
+                existing.match_score = m["match_score"]
                 existing.confidence = m["confidence"]
-                existing.matching_attributes = m["matching_attributes"]
-                existing.differences = m["differences"]
-                existing.explanation = m["explanation"]
+                existing.matching_attributes = m.get("matching_attributes", [])
+                existing.differences = m.get("differences", [])
+                existing.explanation = m.get("explanation")
+                existing.status = "active"
                 existing.updated_at = utcnow()
             else:
                 match_record = ItemMatch(
                     lost_item_id=lost_id,
                     found_item_id=found_id,
-                    match_score=score,
+                    match_score=m["match_score"],
                     confidence=m["confidence"],
-                    matching_attributes=m["matching_attributes"],
-                    differences=m["differences"],
-                    explanation=m["explanation"],
+                    matching_attributes=m.get("matching_attributes", []),
+                    differences=m.get("differences", []),
+                    explanation=m.get("explanation"),
                     status="active",
                     created_at=utcnow(),
                 )
                 db.session.add(match_record)
 
-            saved_matches.append(m)
+            m_formatted = {
+                "matched_item_id": cand_id,
+                "matched_item_name": m.get("candidate_name") or m.get("matched_item_name"),
+                "matched_item_category": m.get("candidate_category") or m.get("matched_item_category"),
+                "matched_item_location": m.get("candidate_location") or m.get("matched_item_location"),
+                "matched_item_image": m.get("candidate_image") or m.get("matched_item_image"),
+                "matched_item_type": opposing_type,
+                "matched_item_status": m.get("candidate_status", "Available"),
+                "match_score": m["match_score"],
+                "confidence": m["confidence"],
+                "matching_attributes": m.get("matching_attributes", []),
+                "differences": m.get("differences", []),
+                "explanation": m.get("explanation"),
+            }
+            saved_matches.append(m_formatted)
 
         db.session.commit()
         return saved_matches
@@ -628,7 +708,6 @@ def report_item():
                 base64.b64encode(raw_bytes).decode()
             )
 
-        # Parse client-submitted AI metadata if present
         ai_data = None
         raw_ai_meta = request.form.get("ai_metadata")
         if raw_ai_meta:
@@ -641,7 +720,6 @@ def report_item():
         if ai_data:
             ai_status = "completed"
         elif raw_bytes:
-            # Fallback automatic analysis if user did not preview
             try:
                 ai_res = analyze_item_image(raw_bytes)
                 if ai_res.get("success") and ai_res.get("data"):
@@ -765,78 +843,32 @@ def report_lost_item():
         db.session.add(item)
         db.session.commit()
 
-        # Run instant AI match discovery against existing found items
+        # Trigger automatic matching against found items
         matches = sync_item_matches(item)
 
         return jsonify({
             "status": "success",
             "item_id": item.id,
-            "ai_status": ai_status,
             "match_count": len(matches),
             "matches": matches
         })
 
     except Exception as e:
-        app.logger.exception("Error during lost item reporting")
+        app.logger.exception("Error reporting lost item")
         return jsonify({"error": "Failed to register lost item report."}), 500
 
 
-# ---------- AI MATCH RETRIEVAL & ENGINE TRIGGER ----------
+# ---------- RETRIEVE MATCHES FOR AN ITEM ----------
 
 @app.route("/api/ai/matches/<int:item_id>", methods=["GET"])
 @login_required
-def get_item_matches(item_id: int):
-    """Retrieve potential AI matches for a lost or found item."""
+def api_get_item_matches(item_id):
     try:
         item = db.session.get(Item, item_id)
         if not item:
-            return jsonify({"success": False, "error": "Item not found."}), 404
+            return jsonify({"success": False, "error": "Item not found"}), 404
 
-        is_lost = (item.item_type == "lost")
-
-        # Query existing match records
-        if is_lost:
-            match_records = ItemMatch.query.filter_by(
-                lost_item_id=item.id, status="active"
-            ).order_by(ItemMatch.match_score.desc()).all()
-        else:
-            match_records = ItemMatch.query.filter_by(
-                found_item_id=item.id, status="active"
-            ).order_by(ItemMatch.match_score.desc()).all()
-
-        # If no cached match records, compute on the fly
-        if not match_records:
-            sync_item_matches(item)
-            if is_lost:
-                match_records = ItemMatch.query.filter_by(
-                    lost_item_id=item.id, status="active"
-                ).order_by(ItemMatch.match_score.desc()).all()
-            else:
-                match_records = ItemMatch.query.filter_by(
-                    found_item_id=item.id, status="active"
-                ).order_by(ItemMatch.match_score.desc()).all()
-
-        results = []
-        for m in match_records:
-            opp_item = m.found_item if is_lost else m.lost_item
-            if not opp_item:
-                continue
-            results.append({
-                "match_id": m.id,
-                "matched_item_id": opp_item.id,
-                "matched_item_name": opp_item.name,
-                "matched_item_category": opp_item.category,
-                "matched_item_location": opp_item.location,
-                "matched_item_image": opp_item.image_data,
-                "matched_item_status": opp_item.status,
-                "matched_item_type": opp_item.item_type,
-                "match_score": m.match_score,
-                "confidence": m.confidence,
-                "matching_attributes": m.matching_attributes or [],
-                "differences": m.differences or [],
-                "explanation": m.explanation or "",
-                "created_at": m.created_at.isoformat() if m.created_at else None,
-            })
+        matches = sync_item_matches(item)
 
         return jsonify({
             "success": True,
@@ -844,47 +876,28 @@ def get_item_matches(item_id: int):
                 "item_id": item.id,
                 "item_name": item.name,
                 "item_type": item.item_type or "found",
-                "matches": results,
+                "matches": matches
             },
             "error": None
         })
-
     except Exception as e:
         app.logger.exception(f"Error fetching matches for item {item_id}")
-        return jsonify({"success": False, "error": "AI matching service is temporarily unavailable."}), 200
+        return jsonify({
+            "success": False,
+            "error": "Failed to fetch AI match discovery.",
+            "data": None
+        }), 200
 
 
-@app.route("/api/ai/match-item/<int:item_id>", methods=["POST"])
-@login_required
-def trigger_item_match(item_id: int):
-    """Force re-evaluating matches for an item."""
-    try:
-        item = db.session.get(Item, item_id)
-        if not item:
-            return jsonify({"success": False, "error": "Item not found."}), 404
-
-        matches = sync_item_matches(item)
-        return jsonify({"success": True, "data": {"match_count": len(matches), "matches": matches}, "error": None})
-    except Exception as e:
-        app.logger.exception("Error triggering matching")
-        return jsonify({"success": False, "error": "Failed to run AI matching engine."}), 500
-
-
-# ---------- AI NATURAL LANGUAGE SEARCH PIPELINE ----------
+# ---------- AI NATURAL LANGUAGE SEARCH ENDPOINT ----------
 
 @app.route("/api/ai/search", methods=["POST"])
 @login_required
 def api_ai_search():
-    """Natural language AI search endpoint."""
+    """Natural Language semantic search endpoint."""
     try:
-        query = ""
-        target = "all"
-        if request.is_json and request.json:
-            query = request.json.get("query", "").strip()
-            target = request.json.get("target", "all")
-        elif request.form:
-            query = request.form.get("query", "").strip()
-            target = request.form.get("target", "all")
+        data = request.json or {}
+        query = data.get("query", "").strip()
 
         if not query:
             return jsonify({
@@ -893,15 +906,10 @@ def api_ai_search():
                 "data": None
             }), 400
 
-        # Query items from database based on target
-        if target == "found":
-            db_items = Item.query.filter(
-                (Item.item_type == "found") | (Item.item_type == None)
-            ).all()
-        elif target == "lost":
-            db_items = Item.query.filter_by(item_type="lost").all()
-        else:
-            db_items = Item.query.all()
+        # Retrieve candidate items from database
+        db_items = Item.query.filter(
+            (Item.status != "Claimed") | (Item.status == None)
+        ).all()
 
         item_dicts = [it.to_dict() for it in db_items]
 
@@ -956,12 +964,9 @@ def api_ai_chat():
         }), 200
 
 
-
-
 # ---------- AI CLAIM VERIFICATION HELPER & ENDPOINTS ----------
 
 def analyze_and_persist_claim_ai(claim: Claim, item: Item) -> dict[str, Any] | None:
-    """Runs deterministic & AI claim verification and persists results to database."""
     try:
         claim_dict = claim.to_dict()
         item_dict = item.to_dict()
@@ -975,7 +980,7 @@ def analyze_and_persist_claim_ai(claim: Claim, item: Item) -> dict[str, Any] | N
             claim.ai_conflicting_factors = d.get("conflicting_factors")
             claim.ai_explanation = d.get("explanation")
             claim.ai_recommendation = d.get("recommendation", "manual_review")
-            claim.ai_analysis_status = "completed"
+            claim.ai_analysis_status = d.get("analysis_status", "completed")
             claim.ai_analyzed_at = utcnow()
             db.session.commit()
             return d
@@ -984,7 +989,7 @@ def analyze_and_persist_claim_ai(claim: Claim, item: Item) -> dict[str, Any] | N
             db.session.commit()
             return None
     except Exception as e:
-        app.logger.warning(f"Failed to run AI assessment for claim {claim.id}: {e}")
+        app.logger.exception(f"Error persisting AI claim analysis for claim {claim.id}: {e}")
         claim.ai_analysis_status = "failed"
         db.session.commit()
         return None
@@ -992,19 +997,17 @@ def analyze_and_persist_claim_ai(claim: Claim, item: Item) -> dict[str, Any] | N
 
 @app.route("/api/ai/claim-assessment/<int:claim_id>", methods=["GET"])
 @login_required
-def get_claim_assessment(claim_id: int):
-    """Retrieve the AI claim verification assessment."""
+def api_get_claim_assessment(claim_id):
     try:
         claim = db.session.get(Claim, claim_id)
         if not claim:
-            return jsonify({"success": False, "error": "Claim not found."}), 404
+            return jsonify({"success": False, "error": "Claim record not found"}), 404
 
         item = db.session.get(Item, claim.item_id)
         if not item:
-            return jsonify({"success": False, "error": "Associated item not found."}), 404
+            return jsonify({"success": False, "error": "Associated item not found"}), 404
 
-        # If analysis not yet performed, run it now
-        if not claim.ai_analysis_status or claim.ai_analysis_status == "pending":
+        if claim.ai_confidence_score is None:
             analyze_and_persist_claim_ai(claim, item)
 
         return jsonify({
@@ -1013,53 +1016,73 @@ def get_claim_assessment(claim_id: int):
                 "claim_id": claim.id,
                 "item_id": item.id,
                 "item_name": item.name,
+                "student_id": claim.student_id,
                 "confidence_score": claim.ai_confidence_score,
-                "confidence_level": claim.ai_confidence_level or "low",
+                "confidence_level": claim.ai_confidence_level,
                 "matching_factors": claim.ai_matching_factors or [],
                 "conflicting_factors": claim.ai_conflicting_factors or [],
-                "explanation": claim.ai_explanation or "",
+                "explanation": claim.ai_explanation,
                 "recommendation": claim.ai_recommendation or "manual_review",
-                "status": claim.ai_analysis_status or "completed",
-                "analyzed_at": claim.ai_analyzed_at.isoformat() if claim.ai_analyzed_at else None,
+                "analysis_status": claim.ai_analysis_status,
+                "analyzed_at": claim.ai_analyzed_at.isoformat() if claim.ai_analyzed_at else None
             },
             "error": None
         })
+
     except Exception as e:
-        app.logger.exception("Error retrieving claim assessment")
-        return jsonify({"success": False, "error": "Failed to retrieve claim assessment."}), 500
+        app.logger.exception(f"Error retrieving claim assessment for claim {claim_id}")
+        return jsonify({
+            "success": False,
+            "error": "Failed to retrieve claim assessment.",
+            "data": None
+        }), 200
 
 
 @app.route("/api/ai/analyze-claim/<int:claim_id>", methods=["POST"])
 @login_required
-def trigger_claim_analysis(claim_id: int):
-    """Force re-analysis of a claim verification assessment."""
+def api_analyze_claim_endpoint(claim_id):
     try:
         claim = db.session.get(Claim, claim_id)
         if not claim:
-            return jsonify({"success": False, "error": "Claim not found."}), 404
+            return jsonify({"success": False, "error": "Claim not found"}), 404
 
         item = db.session.get(Item, claim.item_id)
         if not item:
-            return jsonify({"success": False, "error": "Associated item not found."}), 404
+            return jsonify({"success": False, "error": "Item not found"}), 404
 
-        res = analyze_and_persist_claim_ai(claim, item)
-        return jsonify({"success": True, "data": res, "error": None})
+        data = analyze_and_persist_claim_ai(claim, item)
+        if data:
+            return jsonify({"success": True, "data": data, "error": None})
+        else:
+            return jsonify({
+                "success": False,
+                "error": "AI claim analysis could not be completed.",
+                "data": None
+            }), 200
+
     except Exception as e:
-        app.logger.exception("Error re-analyzing claim")
-        return jsonify({"success": False, "error": "Failed to trigger AI claim analysis."}), 500
+        app.logger.exception(f"Error re-analyzing claim {claim_id}")
+        return jsonify({
+            "success": False,
+            "error": "Failed to re-analyze claim.",
+            "data": None
+        }), 200
 
 
-# ---------- ALLOCATE CLAIM QUERY ----------
+# ---------- CLAIM REGISTRATION PIPELINE ----------
 
 @app.route("/api/claim", methods=["POST"])
 @login_required
 def claim_item():
     try:
         data = request.json
-
         item = db.session.get(Item, data["item_id"])
+
         if not item:
-            return jsonify({"error": "Target item not found inside current channel"}), 404
+            return jsonify({"error": "Item not found"}), 404
+
+        if item.status == "Claimed":
+            return jsonify({"error": "This item has already been claimed."}), 400
 
         item.status = "Pending"
 
@@ -1078,14 +1101,12 @@ def claim_item():
         # Run AI claim verification assistance immediately
         analyze_and_persist_claim_ai(claim, item)
 
-        # 1. Notify Student Lifecycle
         send_email(
             data["student_email"],
             "Campus Retain Claim Submitted",
             f"Your claim request for '{item.name}' is submitted and under review."
         )
 
-        # 2. FIXED: Administrative copy alert now triggers properly inside your primary workspace
         if ADMIN_EMAIL:
             admin_body = f"Hello Admin,\n\nA new claim request has been submitted for item: '{item.name}'.\n\nStudent ID: {data['student_id']}\nProof Description: {data['proof_description']}\n\nPlease review this inside your Admin Management dashboard."
             send_email(ADMIN_EMAIL, "Alert: New Claim Submitted", admin_body)
@@ -1202,7 +1223,7 @@ def delete_item(item_id):
 
 
 # ==================================================
-# INFRASTRUCTURE DEPLOYMENT SANITY CHECKS
+# DIAGNOSTICS & INFRASTRUCTURE SANITY CHECKS
 # ==================================================
 
 @app.route("/test-email")

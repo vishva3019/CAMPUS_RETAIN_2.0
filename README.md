@@ -3,7 +3,8 @@
 > **Find what you lost, faster with AI.**  
 > *Official Entry for the Razorpay AI Builder Internship 2026 / Buildathon*
 
-Live Deployment: [https://campus-retain-2-0.vercel.app/](https://campus-retain-2-0.vercel.app/)
+**Live Deployment:** [https://campus-retain-2-0.vercel.app/](https://campus-retain-2-0.vercel.app/)  
+**Website:** [https://campusretain.in](https://campusretain.in)
 
 ---
 
@@ -53,6 +54,31 @@ A floating chat assistant that guides students across the platform:
 - **Grounded Inventory Search**: Responds only with real database records; strictly refuses to fabricate non-existent items.
 - **Workflow Guidance**: Explains claiming steps, reporting found items (with physical handover to the DOSS office), and tracking lost reports.
 - **Anti-Theft Security Shield**: Politely refuses to disclose secret verification details or administrator credentials.
+
+---
+
+## 👨‍🎓 Student Portal & 👨‍💼 Admin Operations
+
+### 👨‍🎓 Student Features
+- **Secure Domain Authentication:** Identity protection strictly matching campus organization emails (`@ced.alliance.edu.in`).
+- **Multimodal Discovery Registry:** Instantly report found items with AI visual attribute extraction, category mappings, and location coordinates.
+- **Instant Match Discovery:** Report lost items to automatically trigger matching against all active found records.
+- **Dynamic NL Search & Filters:** Type natural conversational queries or filter by category and location in real-time.
+- **Possession Claim Pipeline:** Submit unique identifier attributes (proof description) that only the true owner would know.
+- **Password Recovery:** Secure email-based OTP (One-Time Password) workflow to reset account credentials if forgotten.
+
+### 👨‍💼 Administration Features
+- **Cyber-Dark Operations Terminal:** Premium dark-themed administrative dashboard providing live metrics (Total Records, AI Potential Matches, Pending Reviews, Successfully Claimed).
+- **Dual Decision Engine:**
+  - **Approve Claim:** Marks an asset as securely handed over and locks its public status to `Claimed`.
+  - **Reject Claim:** Prompts the admin for custom rationale remarks, instantly alerts the student, and returns the asset to `Available` status for public discovery.
+- **AI Verification Cards:** Inspect AI confidence ratings, matching factor breakdowns, and conflicting attributes for each pending claim.
+- **Claim History Audit Logs:** A clean chronological feed showing past claim attempts, historical proof inputs, and user coordinates for every item.
+- **Resolution Cleanup:** Permanent item deletion capabilities to manage active warehouse inventory.
+
+### 🔔 Integrated Notifications
+- **Email Dispatch Pipeline:** Automated secure SMTP notifications triggering on Account Registration, Claim Submissions, Approvals, and Rejections (including admin remarks).
+- **Cellular SMS alerts:** Twilio API integration providing immediate SMS alerts straight to the student's phone.
 
 ---
 
@@ -126,6 +152,7 @@ CAMPUS_RETAIN_2.0/
 │
 ├── templates/                  # Jinja2 Templates
 │   ├── index.html              # Public Catalog, AI Search, Lost Reporting, AI Chat
+│   ├── dashboard.html          # Internal Authenticated Student Dashboard
 │   ├── admin.html              # Admin Dashboard, Discovered Pairs, Claim Logs
 │   ├── login.html              # Student & Organization Login
 │   ├── admin_login.html        # Secure Admin Gateway
@@ -202,7 +229,7 @@ Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
 ## 🧪 Running Tests
 
-Execute the complete test suite across all AI modules:
+Execute the complete test suite across all AI modules and end-to-end user journeys:
 ```bash
 python -m unittest discover tests
 ```
