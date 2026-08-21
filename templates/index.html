@@ -2321,323 +2321,237 @@
 
 
         // ==================================================
-
         // AI MULTIMODAL IMAGE UPLOAD & ANALYSIS
-
         // ==================================================
-
         let lastAiAnalysis = null;
+        let currentAnalysisId = 0;
+        let imageAnalysisAbortController = null;
 
-
+        function clearAiAnalysisState() {
+            lastAiAnalysis = null;
+            const metaInput = document.getElementById('aiMetadataInput');
+            if (metaInput) metaInput.value = '';
+            const result = document.getElementById('aiAnalysisResult');
+            if (result) result.classList.add('hidden');
+            const cat = document.getElementById('aiResultCategory');
+            if (cat) cat.innerText = '-';
+            const color = document.getElementById('aiResultColor');
+            if (color) color.innerText = '-';
+            const brand = document.getElementById('aiResultBrand');
+            if (brand) brand.innerText = '-';
+            const brandRow = document.getElementById('aiBrandRow');
+            if (brandRow) brandRow.classList.add('hidden');
+            const features = document.getElementById('aiResultFeatures');
+            if (features) features.innerHTML = '';
+            const featuresRow = document.getElementById('aiFeaturesRow');
+            if (featuresRow) featuresRow.classList.add('hidden');
+        }
 
         async function previewAndAnalyzeImage(event) {
-
             const input = event.target;
+            if (!input.files || !input.files[0]) {
+                clearAiAnalysisState();
+                return;
+            }
 
-            if (!input.files || !input.files[0]) return;
+            // Immediately cancel any pending previous image analysis request
+            if (imageAnalysisAbortController) {
+                imageAnalysisAbortController.abort();
+            }
+            imageAnalysisAbortController = new AbortController();
+            const thisRequestId = ++currentAnalysisId;
 
-
+            // Immediately clear previous analysis state and UI
+            clearAiAnalysisState();
 
             const file = input.files[0];
-
             const reader = new FileReader();
-
             reader.onload = function(e) {
-
-                const preview = document.getElementById('imagePreview');
-
-                preview.src = e.target.result;
-
-                preview.classList.remove('hidden');
-
-                document.getElementById('imagePlaceholder')?.classList.add('opacity-0');
-
+                if (thisRequestId === currentAnalysisId) {
+                    const preview = document.getElementById('imagePreview');
+                    if (preview) {
+                        preview.src = e.target.result;
+                        preview.classList.remove('hidden');
+                    }
+                    document.getElementById('imagePlaceholder')?.classList.add('opacity-0');
+                }
             };
-
             reader.readAsDataURL(file);
 
-
-
             const loading = document.getElementById('aiAnalysisLoading');
-
             const result = document.getElementById('aiAnalysisResult');
-
-            loading.classList.remove('hidden');
-
-            result.classList.add('hidden');
-
-
+            if (loading) loading.classList.remove('hidden');
+            if (result) result.classList.add('hidden');
 
             const formData = new FormData();
-
             formData.append('image', file);
 
-
-
             try {
-
-                const response = await fetch('/api/ai/analyze-image', { method: 'POST', body: formData });
-
-                const res = await response.json();
-
-
-
-                if (response.ok && res.success && res.data) {
-
-                    lastAiAnalysis = res.data;
-
-                    document.getElementById('aiMetadataInput').value = JSON.stringify(res.data);
-
-                    document.getElementById('aiResultCategory').innerText = res.data.category || 'Unknown';
-
-                    document.getElementById('aiResultColor').innerText = res.data.primary_color || 'Unknown';
-
-
-
-                    if (res.data.brand || res.data.model) {
-
-                        document.getElementById('aiResultBrand').innerText = [res.data.brand, res.data.model].filter(Boolean).join(' - ');
-
-                        document.getElementById('aiBrandRow').classList.remove('hidden');
-
-                    }
-
-
-
-                    if (res.data.distinctive_features && res.data.distinctive_features.length > 0) {
-
-                        document.getElementById('aiResultFeatures').innerHTML = res.data.distinctive_features.map(f => `<span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded text-[9px] font-bold">${escapeHtml(f)}</span>`).join('');
-
-                        document.getElementById('aiFeaturesRow').classList.remove('hidden');
-
-                    }
-
-
-
-                    result.classList.remove('hidden');
-
-                }
-
-            } catch (err) {
-
-                // Non-critical fallback
-
-            } finally {
-
-                loading.classList.add('hidden');
-
-            }
-
-        }
-
-
-
-        function applyAISuggestions() {
-
-            if (!lastAiAnalysis) return;
-
-            if (lastAiAnalysis.category) {
-
-                const sel = document.getElementById('reportCategory');
-
-                for (let i = 0; i < sel.options.length; i++) {
-
-                    if (sel.options[i].value.toLowerCase() === lastAiAnalysis.category.toLowerCase()) {
-
-                        sel.selectedIndex = i;
-
-                        break;
-
-                    }
-
-                }
-
-            }
-
-            showToast('AI suggestions applied to form fields.');
-
-        }
-
-
-
-        // ==================================================
-
-        // AI DISCOVERED MATCHES MODAL
-
-        // ==================================================
-
-        async function openMatchesModal(itemId, itemName) {
-
-            const content = document.getElementById('matchesModalContent');
-
-            content.innerHTML = `
-
-                <div class="py-8 text-center text-slate-400">
-
-                    <svg class="animate-spin h-6 w-6 text-indigo-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
-
-                    <span class="text-xs font-semibold">Running cross-attribute AI matching engine...</span>
-
-                </div>
-
-            `;
-
-            toggleModal('matchesModal');
-
-
-
-            try {
-
-                const response = await fetch(`/api/ai/matches/${itemId}`);
-
-                const res = await response.json();
-
-
-
-                if (response.ok && res.success && res.data) {
-
-                    const matches = res.data.matches || [];
-
-                    if (matches.length === 0) {
-
-                        content.innerHTML = `
-
-                            <div class="py-8 text-center text-slate-500 bg-slate-50 rounded-2xl border border-slate-200/80 p-6 space-y-2">
-
-                                <div class="text-2xl">🤖</div>
-
-                                <h4 class="font-bold text-slate-800 text-sm">No Active Match Candidates Yet</h4>
-
-                                <p class="text-xs text-slate-500">The matching engine monitors opposing reports continuously. As soon as a corresponding report is registered, it will be paired here.</p>
-
-                            </div>
-
-                        `;
-
-                    } else {
-
-                        content.innerHTML = matches.map(m => `
-
-                            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-
-                                <div class="flex items-center justify-between">
-
-                                    <span class="text-xs font-black text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">${m.match_score}% Confidence</span>
-
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase">${escapeHtml(m.matched_item_type || 'Found')}</span>
-
-                                </div>
-
-                                <div>
-
-                                    <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(m.matched_item_name)}</h4>
-
-                                    <p class="text-xs text-slate-500">📍 ${escapeHtml(m.matched_item_location || 'Campus')}</p>
-
-                                </div>
-
-                                ${m.explanation ? `<p class="text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/60 font-medium">${escapeHtml(m.explanation)}</p>` : ''}
-
-                                <div class="flex justify-end pt-1">
-
-                                    <button type="button" onclick="toggleModal('matchesModal'); openClaimModal('${m.matched_item_id}', '${escapeHtml(m.matched_item_name)}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs transition">Claim This Item</button>
-
-                                </div>
-
-                            </div>
-
-                        `).join('');
-
-                    }
-
-                }
-
-            } catch (err) {
-
-                content.innerHTML = `<div class="p-4 text-center text-xs text-rose-600 font-bold">Failed to load matches.</div>`;
-
-            }
-
-        }
-
-
-
-        // ==================================================
-
-        // CLAIM PROPERTY MODAL & SUBMISSION
-
-        // ==================================================
-
-        function openClaimModal(id, name) {
-
-            document.getElementById('claimItemId').value = id;
-
-            document.getElementById('claimItemNameDisplay').innerText = name;
-
-            toggleModal('claimModal');
-
-        }
-
-
-
-        document.getElementById('claimForm').onsubmit = async (e) => {
-
-            e.preventDefault();
-
-            const btn = document.getElementById('claimSubmitBtn');
-
-            btn.disabled = true;
-
-
-
-            try {
-
-                const response = await fetch('/api/claim', {
-
+                const response = await fetch('/api/ai/analyze-image', {
                     method: 'POST',
-
-                    headers: { 'Content-Type': 'application/json' },
-
-                    body: JSON.stringify({
-
-                        item_id: document.getElementById('claimItemId').value,
-
-                        student_id: document.getElementById('claimStudentId').value,
-
-                        phone: document.getElementById('claimPhone').value,
-
-                        proof_description: document.getElementById('claimProof').value,
-
-                    })
-
+                    body: formData,
+                    signal: imageAnalysisAbortController.signal
                 });
 
-                const res = await response.json();
-
-                if (response.ok && res.status === 'success') {
-
-                    showToast('Claim submitted for administrator review!');
-
-                    toggleModal('claimModal');
-
-                    setTimeout(() => location.reload(), 1200);
-
-                } else {
-
-                    showToast(res.error || 'Failed to submit claim.', 'error');
-
+                // Ignore late responses from older image selections
+                if (thisRequestId !== currentAnalysisId) {
+                    return;
                 }
 
+                const res = await response.json();
+
+                if (response.ok && res.success && res.data) {
+                    lastAiAnalysis = res.data;
+                    document.getElementById('aiMetadataInput').value = JSON.stringify(res.data);
+                    document.getElementById('aiResultCategory').innerText = res.data.category || 'Unknown';
+                    document.getElementById('aiResultColor').innerText = res.data.primary_color || 'Unknown';
+
+                    if (res.data.brand || res.data.model) {
+                        document.getElementById('aiResultBrand').innerText = [res.data.brand, res.data.model].filter(Boolean).join(' - ');
+                        document.getElementById('aiBrandRow')?.classList.remove('hidden');
+                    } else {
+                        document.getElementById('aiBrandRow')?.classList.add('hidden');
+                    }
+
+                    if (res.data.distinctive_features && res.data.distinctive_features.length > 0) {
+                        document.getElementById('aiResultFeatures').innerHTML = res.data.distinctive_features
+                            .map(f => `<span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded text-[9px] font-bold">${escapeHtml(f)}</span>`)
+                            .join('');
+                        document.getElementById('aiFeaturesRow')?.classList.remove('hidden');
+                    } else {
+                        document.getElementById('aiFeaturesRow')?.classList.add('hidden');
+                    }
+
+                    result?.classList.remove('hidden');
+                } else {
+                    clearAiAnalysisState();
+                    const errMsg = (res && res.error) ? res.error : "AI analysis failed. Please try again.";
+                    showToast(errMsg, 'error');
+                }
             } catch (err) {
-
-                showToast('Network error submitting claim.', 'error');
-
+                if (err.name === 'AbortError') {
+                    // Intentionally canceled for newer image
+                    return;
+                }
+                if (thisRequestId === currentAnalysisId) {
+                    clearAiAnalysisState();
+                    showToast('AI analysis failed. Please try again.', 'error');
+                }
             } finally {
-
-                btn.disabled = false;
-
+                if (thisRequestId === currentAnalysisId && loading) {
+                    loading.classList.add('hidden');
+                }
             }
+        }
 
+        function applyAISuggestions() {
+            if (!lastAiAnalysis) {
+                showToast('No active AI analysis available to apply.', 'error');
+                return;
+            }
+            if (lastAiAnalysis.category) {
+                const sel = document.getElementById('reportCategory');
+                if (sel) {
+                    for (let i = 0; i < sel.options.length; i++) {
+                        if (sel.options[i].value.toLowerCase() === lastAiAnalysis.category.toLowerCase()) {
+                            sel.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+            showToast('AI suggestions applied to form fields.');
+        }
+
+        // ==================================================
+        // AI DISCOVERED MATCHES MODAL
+        // ==================================================
+        async function openMatchesModal(itemId, itemName) {
+            const content = document.getElementById('matchesModalContent');
+            content.innerHTML = `
+                <div class="py-8 text-center text-slate-400">
+                    <svg class="animate-spin h-6 w-6 text-indigo-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+                    <span class="text-xs font-semibold">Running cross-attribute AI matching engine...</span>
+                </div>
+            `;
+            toggleModal('matchesModal');
+
+            try {
+                const response = await fetch(`/api/ai/matches/${itemId}`);
+                const res = await response.json();
+
+                if (response.ok && res.success && res.data) {
+                    const matches = res.data.matches || [];
+                    if (matches.length === 0) {
+                        content.innerHTML = `
+                            <div class="py-8 text-center text-slate-500 bg-slate-50 rounded-2xl border border-slate-200/80 p-6 space-y-2">
+                                <div class="text-2xl">🤖</div>
+                                <h4 class="font-bold text-slate-800 text-sm">No Active Match Candidates Yet</h4>
+                                <p class="text-xs text-slate-500">The matching engine monitors opposing reports continuously. As soon as a corresponding report is registered, it will be paired here.</p>
+                            </div>
+                        `;
+                    } else {
+                        content.innerHTML = matches.map(m => `
+                            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-black text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">${m.match_score}% Confidence</span>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">${escapeHtml(m.matched_item_type || 'Found')}</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(m.matched_item_name)}</h4>
+                                    <p class="text-xs text-slate-500">📍 ${escapeHtml(m.matched_item_location || 'Campus')}</p>
+                                </div>
+                                ${m.explanation ? `<p class="text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/60 font-medium">${escapeHtml(m.explanation)}</p>` : ''}
+                                <div class="flex justify-end pt-1">
+                                    <button type="button" onclick="toggleModal('matchesModal'); openClaimModal('${m.matched_item_id}', '${escapeHtml(m.matched_item_name)}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs transition">Claim This Item</button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (err) {
+                content.innerHTML = `<div class="p-4 text-center text-xs text-rose-600 font-bold">Failed to load matches.</div>`;
+            }
+        }
+
+        // ==================================================
+        // CLAIM PROPERTY MODAL & SUBMISSION
+        // ==================================================
+        function openClaimModal(id, name) {
+            document.getElementById('claimItemId').value = id;
+            document.getElementById('claimItemNameDisplay').innerText = name;
+            toggleModal('claimModal');
+        }
+
+        document.getElementById('claimForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('claimSubmitBtn');
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        item_id: document.getElementById('claimItemId').value,
+                        student_id: document.getElementById('claimStudentId').value,
+                        phone: document.getElementById('claimPhone').value,
+                        proof_description: document.getElementById('claimProof').value,
+                    })
+                });
+                const res = await response.json();
+                if (response.ok && res.status === 'success') {
+                    showToast(res.message || 'Claim submitted successfully. Your request is now under review.');
+                    toggleModal('claimModal');
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    showToast(res.message || res.error || 'Unable to submit the claim. Please try again.', 'error');
+                }
+            } catch (err) {
+                showToast('Unable to submit the claim. Please check your connection and retry.', 'error');
+            } finally {
+                btn.disabled = false;
+            }
         };
 
 

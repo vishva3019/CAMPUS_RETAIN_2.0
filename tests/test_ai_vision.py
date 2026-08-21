@@ -189,6 +189,52 @@ class TestVisionAnalysisExecution(unittest.TestCase):
         self.assertFalse(res["success"])
         self.assertIn("valid", res["error"].lower())
 
+    def test_analyze_with_unconfigured_api_key_returns_safe_error(self):
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "", "GEMINI_API_KEY": ""}, clear=True):
+            res = analyze_item_image(SAMPLE_PNG_BYTES)
+            self.assertFalse(res["success"])
+            self.assertIsNone(res["data"])
+            self.assertIn("not configured", res["error"].lower())
+
+    def test_analyze_charger_multimodal_does_not_return_backpack(self):
+        charger_mock_response = MagicMock()
+        charger_mock_response.status_code = 200
+        charger_mock_response.json.return_value = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": json.dumps(
+                                    {
+                                        "category": "electronics",
+                                        "primary_color": "white",
+                                        "secondary_colors": [],
+                                        "brand": "Apple",
+                                        "model": "20W USB-C Power Adapter",
+                                        "visible_text": ["20W", "Designed by Apple"],
+                                        "distinctive_features": ["USB-C port on bottom"],
+                                        "condition": "good",
+                                        "confidence": 0.95,
+                                    }
+                                )
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key"}, clear=True):
+            with patch("requests.post", return_value=charger_mock_response):
+                res = analyze_item_image(SAMPLE_PNG_BYTES)
+                self.assertTrue(res["success"])
+                self.assertEqual(res["data"]["category"], "electronics")
+                self.assertEqual(res["data"]["brand"], "Apple")
+                self.assertEqual(res["data"]["primary_color"], "white")
+                self.assertNotEqual(res["data"]["category"], "backpack")
+                self.assertNotEqual(res["data"]["brand"], "Nike")
+
 
 class TestFlaskAppVisionIntegration(unittest.TestCase):
     """Test Flask routes integrating AI image analysis and reporting."""

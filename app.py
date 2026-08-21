@@ -388,7 +388,12 @@ def login_required(f):
     def wrapper(*args, **kwargs):
         if "user_email" not in session:
             if request.path.startswith("/api/") or request.is_json:
-                return jsonify({"error": "Authentication required. Please sign in.", "success": False}), 401
+                return jsonify({
+                    "status": "error",
+                    "error": "Authentication required. Please sign in.",
+                    "message": "Authentication required.",
+                    "success": False
+                }), 401
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return wrapper
@@ -651,6 +656,7 @@ def logout():
 @login_required
 def api_ai_analyze_image():
     try:
+        user_email = session.get("user_email", "anonymous")
         image_bytes = None
         mime_type = "image/jpeg"
 
@@ -689,14 +695,22 @@ def api_ai_analyze_image():
                 "data": None
             }), 400
 
+        app.logger.info(f"AI image analysis requested by {user_email}: payload size={len(image_bytes)} bytes, mime={mime_type}")
         res = analyze_item_image(image_bytes)
+
+        if res.get("success") and res.get("data"):
+            d = res["data"]
+            app.logger.info(f"AI image analysis completed for {user_email}: category={d.get('category')}, brand={d.get('brand')}, color={d.get('primary_color')}")
+        else:
+            app.logger.warning(f"AI image analysis failed for {user_email}: {res.get('error')}")
+
         return jsonify(res)
 
     except Exception as e:
         app.logger.exception("AI image analysis endpoint error")
         return jsonify({
             "success": False,
-            "error": "AI vision analysis is temporarily unavailable.",
+            "error": "AI vision analysis is temporarily unavailable. Please try again.",
             "data": None
         }), 200
 
@@ -1173,51 +1187,112 @@ def api_analyze_claim_endpoint(claim_id):
 @login_required
 def claim_item():
     try:
-        data = request.json
-        item = db.session.get(Item, data["item_id"])
+        data = request.get_json(silent=True) or {}
+        item_id = data.get("item_id")
+        student_id = (data.get("student_id") or "").strip()
+        phone = (data.get("phone") or "").strip()
+        proof_description = (data.get("proof_description") or "").strip()
 
+        # User is authenticated via @login_required; use ONLY authenticated session email
+        student_email = session.get("user_email")
+        if not student_email:
+            return jsonify({
+                "status": "error",
+                "message": "Authentication required."
+            }), 401
+
+        if not item_id:
+            return jsonify({
+                "status": "error",
+                "message": "Item identifier is required."
+            }), 400
+
+        if not student_id or not proof_description:
+            return jsonify({
+                "status": "error",
+                "message": "Student ID and ownership proof description are required."
+            }), 400
+
+        item = db.session.get(Item, item_id)
         if not item:
-            return jsonify({"error": "Item not found"}), 404
+            return jsonify({
+                "status": "error",
+                "message": "The requested item was not found."
+            }), 404
 
         if item.status == "Claimed":
-            return jsonify({"error": "This item has already been claimed."}), 400
+            return jsonify({
+                "status": "error",
+                "message": "This item has already been claimed."
+            }), 400
 
         item.status = "Pending"
 
         claim = Claim(
-            item_id=data["item_id"],
-            student_id=data["student_id"],
-            student_email=data["student_email"],
-            phone=data.get("phone", ""),
-            proof_description=data["proof_description"],
+            item_id=item.id,
+            student_id=student_id,
+            student_email=student_email,
+            phone=phone,
+            proof_description=proof_description,
             ai_analysis_status="pending"
         )
 
         db.session.add(claim)
         db.session.commit()
 
-        # Run AI claim verification assistance immediately
-        analyze_and_persist_claim_ai(claim, item)
+        # Run AI claim verification assistance immediately (does not fail claim creation)
+        try:
+            analyze_and_persist_claim_ai(claim, item)
+        except Exception as ai_exc:
+            app.logger.warning(f"AI claim verification encountered error for claim {claim.id}: {ai_exc}")
 
-        send_email(
-            data["student_email"],
-            "Campus Retain Claim Submitted",
-            f"Your claim request for '{item.name}' is submitted and under review."
-        )
+        # Notification delivery is secondary; failure must not prevent successful claim creation
+        email_sent = False
+        sms_sent = False
 
-        if ADMIN_EMAIL:
-            admin_body = f"Hello Admin,\n\nA new claim request has been submitted for item: '{item.name}'.\n\nStudent ID: {data['student_id']}\nProof Description: {data['proof_description']}\n\nPlease review this inside your Admin Management dashboard."
-            send_email(ADMIN_EMAIL, "Alert: New Claim Submitted", admin_body)
+        try:
+            email_sent = bool(send_email(
+                student_email,
+                "Campus Retain Claim Submitted",
+                f"Your claim request for '{item.name}' is submitted and under review."
+            ))
+            if ADMIN_EMAIL:
+                admin_body = (
+                    f"Hello Admin,\n\n"
+                    f"A new claim request has been submitted for item: '{item.name}'.\n\n"
+                    f"Student ID: {student_id}\n"
+                    f"Student Email: {student_email}\n"
+                    f"Phone: {phone}\n"
+                    f"Proof Description: {proof_description}\n\n"
+                    f"Please review this inside your Admin Management dashboard."
+                )
+                send_email(ADMIN_EMAIL, "Alert: New Claim Submitted", admin_body)
+        except Exception as mail_exc:
+            app.logger.warning(f"Email dispatch error for claim {claim.id}: {mail_exc}")
 
-        send_sms(
-            data.get("phone", ""),
-            f"Campus Retain: Claim request for {item.name} submitted."
-        )
+        try:
+            if phone:
+                sms_sent = bool(send_sms(
+                    phone,
+                    f"Campus Retain: Claim request for {item.name} submitted."
+                ))
+        except Exception as sms_exc:
+            app.logger.warning(f"SMS dispatch error for claim {claim.id}: {sms_exc}")
 
-        return jsonify({"status": "success", "claim_id": claim.id})
+        return jsonify({
+            "status": "success",
+            "message": "Claim submitted successfully. Your request is now under review.",
+            "claim_id": claim.id,
+            "email_sent": email_sent,
+            "sms_sent": sms_sent
+        }), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.exception("Unexpected error in /api/claim")
+        return jsonify({
+            "status": "error",
+            "message": "Unable to submit the claim. Please try again."
+        }), 500
 
 
 # ---------- EXECUTE APPROVAL TERMINAL ----------

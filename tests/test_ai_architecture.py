@@ -164,10 +164,11 @@ class TestAIServiceStubs(unittest.TestCase):
         self.assertEqual(fail["error"], "Error message")
 
     def test_vision_stub_interface(self):
-        res = analyze_item_image("data:image/png;base64,mock")
-        self.assertTrue(res["success"])
-        self.assertIn("category", res["data"])
-        self.assertIn("primary_color", res["data"])
+        with patch.dict(os.environ, {"AI_PROVIDER": "mock", "AI_API_KEY": "test"}, clear=True):
+            res = analyze_item_image("data:image/png;base64,mock")
+            self.assertTrue(res["success"])
+            self.assertIn("category", res["data"])
+            self.assertIn("primary_color", res["data"])
 
     def test_matching_stub_interface(self):
         res = find_potential_matches({"name": "Keys"}, [{"name": "Keychain"}])

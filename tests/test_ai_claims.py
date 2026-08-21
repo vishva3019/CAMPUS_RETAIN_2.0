@@ -225,6 +225,117 @@ class TestFlaskClaimIntegration(unittest.TestCase):
         self.assertTrue(data["success"])
         self.assertIsNotNone(data["data"]["confidence_score"])
 
+    def test_claim_submission_without_student_email_in_body_uses_session(self):
+        with self.app.app_context():
+            item = self.app_module.Item(
+                name="Water Bottle",
+                category="Bottles",
+                location="Cafeteria",
+                item_type="found",
+                status="Available"
+            )
+            self.app_module.db.session.add(item)
+            self.app_module.db.session.commit()
+            item_id = item.id
+
+        with self.client.session_transaction() as sess:
+            sess["user_email"] = "session_user@ced.alliance.edu.in"
+
+        # Request payload does NOT contain student_email field
+        resp = self.client.post(
+            "/api/claim",
+            json={
+                "item_id": item_id,
+                "student_id": "CED2026-888",
+                "phone": "9876543210",
+                "proof_description": "Blue stainless steel bottle with minor dent.",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertEqual(data["status"], "success")
+        self.assertIn("claim_id", data)
+        self.assertIn("message", data)
+        self.assertIn("review", data["message"].lower())
+
+        with self.app.app_context():
+            claim = self.app_module.db.session.get(self.app_module.Claim, data["claim_id"])
+            self.assertIsNotNone(claim)
+            self.assertEqual(claim.student_email, "session_user@ced.alliance.edu.in")
+            self.assertEqual(claim.student_id, "CED2026-888")
+
+    def test_claim_submission_succeeds_even_when_email_and_sms_fail(self):
+        with self.app.app_context():
+            item = self.app_module.Item(
+                name="Scientific Calculator",
+                category="Electronics",
+                location="LH-101",
+                item_type="found",
+                status="Available"
+            )
+            self.app_module.db.session.add(item)
+            self.app_module.db.session.commit()
+            item_id = item.id
+
+        with self.client.session_transaction() as sess:
+            sess["user_email"] = "test_resilience@ced.alliance.edu.in"
+
+        with patch.object(self.app_module, "send_email", side_effect=Exception("SMTP Connection Refused")):
+            with patch.object(self.app_module, "send_sms", side_effect=Exception("Twilio Service Unavailable")):
+                resp = self.client.post(
+                    "/api/claim",
+                    json={
+                        "item_id": item_id,
+                        "student_id": "CED2026-555",
+                        "phone": "9876543210",
+                        "proof_description": "Casio fx-991EX calculator with name sticker on back.",
+                    },
+                )
+                self.assertEqual(resp.status_code, 200)
+                data = resp.get_json()
+                self.assertEqual(data["status"], "success")
+                self.assertFalse(data["email_sent"])
+                self.assertFalse(data["sms_sent"])
+
+                with self.app.app_context():
+                    claim = self.app_module.db.session.get(self.app_module.Claim, data["claim_id"])
+                    self.assertIsNotNone(claim)
+                    saved_item = self.app_module.db.session.get(self.app_module.Item, item_id)
+                    self.assertEqual(saved_item.status, "Pending")
+
+    def test_claim_submission_missing_required_fields_returns_clean_json_error(self):
+        with self.client.session_transaction() as sess:
+            sess["user_email"] = "student@ced.alliance.edu.in"
+
+        # Missing proof_description and student_id
+        resp = self.client.post(
+            "/api/claim",
+            json={"item_id": 9999},
+        )
+        self.assertEqual(resp.status_code, 400)
+        data = resp.get_json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("message", data)
+        self.assertNotIn("KeyError", data["message"])
+        self.assertNotIn("Traceback", data["message"])
+
+    def test_claim_submission_for_nonexistent_item_returns_clean_json_error(self):
+        with self.client.session_transaction() as sess:
+            sess["user_email"] = "student@ced.alliance.edu.in"
+
+        resp = self.client.post(
+            "/api/claim",
+            json={
+                "item_id": 999999,
+                "student_id": "CED2026-001",
+                "proof_description": "Valid proof for nonexistent item.",
+            },
+        )
+        self.assertEqual(resp.status_code, 404)
+        data = resp.get_json()
+        self.assertEqual(data["status"], "error")
+        self.assertIn("not found", data["message"].lower())
+
 
 if __name__ == "__main__":
     unittest.main()

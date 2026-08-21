@@ -220,7 +220,7 @@ def analyze_item_image(image_input: Any) -> dict[str, Any]:
         )
 
     try:
-        client = get_ai_client(require_configured=False)
+        client = get_ai_client(require_configured=True)
         raw_response = client.analyze_multimodal(
             prompt=VISION_USER_PROMPT,
             image_bytes=raw_bytes,
@@ -237,5 +237,5 @@ def analyze_item_image(image_input: Any) -> dict[str, Any]:
         logger.exception(f"Unexpected AI vision error: {exc}")
         return format_ai_response(
             False,
-            error="AI analysis is temporarily unavailable. Standard reporting is still available.",
+            error="AI analysis failed. Please try again.",
         )
