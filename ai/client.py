@@ -141,21 +141,39 @@ class GoogleGeminiProvider(BaseAIProvider):
 
         # Extract sanitized message from upstream error payload
         err_msg = ""
-        if response.status_code != 200:
+        category = "unknown"
+        if response.status_code == 200:
+            category = "success"
+            logger.info(
+                f"Gemini vision request success: provider=google, model={self.model}, "
+                f"status=200, category=success"
+            )
+        else:
             try:
                 err_body = response.json()
                 err_msg = err_body.get("error", {}).get("message", response.text)
             except Exception:
                 err_msg = response.text[:200]
 
+            if response.status_code in (401, 403):
+                category = "authentication_error"
+            elif response.status_code == 404:
+                category = "model_not_found"
+            elif response.status_code == 429:
+                category = "rate_limit_exceeded"
+            elif response.status_code == 400:
+                category = "invalid_payload_schema"
+            elif response.status_code >= 500:
+                category = "upstream_server_error"
+
             logger.warning(
-                f"Gemini request failed: status={response.status_code}, "
-                f"model={self.model}, msg={err_msg}"
+                f"Gemini vision request failed: provider=google, model={self.model}, "
+                f"status={response.status_code}, category={category}, msg={err_msg}"
             )
 
         if response.status_code in (401, 403):
             raise AIAuthenticationError(
-                "Invalid or unauthorized Google AI API key.",
+                f"Invalid or unauthorized Google AI API key ({err_msg}).",
                 user_safe_message="AI service authentication failed. Please contact the administrator."
             )
         if response.status_code == 404:
@@ -175,7 +193,7 @@ class GoogleGeminiProvider(BaseAIProvider):
             )
         if response.status_code >= 500:
             raise AIProviderError(
-                f"Google AI upstream server error (HTTP {response.status_code}).",
+                f"Google AI upstream server error (HTTP {response.status_code}): {err_msg}",
                 user_safe_message="AI provider is temporarily unavailable. Standard reporting is still available."
             )
         if response.status_code != 200:
