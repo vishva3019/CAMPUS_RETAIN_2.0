@@ -172,7 +172,7 @@
                             <th class="p-5">Asset Metadata & Location</th>
                             <th class="p-5">Type / Category</th>
                             <th class="p-5">Verification Coordinates</th>
-                            <th class="p-5">Claim Logs</th>
+                            <th class="p-5">Claim Logs & AI Assistance</th>
                             <th class="p-5">Status</th>
                             <th class="p-5 text-right">System Actions</th>
                         </tr>
@@ -201,15 +201,62 @@
                             <td class="p-5 text-xs text-cyan-400 font-semibold italic max-w-[150px] truncate">"{{ item.secret_detail or 'N/A' }}"</td>
                             <td class="p-5">
                                 {% if item.claims %}
-                                    <div class="max-h-44 overflow-y-auto space-y-2 pr-1 min-w-[240px]">
+                                    <div class="max-h-60 overflow-y-auto space-y-3 pr-1 min-w-[280px]">
                                         {% for claim in item.claims | reverse %}
-                                            <div class="p-3 rounded-2xl border text-slate-300 text-xs {% if loop.first and item.status == 'Pending' %}bg-amber-500/5 border-amber-500/20{% else %}bg-slate-950/40 border-slate-800/80 opacity-50{% endif %}">
-                                                <div class="flex justify-between items-center mb-1">
+                                            <div class="p-3.5 rounded-2xl border text-slate-300 text-xs {% if loop.first and item.status == 'Pending' %}bg-amber-500/5 border-amber-500/30 shadow-sm{% else %}bg-slate-950/40 border-slate-800/80 opacity-60{% endif %} space-y-2">
+                                                <div class="flex justify-between items-center">
                                                     <span class="font-extrabold text-white text-xs">{{ claim.student_id }}</span>
-                                                    <span class="text-[9px] text-slate-500 font-bold">{{ claim.timestamp.strftime('%m-%d %H:%M') }}</span>
+                                                    <span class="text-[9px] text-slate-500 font-bold">{{ claim.timestamp.strftime('%m-%d %H:%M') if claim.timestamp else 'Recent' }}</span>
                                                 </div>
                                                 <span class="text-[10px] text-slate-400 block font-medium">{{ claim.student_email }} | {{ claim.phone }}</span>
-                                                <span class="italic block mt-1.5 text-slate-300 font-medium border-t border-slate-800/50 pt-1.5">"{{ claim.proof_description }}"</span>
+                                                <span class="italic block text-slate-300 font-medium border-t border-slate-800/50 pt-1.5">"{{ claim.proof_description }}"</span>
+
+                                                <!-- Phase 6: AI-Assisted Claim Assessment Card -->
+                                                {% if claim.ai_confidence_score is not none %}
+                                                <div class="mt-2 pt-2 border-t border-slate-800/80 space-y-1.5 bg-slate-900/60 p-2.5 rounded-xl">
+                                                    <div class="flex items-center justify-between">
+                                                        <span class="text-[9px] font-black uppercase tracking-wider text-indigo-300 flex items-center gap-1">
+                                                            <span>🤖</span> AI Verification Assessment
+                                                        </span>
+                                                        {% if claim.ai_confidence_score >= 80 %}
+                                                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">{{ claim.ai_confidence_score }}% (HIGH)</span>
+                                                        {% elif claim.ai_confidence_score >= 60 %}
+                                                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">{{ claim.ai_confidence_score }}% (MEDIUM)</span>
+                                                        {% else %}
+                                                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">{{ claim.ai_confidence_score }}% (LOW)</span>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    {% if claim.ai_matching_factors %}
+                                                    <div class="space-y-0.5">
+                                                        {% for factor in claim.ai_matching_factors %}
+                                                        <div class="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                                                            <span>✓</span> <span>{{ factor }}</span>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+
+                                                    {% if claim.ai_conflicting_factors %}
+                                                    <div class="space-y-0.5">
+                                                        {% for conflict in claim.ai_conflicting_factors %}
+                                                        <div class="text-[10px] text-rose-400 font-medium flex items-center gap-1">
+                                                            <span>⚠</span> <span>{{ conflict }}</span>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+
+                                                    {% if claim.ai_explanation %}
+                                                    <p class="text-[10px] text-slate-400 italic">"{{ claim.ai_explanation }}"</p>
+                                                    {% endif %}
+
+                                                    <div class="flex items-center justify-between pt-1 border-t border-slate-800/40 text-[8px] font-bold tracking-widest text-slate-500 uppercase">
+                                                        <span>Recommendation:</span>
+                                                        <span class="text-indigo-400 font-black">MANUAL ADMIN REVIEW</span>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
                                             </div>
                                         {% endfor %}
                                     </div>
@@ -230,10 +277,10 @@
                                 <div class="flex items-center justify-end gap-2">
                                     {% if item.status == 'Pending' %}
                                     <button type="button" data-id="{{ item.id }}" onclick="handleAction('approve', this, this.getAttribute('data-id'))" class="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:from-indigo-500 hover:to-cyan-500 transition-all shadow-md flex items-center gap-1">
-                                        Approve
+                                        Approve Claim
                                     </button>
                                     <button type="button" data-id="{{ item.id }}" onclick="handleAction('reject', this, this.getAttribute('data-id'))" class="bg-rose-950/50 text-rose-400 border border-rose-500/20 px-4 py-2 rounded-xl text-xs font-bold hover:bg-rose-900/30 transition-all flex items-center gap-1">
-                                        Reject
+                                        Reject Claim
                                     </button>
                                     {% endif %}
                                     <button type="button" data-id="{{ item.id }}" onclick="handleAction('delete', this, this.getAttribute('data-id'))" class="border border-slate-800 bg-slate-950/40 p-2 rounded-xl text-slate-500 hover:text-rose-500 hover:border-rose-500/30 transition duration-200">

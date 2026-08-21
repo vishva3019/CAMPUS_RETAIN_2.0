@@ -14,6 +14,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from ai.vision import analyze_item_image
 from ai.matching import find_potential_matches
 from ai.search import semantic_search
+from ai.claims import analyze_claim
 from ai.config import AIConfig
 
 def utcnow():
@@ -166,6 +167,35 @@ class Claim(db.Model):
     phone = db.Column(db.String(20))
     proof_description = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Phase 6: AI-Assisted Claim Verification Metadata
+    ai_confidence_score = db.Column(db.Integer, nullable=True)
+    ai_confidence_level = db.Column(db.String(20), nullable=True)  # "high", "medium", "low"
+    ai_matching_factors = db.Column(db.JSON, nullable=True)
+    ai_conflicting_factors = db.Column(db.JSON, nullable=True)
+    ai_explanation = db.Column(db.Text, nullable=True)
+    ai_recommendation = db.Column(db.String(50), default="manual_review")
+    ai_analysis_status = db.Column(db.String(20), default="pending")  # "pending", "completed", "failed"
+    ai_analyzed_at = db.Column(db.DateTime, nullable=True)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "item_id": self.item_id,
+            "student_id": self.student_id,
+            "student_email": self.student_email,
+            "phone": self.phone,
+            "proof_description": self.proof_description,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "ai_confidence_score": self.ai_confidence_score,
+            "ai_confidence_level": self.ai_confidence_level or "low",
+            "ai_matching_factors": self.ai_matching_factors or [],
+            "ai_conflicting_factors": self.ai_conflicting_factors or [],
+            "ai_explanation": self.ai_explanation or "",
+            "ai_recommendation": self.ai_recommendation or "manual_review",
+            "ai_analysis_status": self.ai_analysis_status or "pending",
+            "ai_analyzed_at": self.ai_analyzed_at.isoformat() if self.ai_analyzed_at else None,
+        }
 
 
 # ==================================================
@@ -892,6 +922,97 @@ def api_ai_search():
 
 
 
+# ---------- AI CLAIM VERIFICATION HELPER & ENDPOINTS ----------
+
+def analyze_and_persist_claim_ai(claim: Claim, item: Item) -> dict[str, Any] | None:
+    """Runs deterministic & AI claim verification and persists results to database."""
+    try:
+        claim_dict = claim.to_dict()
+        item_dict = item.to_dict()
+
+        res = analyze_claim(claim_dict, item_dict)
+        if res.get("success") and res.get("data"):
+            d = res["data"]
+            claim.ai_confidence_score = d.get("confidence_score")
+            claim.ai_confidence_level = d.get("confidence_level")
+            claim.ai_matching_factors = d.get("matching_factors")
+            claim.ai_conflicting_factors = d.get("conflicting_factors")
+            claim.ai_explanation = d.get("explanation")
+            claim.ai_recommendation = d.get("recommendation", "manual_review")
+            claim.ai_analysis_status = "completed"
+            claim.ai_analyzed_at = utcnow()
+            db.session.commit()
+            return d
+        else:
+            claim.ai_analysis_status = "failed"
+            db.session.commit()
+            return None
+    except Exception as e:
+        app.logger.warning(f"Failed to run AI assessment for claim {claim.id}: {e}")
+        claim.ai_analysis_status = "failed"
+        db.session.commit()
+        return None
+
+
+@app.route("/api/ai/claim-assessment/<int:claim_id>", methods=["GET"])
+@login_required
+def get_claim_assessment(claim_id: int):
+    """Retrieve the AI claim verification assessment."""
+    try:
+        claim = db.session.get(Claim, claim_id)
+        if not claim:
+            return jsonify({"success": False, "error": "Claim not found."}), 404
+
+        item = db.session.get(Item, claim.item_id)
+        if not item:
+            return jsonify({"success": False, "error": "Associated item not found."}), 404
+
+        # If analysis not yet performed, run it now
+        if not claim.ai_analysis_status or claim.ai_analysis_status == "pending":
+            analyze_and_persist_claim_ai(claim, item)
+
+        return jsonify({
+            "success": True,
+            "data": {
+                "claim_id": claim.id,
+                "item_id": item.id,
+                "item_name": item.name,
+                "confidence_score": claim.ai_confidence_score,
+                "confidence_level": claim.ai_confidence_level or "low",
+                "matching_factors": claim.ai_matching_factors or [],
+                "conflicting_factors": claim.ai_conflicting_factors or [],
+                "explanation": claim.ai_explanation or "",
+                "recommendation": claim.ai_recommendation or "manual_review",
+                "status": claim.ai_analysis_status or "completed",
+                "analyzed_at": claim.ai_analyzed_at.isoformat() if claim.ai_analyzed_at else None,
+            },
+            "error": None
+        })
+    except Exception as e:
+        app.logger.exception("Error retrieving claim assessment")
+        return jsonify({"success": False, "error": "Failed to retrieve claim assessment."}), 500
+
+
+@app.route("/api/ai/analyze-claim/<int:claim_id>", methods=["POST"])
+@login_required
+def trigger_claim_analysis(claim_id: int):
+    """Force re-analysis of a claim verification assessment."""
+    try:
+        claim = db.session.get(Claim, claim_id)
+        if not claim:
+            return jsonify({"success": False, "error": "Claim not found."}), 404
+
+        item = db.session.get(Item, claim.item_id)
+        if not item:
+            return jsonify({"success": False, "error": "Associated item not found."}), 404
+
+        res = analyze_and_persist_claim_ai(claim, item)
+        return jsonify({"success": True, "data": res, "error": None})
+    except Exception as e:
+        app.logger.exception("Error re-analyzing claim")
+        return jsonify({"success": False, "error": "Failed to trigger AI claim analysis."}), 500
+
+
 # ---------- ALLOCATE CLAIM QUERY ----------
 
 @app.route("/api/claim", methods=["POST"])
@@ -911,11 +1032,15 @@ def claim_item():
             student_id=data["student_id"],
             student_email=data["student_email"],
             phone=data.get("phone", ""),
-            proof_description=data["proof_description"]
+            proof_description=data["proof_description"],
+            ai_analysis_status="pending"
         )
 
         db.session.add(claim)
         db.session.commit()
+
+        # Run AI claim verification assistance immediately
+        analyze_and_persist_claim_ai(claim, item)
 
         # 1. Notify Student Lifecycle
         send_email(
@@ -934,7 +1059,7 @@ def claim_item():
             f"Campus Retain: Claim request for {item.name} submitted."
         )
 
-        return jsonify({"status": "success"})
+        return jsonify({"status": "success", "claim_id": claim.id})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

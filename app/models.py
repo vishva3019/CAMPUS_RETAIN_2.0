@@ -416,6 +416,16 @@ class Claim(db.Model):
     decided_at = db.Column(db.DateTime, nullable=True)
     decision_remarks = db.Column(db.Text, nullable=True)
 
+    # Phase 6: AI-Assisted Claim Verification Metadata
+    ai_confidence_score = db.Column(db.Integer, nullable=True)
+    ai_confidence_level = db.Column(db.String(20), nullable=True)  # "high", "medium", "low"
+    ai_matching_factors = db.Column(db.JSON, nullable=True)
+    ai_conflicting_factors = db.Column(db.JSON, nullable=True)
+    ai_explanation = db.Column(db.Text, nullable=True)
+    ai_recommendation = db.Column(db.String(50), default="manual_review")
+    ai_analysis_status = db.Column(db.String(20), default="pending")  # "pending", "completed", "failed"
+    ai_analyzed_at = db.Column(db.DateTime, nullable=True)
+
     item = db.relationship("Item", back_populates="claims")
 
     def __repr__(self) -> str:  # pragma: no cover - debugging aid
