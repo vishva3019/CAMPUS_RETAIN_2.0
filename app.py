@@ -695,7 +695,11 @@ def api_ai_analyze_image():
                 "data": None
             }), 400
 
-        app.logger.info(f"AI image analysis requested by {user_email}: payload size={len(image_bytes)} bytes, mime={mime_type}")
+        app.logger.info(
+            f"AI image analysis requested by {user_email}: provider={AIConfig.get_provider()}, "
+            f"model={AIConfig.get_model()}, configured={AIConfig.is_configured()}, "
+            f"timeout={AIConfig.get_timeout()}s, mime={mime_type}, size={len(image_bytes)} bytes"
+        )
         res = analyze_item_image(image_bytes)
 
         if res.get("success") and res.get("data"):

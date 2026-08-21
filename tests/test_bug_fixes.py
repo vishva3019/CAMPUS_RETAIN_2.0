@@ -701,6 +701,33 @@ class TestBug1And2Regression(unittest.TestCase):
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
             )
 
+    # TEST 23: Low-latency thinkingConfig for Gemini 3.6 Flash
+    def test_23_low_latency_thinking_config_gemini_3_6_flash(self):
+        from ai.client import GoogleGeminiProvider
+
+        provider = GoogleGeminiProvider(api_key="secret_test_key", model="gemini-3.6-flash")
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "candidates": [{"content": {"parts": [{"text": json.dumps({"category": "electronics"})}]}}]
+        }
+
+        with patch("requests.post", return_value=mock_resp) as mock_post:
+            provider.analyze_multimodal("analyze item", SAMPLE_PNG_BYTES, "image/png")
+            sent_payload = mock_post.call_args[1]["json"]
+            self.assertIn("thinkingConfig", sent_payload["generationConfig"])
+            self.assertEqual(sent_payload["generationConfig"]["thinkingConfig"]["thinkingLevel"], "LOW")
+
+    # TEST 24: Configurable AI_TIMEOUT environment variable
+    def test_24_configurable_ai_timeout_handling(self):
+        from ai.config import AIConfig
+        from ai.client import get_ai_client
+
+        with patch.dict(os.environ, {"AI_TIMEOUT": "25", "AI_PROVIDER": "google", "AI_API_KEY": "valid_key"}, clear=True):
+            self.assertEqual(AIConfig.get_timeout(), 25)
+            client = get_ai_client(require_configured=True)
+            self.assertEqual(client.timeout, 25)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -12,6 +12,7 @@ import base64
 import json
 import logging
 import re
+import time
 from typing import Any
 
 import requests
@@ -116,6 +117,7 @@ class GoogleGeminiProvider(BaseAIProvider):
 
     def _execute_request(self, payload: dict[str, Any]) -> dict[str, Any]:
         url = self._get_url()
+        start_time = time.time()
         try:
             response = requests.post(
                 url,
@@ -126,14 +128,23 @@ class GoogleGeminiProvider(BaseAIProvider):
                 },
                 timeout=self.timeout,
             )
+            duration = round(time.time() - start_time, 2)
         except requests.exceptions.Timeout as exc:
-            logger.warning(f"Google Gemini request timed out: model={self.model}, timeout={self.timeout}s")
+            duration = round(time.time() - start_time, 2)
+            logger.warning(
+                f"Google Gemini request timed out: provider=google, model={self.model}, "
+                f"timeout={self.timeout}s, duration={duration}s, status=timeout, category=timeout"
+            )
             raise AITimeoutError(
                 f"Google Gemini request timed out after {self.timeout}s.",
                 user_safe_message="AI analysis timed out. Please try again."
             ) from exc
         except requests.exceptions.RequestException as exc:
-            logger.warning(f"Google Gemini network fault: model={self.model}, err={exc}")
+            duration = round(time.time() - start_time, 2)
+            logger.warning(
+                f"Google Gemini network fault: provider=google, model={self.model}, "
+                f"duration={duration}s, err={exc}, category=network_error"
+            )
             raise AIProviderError(
                 f"Network communication fault with Google Gemini: {exc}",
                 user_safe_message="AI provider is temporarily unavailable. Standard reporting is still available."
@@ -146,7 +157,7 @@ class GoogleGeminiProvider(BaseAIProvider):
             category = "success"
             logger.info(
                 f"Gemini vision request success: provider=google, model={self.model}, "
-                f"status=200, category=success"
+                f"duration={duration}s, status=200, category=success"
             )
         else:
             try:
@@ -168,7 +179,7 @@ class GoogleGeminiProvider(BaseAIProvider):
 
             logger.warning(
                 f"Gemini vision request failed: provider=google, model={self.model}, "
-                f"status={response.status_code}, category={category}, msg={err_msg}"
+                f"duration={duration}s, status={response.status_code}, category={category}, msg={err_msg}"
             )
 
         if response.status_code in (401, 403):
@@ -226,11 +237,18 @@ class GoogleGeminiProvider(BaseAIProvider):
     def generate_json(
         self, prompt: str, system_instruction: str | None = None
     ) -> dict[str, Any]:
+        gen_config: dict[str, Any] = {
+            "responseMimeType": "application/json",
+        }
+        clean_model = self.model.strip().lower()
+        if "gemini-3" in clean_model or "gemini-2.5" in clean_model:
+            gen_config["thinkingConfig"] = {
+                "thinkingLevel": "LOW",
+            }
+
         payload: dict[str, Any] = {
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {
-                "responseMimeType": "application/json",
-            },
+            "generationConfig": gen_config,
         }
         if system_instruction:
             payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
@@ -253,6 +271,15 @@ class GoogleGeminiProvider(BaseAIProvider):
         system_instruction: str | None = None,
     ) -> dict[str, Any]:
         b64_data = base64.b64encode(image_bytes).decode("utf-8")
+        gen_config: dict[str, Any] = {
+            "responseMimeType": "application/json",
+        }
+        clean_model = self.model.strip().lower()
+        if "gemini-3" in clean_model or "gemini-2.5" in clean_model:
+            gen_config["thinkingConfig"] = {
+                "thinkingLevel": "LOW",
+            }
+
         payload: dict[str, Any] = {
             "contents": [
                 {
@@ -267,9 +294,7 @@ class GoogleGeminiProvider(BaseAIProvider):
                     ]
                 }
             ],
-            "generationConfig": {
-                "responseMimeType": "application/json",
-            },
+            "generationConfig": gen_config,
         }
         if system_instruction:
             payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
@@ -460,8 +485,9 @@ def get_ai_client(require_configured: bool = False) -> BaseAIProvider:
 
     logger.info(
         f"AI Provider selected: {provider} | "
-        f"AI configuration status: {'configured' if is_conf else 'not configured'} | "
         f"AI model: {model} | "
+        f"AI configuration status: {'configured' if is_conf else 'not configured'} | "
+        f"AI timeout: {timeout}s | "
         f"AI key status: {'configured' if is_conf else 'missing'}"
     )
 
