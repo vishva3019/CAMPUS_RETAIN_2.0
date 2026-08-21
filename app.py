@@ -12,6 +12,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from ai.vision import analyze_item_image
+from ai.matching import find_potential_matches
 from ai.config import AIConfig
 
 def utcnow():
@@ -87,8 +88,10 @@ class Item(db.Model):
     location = db.Column(db.String(150))
     secret_detail = db.Column(db.Text)
     image_data = db.Column(db.Text)
+    item_type = db.Column(db.String(20), default="found", nullable=False)  # 'found' or 'lost'
     status = db.Column(db.String(30), default="Available")
     date_found = db.Column(db.DateTime, default=utcnow)
+    reported_by = db.Column(db.String(120), nullable=True)
 
     # AI Visual & Metadata Fields
     ai_category = db.Column(db.String(50), nullable=True)
@@ -109,6 +112,49 @@ class Item(db.Model):
         lazy=True,
         cascade="all, delete-orphan"
     )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "category": self.category,
+            "location": self.location,
+            "secret_detail": self.secret_detail,
+            "image_data": self.image_data,
+            "item_type": self.item_type or "found",
+            "status": self.status,
+            "date_found": self.date_found.isoformat() if self.date_found else None,
+            "reported_by": self.reported_by,
+            "ai_category": self.ai_category,
+            "ai_primary_color": self.ai_primary_color,
+            "ai_secondary_colors": self.ai_secondary_colors,
+            "ai_brand": self.ai_brand,
+            "ai_model": self.ai_model,
+            "ai_visible_text": self.ai_visible_text,
+            "ai_distinctive_features": self.ai_distinctive_features,
+            "ai_condition": self.ai_condition,
+            "ai_confidence": self.ai_confidence,
+            "ai_analysis_status": self.ai_analysis_status,
+        }
+
+
+class ItemMatch(db.Model):
+    __tablename__ = "item_matches"
+    id = db.Column(db.Integer, primary_key=True)
+    lost_item_id = db.Column(db.Integer, db.ForeignKey("item.id", ondelete="CASCADE"), nullable=False, index=True)
+    found_item_id = db.Column(db.Integer, db.ForeignKey("item.id", ondelete="CASCADE"), nullable=False, index=True)
+    match_score = db.Column(db.Integer, nullable=False)
+    confidence = db.Column(db.String(20), nullable=False)  # "high", "medium", "low"
+    matching_attributes = db.Column(db.JSON, nullable=True)
+    differences = db.Column(db.JSON, nullable=True)
+    explanation = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default="active")  # "active", "dismissed", "confirmed"
+    created_at = db.Column(db.DateTime, default=utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    lost_item = db.relationship("Item", foreign_keys=[lost_item_id], backref=db.backref("matches_as_lost", cascade="all, delete-orphan"))
+    found_item = db.relationship("Item", foreign_keys=[found_item_id], backref=db.backref("matches_as_found", cascade="all, delete-orphan"))
+
 
 
 class Claim(db.Model):
@@ -223,12 +269,40 @@ def admin_required(f):
 @app.route("/")
 @login_required
 def index():
-    items = Item.query.order_by(Item.date_found.desc()).all()
+    user_email = session.get("user_email")
+
+    # Found items in the public inventory
+    items = Item.query.filter(
+        (Item.item_type == "found") | (Item.item_type == None)
+    ).order_by(Item.date_found.desc()).all()
+
+    # User's reported lost items
+    my_lost_items = (
+        Item.query.filter_by(item_type="lost", reported_by=user_email)
+        .order_by(Item.date_found.desc())
+        .all()
+        if user_email
+        else []
+    )
+
+    # Attach match counts for badge display
+    for item in items:
+        item.match_count = ItemMatch.query.filter_by(
+            found_item_id=item.id, status="active"
+        ).count()
+
+    for item in my_lost_items:
+        item.match_count = ItemMatch.query.filter_by(
+            lost_item_id=item.id, status="active"
+        ).count()
+
     return render_template(
         "index.html",
         items=items,
-        user_email=session.get("user_email")
+        my_lost_items=my_lost_items,
+        user_email=user_email,
     )
+
 
 
 # ---------------- USER AUTHENTICATION ----------------
@@ -376,7 +450,13 @@ def admin_login():
 @admin_required
 def admin_dashboard():
     items = Item.query.order_by(Item.date_found.desc()).all()
-    return render_template("admin.html", items=items)
+    matches = (
+        ItemMatch.query.filter_by(status="active")
+        .order_by(ItemMatch.match_score.desc())
+        .all()
+    )
+    return render_template("admin.html", items=items, matches=matches)
+
 
 
 @app.route("/logout")
@@ -435,6 +515,72 @@ def api_analyze_image():
         }), 200
 
 
+def sync_item_matches(target_item):
+    """Executes matching for target_item against opposing inventory and updates ItemMatch table."""
+    try:
+        is_lost = (target_item.item_type == "lost")
+        opposing_type = "found" if is_lost else "lost"
+
+        # Query candidates of opposing type
+        candidates = Item.query.filter(
+            Item.item_type == opposing_type,
+            Item.id != target_item.id,
+            Item.status != "Claimed"
+        ).all()
+
+        if not candidates:
+            return []
+
+        target_dict = target_item.to_dict()
+        candidate_dicts = [c.to_dict() for c in candidates]
+
+        res = find_potential_matches(target_dict, candidate_dicts, top_n=8)
+        matches_data = res.get("data", {}).get("matches", []) if res.get("success") else []
+
+        saved_matches = []
+        for m in matches_data:
+            score = m["match_score"]
+            if score < 40:
+                continue
+
+            cand_id = m["candidate_id"]
+            lost_id = target_item.id if is_lost else cand_id
+            found_id = cand_id if is_lost else target_item.id
+
+            existing = ItemMatch.query.filter_by(
+                lost_item_id=lost_id, found_item_id=found_id
+            ).first()
+
+            if existing:
+                existing.match_score = score
+                existing.confidence = m["confidence"]
+                existing.matching_attributes = m["matching_attributes"]
+                existing.differences = m["differences"]
+                existing.explanation = m["explanation"]
+                existing.updated_at = utcnow()
+            else:
+                match_record = ItemMatch(
+                    lost_item_id=lost_id,
+                    found_item_id=found_id,
+                    match_score=score,
+                    confidence=m["confidence"],
+                    matching_attributes=m["matching_attributes"],
+                    differences=m["differences"],
+                    explanation=m["explanation"],
+                    status="active",
+                    created_at=utcnow(),
+                )
+                db.session.add(match_record)
+
+            saved_matches.append(m)
+
+        db.session.commit()
+        return saved_matches
+    except Exception as e:
+        app.logger.exception(f"Error syncing item matches for item {target_item.id}: {e}")
+        return []
+
+
 # ---------- REPORT DISCOVERY PIPELINE ----------
 
 @app.route("/api/report", methods=["POST"])
@@ -483,6 +629,9 @@ def report_item():
             location=request.form["location"],
             secret_detail=request.form.get("secret_detail", ""),
             image_data=image_b64,
+            item_type="found",
+            status="Available",
+            reported_by=session.get("user_email"),
             ai_category=ai_data.get("category") if ai_data else None,
             ai_primary_color=ai_data.get("primary_color") if ai_data else None,
             ai_secondary_colors=ai_data.get("secondary_colors") if ai_data else None,
@@ -499,6 +648,9 @@ def report_item():
         db.session.add(item)
         db.session.commit()
 
+        # Trigger background match syncing against active lost item reports
+        matches = sync_item_matches(item)
+
         if ADMIN_EMAIL:
             send_email(
                 ADMIN_EMAIL,
@@ -506,11 +658,188 @@ def report_item():
                 f"A new discovered asset entry '{item.name}' has been logged into the registry."
             )
 
-        return jsonify({"status": "success", "item_id": item.id, "ai_status": ai_status})
+        return jsonify({
+            "status": "success",
+            "item_id": item.id,
+            "ai_status": ai_status,
+            "match_count": len(matches)
+        })
 
     except Exception as e:
         app.logger.exception("Error during item reporting")
         return jsonify({"error": "Failed to log item into inventory."}), 500
+
+
+# ---------- REPORT LOST ITEM PIPELINE ----------
+
+@app.route("/api/report-lost", methods=["POST"])
+@login_required
+def report_lost_item():
+    """Submit a lost item report and discover instant potential matches."""
+    try:
+        f = request.files.get("image")
+        image_b64 = None
+        raw_bytes = None
+
+        if f and f.filename:
+            raw_bytes = f.read()
+            image_b64 = (
+                "data:" + (f.content_type or "image/jpeg") +
+                ";base64," +
+                base64.b64encode(raw_bytes).decode()
+            )
+
+        ai_data = None
+        raw_ai_meta = request.form.get("ai_metadata")
+        if raw_ai_meta:
+            try:
+                ai_data = json.loads(raw_ai_meta)
+            except Exception:
+                ai_data = None
+
+        ai_status = "not_applicable"
+        if ai_data:
+            ai_status = "completed"
+        elif raw_bytes:
+            try:
+                ai_res = analyze_item_image(raw_bytes)
+                if ai_res.get("success") and ai_res.get("data"):
+                    ai_data = ai_res["data"]
+                    ai_status = "completed"
+                else:
+                    ai_status = "failed"
+            except Exception:
+                ai_status = "failed"
+
+        item = Item(
+            name=request.form["name"],
+            category=request.form.get("category", "Other"),
+            location=request.form["location"],
+            secret_detail=request.form.get("secret_detail", ""),
+            image_data=image_b64,
+            item_type="lost",
+            status="Active",
+            reported_by=session.get("user_email"),
+            ai_category=ai_data.get("category") if ai_data else None,
+            ai_primary_color=ai_data.get("primary_color") if ai_data else None,
+            ai_secondary_colors=ai_data.get("secondary_colors") if ai_data else None,
+            ai_brand=ai_data.get("brand") if ai_data else None,
+            ai_model=ai_data.get("model") if ai_data else None,
+            ai_visible_text=ai_data.get("visible_text") if ai_data else None,
+            ai_distinctive_features=ai_data.get("distinctive_features") if ai_data else None,
+            ai_condition=ai_data.get("condition") if ai_data else None,
+            ai_confidence=ai_data.get("confidence") if ai_data else None,
+            ai_analysis_status=ai_status,
+            ai_analyzed_at=utcnow() if ai_data else None
+        )
+
+        db.session.add(item)
+        db.session.commit()
+
+        # Run instant AI match discovery against existing found items
+        matches = sync_item_matches(item)
+
+        return jsonify({
+            "status": "success",
+            "item_id": item.id,
+            "ai_status": ai_status,
+            "match_count": len(matches),
+            "matches": matches
+        })
+
+    except Exception as e:
+        app.logger.exception("Error during lost item reporting")
+        return jsonify({"error": "Failed to register lost item report."}), 500
+
+
+# ---------- AI MATCH RETRIEVAL & ENGINE TRIGGER ----------
+
+@app.route("/api/ai/matches/<int:item_id>", methods=["GET"])
+@login_required
+def get_item_matches(item_id: int):
+    """Retrieve potential AI matches for a lost or found item."""
+    try:
+        item = db.session.get(Item, item_id)
+        if not item:
+            return jsonify({"success": False, "error": "Item not found."}), 404
+
+        is_lost = (item.item_type == "lost")
+
+        # Query existing match records
+        if is_lost:
+            match_records = ItemMatch.query.filter_by(
+                lost_item_id=item.id, status="active"
+            ).order_by(ItemMatch.match_score.desc()).all()
+        else:
+            match_records = ItemMatch.query.filter_by(
+                found_item_id=item.id, status="active"
+            ).order_by(ItemMatch.match_score.desc()).all()
+
+        # If no cached match records, compute on the fly
+        if not match_records:
+            sync_item_matches(item)
+            if is_lost:
+                match_records = ItemMatch.query.filter_by(
+                    lost_item_id=item.id, status="active"
+                ).order_by(ItemMatch.match_score.desc()).all()
+            else:
+                match_records = ItemMatch.query.filter_by(
+                    found_item_id=item.id, status="active"
+                ).order_by(ItemMatch.match_score.desc()).all()
+
+        results = []
+        for m in match_records:
+            opp_item = m.found_item if is_lost else m.lost_item
+            if not opp_item:
+                continue
+            results.append({
+                "match_id": m.id,
+                "matched_item_id": opp_item.id,
+                "matched_item_name": opp_item.name,
+                "matched_item_category": opp_item.category,
+                "matched_item_location": opp_item.location,
+                "matched_item_image": opp_item.image_data,
+                "matched_item_status": opp_item.status,
+                "matched_item_type": opp_item.item_type,
+                "match_score": m.match_score,
+                "confidence": m.confidence,
+                "matching_attributes": m.matching_attributes or [],
+                "differences": m.differences or [],
+                "explanation": m.explanation or "",
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            })
+
+        return jsonify({
+            "success": True,
+            "data": {
+                "item_id": item.id,
+                "item_name": item.name,
+                "item_type": item.item_type or "found",
+                "matches": results,
+            },
+            "error": None
+        })
+
+    except Exception as e:
+        app.logger.exception(f"Error fetching matches for item {item_id}")
+        return jsonify({"success": False, "error": "AI matching service is temporarily unavailable."}), 200
+
+
+@app.route("/api/ai/match-item/<int:item_id>", methods=["POST"])
+@login_required
+def trigger_item_match(item_id: int):
+    """Force re-evaluating matches for an item."""
+    try:
+        item = db.session.get(Item, item_id)
+        if not item:
+            return jsonify({"success": False, "error": "Item not found."}), 404
+
+        matches = sync_item_matches(item)
+        return jsonify({"success": True, "data": {"match_count": len(matches), "matches": matches}, "error": None})
+    except Exception as e:
+        app.logger.exception("Error triggering matching")
+        return jsonify({"success": False, "error": "Failed to run AI matching engine."}), 500
+
 
 
 

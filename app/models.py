@@ -270,6 +270,7 @@ class Item(db.Model):
     thumbnail_url = db.Column(db.Text, nullable=True)
     image_public_id = db.Column(db.String(255), nullable=True)
 
+    item_type = db.Column(db.String(20), nullable=False, default="found", index=True)
     status = db.Column(
         db.String(30), nullable=False, default=ItemStatus.AVAILABLE, index=True
     )
@@ -313,8 +314,75 @@ class Item(db.Model):
             .first()
         )
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "category": self.category,
+            "location": self.location,
+            "secret_detail": self.secret_detail,
+            "image_url": self.image_url,
+            "item_type": self.item_type or "found",
+            "status": self.status,
+            "date_found": self.date_found.isoformat() if self.date_found else None,
+            "reported_by": self.reported_by,
+            "ai_category": self.ai_category,
+            "ai_primary_color": self.ai_primary_color,
+            "ai_secondary_colors": self.ai_secondary_colors,
+            "ai_brand": self.ai_brand,
+            "ai_model": self.ai_model,
+            "ai_visible_text": self.ai_visible_text,
+            "ai_distinctive_features": self.ai_distinctive_features,
+            "ai_condition": self.ai_condition,
+            "ai_confidence": self.ai_confidence,
+            "ai_analysis_status": self.ai_analysis_status,
+        }
+
     def __repr__(self) -> str:  # pragma: no cover - debugging aid
         return f"<Item {self.id} {self.name!r} {self.status}>"
+
+
+class ItemMatch(db.Model):
+    """A potential AI match discovered between a lost item and a found item."""
+
+    __tablename__ = "item_matches"
+
+    id = db.Column(db.Integer, primary_key=True)
+    lost_item_id = db.Column(
+        db.Integer,
+        db.ForeignKey("items.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    found_item_id = db.Column(
+        db.Integer,
+        db.ForeignKey("items.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    match_score = db.Column(db.Integer, nullable=False)
+    confidence = db.Column(db.String(20), nullable=False)
+    matching_attributes = db.Column(db.JSON, nullable=True)
+    differences = db.Column(db.JSON, nullable=True)
+    explanation = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default="active", nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, index=True, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    lost_item = db.relationship(
+        "Item",
+        foreign_keys=[lost_item_id],
+        backref=db.backref("matches_as_lost", cascade="all, delete-orphan"),
+    )
+    found_item = db.relationship(
+        "Item",
+        foreign_keys=[found_item_id],
+        backref=db.backref("matches_as_found", cascade="all, delete-orphan"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<ItemMatch lost={self.lost_item_id} found={self.found_item_id} score={self.match_score}>"
+
 
 
 class Claim(db.Model):
