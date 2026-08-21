@@ -1,84 +1,165 @@
-# Campus Retain AI 🎒🤖
+# 🎓 Campus Retain
 
-> **Find what you lost, faster with AI.**  
-> *Official Entry for the Razorpay AI Builder Internship 2026 / Buildathon*
+> **AI-Powered Lost & Found Platform for University Campuses**
 
-**Live Deployment:** [https://campus-retain-2-0.vercel.app/](https://campus-retain-2-0.vercel.app/)  
-**Website:** [https://campusretain.in](https://campusretain.in)
+Campus Retain is a modern, AI-powered digital lost-and-found platform designed to help students report, discover, match, and recover lost belongings within a university campus.
 
----
-
-## 📌 Problem Statement
-
-Every semester, thousands of personal assets — laptops, smartphones, water bottles, calculators, ID cards, and keys — are misplaced across university campuses. Traditional lost-and-found methods rely on manual bulletin boards or static spreadsheets:
-- **Keyword Mismatch**: A student searching for *"navy blue school bag"* fails to find a post titled *"blue backpack"*.
-- **Delayed Recovery**: Found items sit in custody for weeks because students don't know who has them or where to look.
-- **Verification Fraud & Overhead**: Administrators struggle to verify whether a claimant is the true owner without exposing confidential identifiers.
+The platform combines **Google Gemini multimodal AI**, intelligent search, automated lost-and-found matching, AI-assisted claim verification, email/SMS notifications, and an administrative control center into one unified system.
 
 ---
 
-## 💡 The Solution: Campus Retain AI
+## 🚀 Overview
 
-**Campus Retain AI** transforms the campus lost-and-found workflow into an intelligent, multimodal ecosystem that pairs lost reports with discovered items in real time, understands conversational human search, and assists administrators with fraud-resistant claim verification.
+Losing personal belongings on campus can be frustrating, while finding an item without knowing its owner can be equally difficult.
 
----
+Campus Retain provides a centralized platform where students can:
 
-## 🤖 Core AI Capabilities
+- 📱 Report lost belongings
+- 📸 Report found belongings using photographs
+- 🤖 Automatically analyze item images using AI
+- 🔎 Search items using natural language
+- 🧠 Discover AI-generated lost/found matches
+- 📋 Submit ownership claims
+- 🔐 Verify ownership using private proof
+- 📧 Receive email notifications
+- 📲 Receive SMS notifications
+- 💬 Interact with an AI assistant
+- 👨‍💼 Allow administrators to review and manage claims
 
-### 1. Multimodal AI Image Analysis
-When a student or staff member uploads a photo of a found or lost item:
-- **Automatic Attribute Extraction**: Identifies category, primary & secondary colors, brand, model, visible text, and distinctive visual characteristics (e.g. *"red zipper on front pocket"*, *"sticker on left bezel"*).
-- **Form Auto-Fill**: Auto-populates title and category dropdowns, reducing manual data entry friction.
-- **Confidence Scoring**: Assigns an objective AI confidence rating to the extracted metadata.
-
-### 2. Multi-Factor Lost & Found Matching Engine
-When a lost item is reported, the matching engine immediately cross-references all active found reports (and vice versa):
-- **Weighted Multi-Factor Scoring**: Category (25%), Color & Color Families (20%), Brand/Model (15%), Keyword Overlap (20%), Distinctive Visual Features (10%), Location Proximity (5%), and Date Proximity (5%).
-- **Semantic Reasoning & Evidence**: Provides clear, human-understandable matching reasons (e.g., `✓ Same category (Backpack)`, `✓ Same brand (Nike)`, `✓ Matching feature (Red zipper)`) and notes discrepancies.
-- **Confidence Hierarchy**: Color-coded badges for *Likely Match* (80–100%), *Potential Match* (60–79%), and *Possible Match* (40–59%).
-
-### 3. Natural Language Search
-Allows students to describe their lost property using natural conversational language:
-- **Semantic Query Understanding**: Translates unstructured sentences (*"I lost my black Nike backpack near the library yesterday"*) into structured entity parameters without guessing unstated fields.
-- **Dynamic Relevance Ranking**: Ranks real database inventory by relevance percentage (*94% Relevant - High Relevance*) and displays match justifications.
-- **Interactive UI Pills**: 1-click sample search queries for immediate discovery.
-
-### 4. AI-Assisted Claim Verification
-Assists campus administrators in evaluating ownership claims without replacing human authority:
-- **Privacy-Preserving Proof Assessment**: Compares claimant proof descriptions against item metadata and hidden secret details server-side without leaking secrets.
-- **Strict Anti-Hallucination Guardrail**: The AI recommendation is strictly locked to `MANUAL ADMIN REVIEW` — the AI never automatically approves or rejects claims.
-- **Evidence Breakdown**: Displays matching factors, conflicting factors, and a neutral summary in the administrator dashboard.
-
-### 5. Campus Retain AI Conversational Assistant
-A floating chat assistant that guides students across the platform:
-- **Grounded Inventory Search**: Responds only with real database records; strictly refuses to fabricate non-existent items.
-- **Workflow Guidance**: Explains claiming steps, reporting found items (with physical handover to the DOSS office), and tracking lost reports.
-- **Anti-Theft Security Shield**: Politely refuses to disclose secret verification details or administrator credentials.
+The goal is to make campus recovery **faster, safer, smarter, and easier**.
 
 ---
 
-## 👨‍🎓 Student Portal & 👨‍💼 Admin Operations
+## ✨ Key Features
 
-### 👨‍🎓 Student Features
-- **Secure Domain Authentication:** Identity protection strictly matching campus organization emails (`@ced.alliance.edu.in`).
-- **Multimodal Discovery Registry:** Instantly report found items with AI visual attribute extraction, category mappings, and location coordinates.
-- **Instant Match Discovery:** Report lost items to automatically trigger matching against all active found records.
-- **Dynamic NL Search & Filters:** Type natural conversational queries or filter by category and location in real-time.
-- **Possession Claim Pipeline:** Submit unique identifier attributes (proof description) that only the true owner would know.
-- **Password Recovery:** Secure email-based OTP (One-Time Password) workflow to reset account credentials if forgotten.
+### 🤖 AI-Powered Image Analysis
 
-### 👨‍💼 Administration Features
-- **Cyber-Dark Operations Terminal:** Premium dark-themed administrative dashboard providing live metrics (Total Records, AI Potential Matches, Pending Reviews, Successfully Claimed).
-- **Dual Decision Engine:**
-  - **Approve Claim:** Marks an asset as securely handed over and locks its public status to `Claimed`.
-  - **Reject Claim:** Prompts the admin for custom rationale remarks, instantly alerts the student, and returns the asset to `Available` status for public discovery.
-- **AI Verification Cards:** Inspect AI confidence ratings, matching factor breakdowns, and conflicting attributes for each pending claim.
-- **Claim History Audit Logs:** A clean chronological feed showing past claim attempts, historical proof inputs, and user coordinates for every item.
-- **Resolution Cleanup:** Permanent item deletion capabilities to manage active warehouse inventory.
+Campus Retain uses Google Gemini multimodal AI to analyze uploaded item photographs.
 
-### 🔔 Integrated Notifications
-- **Email Dispatch Pipeline:** Automated secure SMTP notifications triggering on Account Registration, Claim Submissions, Approvals, and Rejections (including admin remarks).
-- **Cellular SMS alerts:** Twilio API integration providing immediate SMS alerts straight to the student's phone.
+The AI can identify:
+
+- Item category
+- Color
+- Brand
+- Visible text
+- Distinctive characteristics
+- Other useful visual attributes
+
+The system uses the extracted information to help students create more accurate reports.
+
+---
+
+### 🔎 AI Natural Language Search
+
+Students can search using normal conversational language instead of relying only on keywords.
+
+Examples:
+
+```text
+Black Nike backpack near the library
+```
+
+```text
+Blue water bottle found near cafeteria
+```
+
+```text
+White Apple charger
+```
+
+The AI extracts relevant entities such as:
+
+- Category
+- Color
+- Brand
+- Location
+- Keywords
+
+and uses them to improve search results.
+
+---
+
+### 🧠 AI Lost & Found Matching
+
+Campus Retain continuously compares lost and found item information.
+
+The matching engine evaluates attributes such as:
+
+- Category
+- Color
+- Brand
+- Location
+- Description
+- Visual characteristics
+
+Potential matches can then be reviewed through the platform.
+
+---
+
+### 💬 AI Assistant
+
+The integrated AI assistant helps students with questions related to the lost-and-found system.
+
+Students can ask questions such as:
+
+```text
+How do I report a lost item?
+```
+
+```text
+How can I claim an item?
+```
+
+```text
+What information should I provide to prove ownership?
+```
+
+---
+
+### 📋 Claim Management
+
+Students can submit claims for found belongings.
+
+Claims contain ownership proof and are reviewed by administrators before the item is released.
+
+The system ensures that:
+
+- Claims are associated with the authenticated student
+- Student email cannot be spoofed through the request body
+- Claim records are preserved even if notifications fail
+- Administrators can approve or reject claims
+
+---
+
+### 📧 Email Notifications
+
+Email notifications can be used for:
+
+- Account registration
+- Claim submission
+- Claim approval
+- Claim rejection
+- Administrative remarks
+
+---
+
+### 📲 SMS Notifications
+
+Twilio integration provides optional SMS notifications for important claim and recovery events.
+
+---
+
+### 👨‍💼 Admin Control Center
+
+Administrators have access to a dedicated management interface for:
+
+- Viewing reported items
+- Reviewing claims
+- Approving claims
+- Rejecting claims
+- Deleting items
+- Reviewing AI match information
+- Managing lost-and-found records
 
 ---
 
@@ -86,47 +167,336 @@ A floating chat assistant that guides students across the platform:
 
 ```mermaid
 flowchart TD
-    subgraph Client Layer
-        A[Student Web UI] -->|Photo Upload| B[Multimodal Vision Endpoint]
-        A -->|Natural Language Query| C[Semantic Search Endpoint]
-        A -->|Chat Message| D[AI Assistant Endpoint]
-        A -->|Submit Claim| E[Claim Endpoint]
-        F[Admin Control Terminal] -->|Review Verification| G[Admin Approval/Rejection]
+
+    subgraph ClientLayer["Client Layer"]
+        A["Student Web UI"] -->|Photo Upload| B["Multimodal Vision Endpoint"]
+        A -->|Natural Language Query| C["Semantic Search Endpoint"]
+        A -->|Chat Message| D["AI Assistant Endpoint"]
+        A -->|Submit Claim| E["Claim Endpoint"]
+        F["Admin Control Terminal"] -->|Review Verification| G["Admin Approval/Rejection"]
     end
 
-    subgraph Backend Core [Flask 3 + SQLAlchemy 2]
-        B --> H[ai/vision.py]
-        C --> I[ai/search.py]
-        D --> J[ai/assistant.py]
-        E --> K[ai/claims.py]
-        
-        H --> L[AI Client REST Gateway]
-        I --> M[Matching & Scoring Engine]
-        K --> M
-        J --> I
+    subgraph BackendCore["Backend Core - Flask 3 + SQLAlchemy 2"]
+        B --> H["ai/vision.py"]
+        C --> I["ai/search.py"]
+        D --> J["ai/assistant.py"]
+        E --> K["Claim Processing"]
+        G --> L["Verification & Approval"]
+
+        H --> M["Google Gemini Vision"]
+        I --> N["Semantic Matching"]
+        J --> O["AI Assistant"]
     end
 
-    subgraph External Services & Storage
-        L -->|REST| N[Google Gemini 1.5 Flash / OpenAI]
-        H -->|Storage| O[Cloudinary Image CDN]
-        Backend Core --> P[(PostgreSQL Neon DB / SQLite)]
-        E -->|Alerts| Q[SMTP Email & Twilio SMS]
+    subgraph DataLayer["Data Layer"]
+        H --> P[("Neon PostgreSQL")]
+        I --> P
+        J --> P
+        K --> P
+        L --> P
     end
+
+    subgraph ExternalServices["External Services"]
+        Q["SMTP Email Service"]
+        R["Twilio SMS API"]
+        M --> S["Google Generative Language API"]
+    end
+
+    K --> Q
+    L --> Q
+    K --> R
 ```
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠️ Tech Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| **Frontend** | HTML5, Tailwind CSS 4, Vanilla JS, Animate.css | Ultra-responsive, glassmorphism UI |
-| **Backend** | Python 3.11+, Flask 3.1.3, Werkzeug 3.1.8 | Modular REST API & web server |
-| **ORM & DB** | SQLAlchemy 2.0, Flask-SQLAlchemy, PostgreSQL (Neon) / SQLite | High-performance relational database |
-| **AI Layer** | Google Gemini 1.5 Flash REST API, OpenAI API | Vision, Semantic Reasoning, Search, Chat |
-| **Storage & Media** | Cloudinary CDN, Base64 Fallback | Secure image hosting & CDN delivery |
-| **Messaging** | SMTP (TLS), Twilio SMS | Automated student & admin notifications |
-| **Hosting** | Vercel Serverless WSGI | Global edge deployment |
+### Backend
+
+- Python
+- Flask 3
+- Flask-SQLAlchemy
+- SQLAlchemy 2
+- PostgreSQL
+- Neon PostgreSQL
+
+### Frontend
+
+- HTML5
+- CSS3
+- JavaScript
+- Tailwind CSS utilities
+- Responsive UI
+- Vanilla JavaScript interactions
+
+### Artificial Intelligence
+
+- Google Gemini
+- Gemini multimodal vision
+- AI natural language search
+- AI lost/found matching
+- AI claim verification
+- AI assistant
+
+### External Services
+
+- Google Generative Language API
+- SMTP Email
+- Twilio SMS
+- Vercel
+
+---
+
+## 🧠 AI Architecture
+
+Campus Retain uses a provider-isolated AI architecture.
+
+```text
+AI Provider
+    │
+    ├── Google Gemini
+    │      └── Multimodal Vision
+    │
+    ├── OpenAI
+    │      └── Provider-supported AI operations
+    │
+    └── Mock/Test Provider
+           └── Offline Testing
+```
+
+Provider selection is controlled using:
+
+```env
+AI_PROVIDER=google
+```
+
+Google Gemini credentials are resolved using provider-specific environment variables.
+
+```env
+AI_API_KEY=your_google_ai_api_key
+```
+
+Alternative supported Google key names include:
+
+```env
+GEMINI_API_KEY=your_google_ai_api_key
+```
+
+```env
+GOOGLE_API_KEY=your_google_ai_api_key
+```
+
+---
+
+## 👁️ Gemini Multimodal Vision
+
+The production vision pipeline uses the Gemini Flash model configured through:
+
+```env
+AI_MODEL=gemini-3.6-flash
+```
+
+The model name can be overridden through the environment.
+
+The image analysis request uses Google's REST API with:
+
+- `inlineData`
+- `mimeType`
+- `responseMimeType`
+- `systemInstruction`
+- `thinkingConfig`
+- Header-based API authentication
+
+The API key is sent through:
+
+```text
+x-goog-api-key
+```
+
+and is never placed in the URL.
+
+---
+
+## ⚡ AI Vision Reliability
+
+The vision system includes safeguards for production reliability.
+
+### Request Timeout
+
+```env
+AI_TIMEOUT=15
+```
+
+### Transient Retry
+
+The Gemini provider performs a maximum of one retry for transient:
+
+- HTTP 429
+- HTTP 503
+
+errors.
+
+Deterministic errors such as:
+
+- HTTP 400
+- HTTP 401
+- HTTP 403
+- HTTP 404
+
+are not unnecessarily retried.
+
+---
+
+## 🔐 Security
+
+Security is a core part of Campus Retain.
+
+### Provider Key Isolation
+
+Google Gemini never receives OpenAI credentials.
+
+OpenAI never receives Google/Gemini credentials.
+
+---
+
+### Session-Based Claim Identity
+
+Claim submissions use the authenticated session identity rather than trusting a user-provided email address.
+
+This prevents email spoofing through client-side request manipulation.
+
+---
+
+### API Key Protection
+
+API keys:
+
+- Are stored in environment variables
+- Are never sent to browser JavaScript
+- Are never included in URLs
+- Are never exposed in API responses
+- Are masked in diagnostics
+
+---
+
+### Safe Error Handling
+
+Internal exceptions and credentials are not exposed to students.
+
+User-facing errors are converted into safe messages.
+
+---
+
+## 🗃️ Database
+
+Campus Retain uses PostgreSQL for persistent application data.
+
+The production deployment uses:
+
+```text
+Neon PostgreSQL
+```
+
+Core records include:
+
+- Students
+- Items
+- Lost reports
+- Claims
+- AI matches
+- Verification information
+
+The application also safely handles dependent records when deleting an item.
+
+---
+
+## ⚡ Performance Optimizations
+
+The application includes several backend performance improvements.
+
+### Batch Match Queries
+
+Instead of executing a database query for every item, match counts are retrieved using grouped aggregation queries.
+
+This reduces unnecessary database round trips.
+
+### Eager Loading
+
+The admin dashboard uses eager loading for related claims and match records.
+
+This helps prevent N+1 query patterns.
+
+### Result
+
+Pages such as:
+
+- Homepage
+- Student Dashboard
+- Admin Dashboard
+
+require significantly fewer database queries than the original implementation.
+
+---
+
+## 📱 Responsive Frontend
+
+Campus Retain is designed for:
+
+- 📱 Mobile
+- 📱 Large mobile screens
+- 📟 Tablets
+- 💻 Laptops
+- 🖥️ Desktop displays
+
+The interface includes:
+
+- Responsive navigation
+- Animated cards
+- Modal interactions
+- AI assistant drawer
+- Smooth transitions
+- Accessible focus states
+- Reduced-motion support
+
+---
+
+## 🧩 Main Application Routes
+
+### Student
+
+```text
+/
+ /login
+ /dashboard
+ /forgot-password
+ /reset-password
+```
+
+### AI APIs
+
+```text
+POST /api/ai/chat
+POST /api/ai/search
+POST /api/ai/analyze-image
+GET  /api/ai/matches/<id>
+```
+
+### Claim & Reporting APIs
+
+```text
+POST /api/claim
+POST /api/report
+POST /api/report-lost
+```
+
+### Administration
+
+```text
+/admin_login
+/admin
+POST /api/admin/*
+POST /api/item/delete/<id>
+```
 
 ---
 
@@ -134,134 +504,288 @@ flowchart TD
 
 ```text
 CAMPUS_RETAIN_2.0/
-├── ai/                         # Modular AI Layer
-│   ├── __init__.py
-│   ├── assistant.py            # Conversational AI Assistant & Intent Router
-│   ├── claims.py               # AI Claim Verification Assistance
-│   ├── client.py               # Unified AI Client (Google Gemini / OpenAI / Mock)
-│   ├── config.py               # Central AI Configuration & Safety Settings
-│   ├── exceptions.py           # Typed AI Exception Hierarchy
-│   ├── matching.py             # Multi-Factor Matching Engine & Scoring
-│   ├── search.py               # Natural Language Search & Query Understanding
-│   └── vision.py               # Multimodal Image Analysis & Metadata Extraction
 │
-├── app.py                      # Flask Application Entrypoint & API Routes
-├── app/                        # Application Package
-│   ├── __init__.py
-│   └── models.py               # Declarative SQLAlchemy Database Models
+├── app.py
+├── requirements.txt
+├── vercel.json
+├── README.md
 │
-├── templates/                  # Jinja2 Templates
-│   ├── index.html              # Public Catalog, AI Search, Lost Reporting, AI Chat
-│   ├── dashboard.html          # Internal Authenticated Student Dashboard
-│   ├── admin.html              # Admin Dashboard, Discovered Pairs, Claim Logs
-│   ├── login.html              # Student & Organization Login
-│   ├── admin_login.html        # Secure Admin Gateway
-│   ├── reset_password.html     # OTP Password Reset
-│   └── maintenance.html        # Clean Maintenance Page
+├── ai/
+│   ├── client.py
+│   ├── config.py
+│   ├── exceptions.py
+│   ├── vision.py
+│   ├── search.py
+│   ├── matching.py
+│   ├── claims.py
+│   └── assistant.py
 │
-├── tests/                      # Comprehensive Unit & Integration Test Suite
-│   ├── test_ai_architecture.py # AI Client & Config tests
-│   ├── test_ai_vision.py       # Vision & image analysis tests
-│   ├── test_ai_matching.py     # Deterministic & AI matching engine tests
-│   ├── test_ai_search.py       # Natural language search tests
-│   ├── test_ai_claims.py       # Claim verification & privacy tests
-│   ├── test_ai_assistant.py    # Assistant intent & hallucination tests
-│   └── test_e2e_workflow.py    # Full end-to-end user lifecycle tests
+├── app/
+│   └── blueprints/
+│       └── api.py
 │
-├── requirements.txt            # Pinned Production Dependencies
-├── vercel.json                 # Vercel Serverless Deployment Manifest
-├── .env.example                # Sample Environment Variables Reference
-└── README.md                   # Project Documentation
+├── templates/
+│   ├── index.html
+│   ├── dashboard.html
+│   ├── login.html
+│   ├── reset_password.html
+│   ├── admin.html
+│   ├── admin_login.html
+│   └── maintenance.html
+│
+├── static/
+│   └── ...
+│
+└── instance/
+    └── ...
 ```
 
 ---
 
-## ⚙️ Installation & Local Setup
+## ⚙️ Local Installation
 
-### 1. Clone the Repository
+### 1. Clone the repository
+
 ```bash
 git clone https://github.com/vishva3019/CAMPUS_RETAIN_2.0.git
+```
+
+### 2. Enter the project directory
+
+```bash
 cd CAMPUS_RETAIN_2.0
 ```
 
-### 2. Create and Activate Virtual Environment
-```bash
-# macOS / Linux
-python3 -m venv .venv
-source .venv/bin/activate
+### 3. Create a virtual environment
 
-# Windows
+```bash
 python -m venv .venv
+```
+
+### 4. Activate the environment
+
+macOS / Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+Windows:
+
+```bash
 .venv\Scripts\activate
 ```
 
-### 3. Install Dependencies
+### 5. Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure Environment Variables
-Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
-```
+---
 
-Fill in your configuration keys in `.env`:
+## 🔑 Environment Configuration
+
+Create a `.env` file for local development.
+
+Example:
+
 ```env
-SECRET_KEY=your-random-secret-key
-DATABASE_URL=sqlite:///campusretain.db
-
 AI_PROVIDER=google
-AI_API_KEY=your-google-gemini-api-key
 AI_MODEL=gemini-3.6-flash
+AI_API_KEY=your_google_ai_api_key
+AI_TIMEOUT=15
 
-ADMIN_EMAIL=admin@ced.alliance.edu.in
-ADMIN_PASSWORD=your_admin_password
+DATABASE_URL=your_postgresql_database_url
+
+SECRET_KEY=your_secret_key
+
+SMTP_SERVER=your_smtp_server
+SMTP_PORT=587
+SMTP_USERNAME=your_email
+SMTP_PASSWORD=your_email_password
+
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=your_twilio_phone_number
 ```
 
-### 5. Run the Application
-```bash
-python app.py
-```
-Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
+**Never commit `.env` or real credentials to GitHub.**
 
 ---
 
-## 🧪 Running Tests
+## ▶️ Running Locally
 
-Execute the complete test suite across all AI modules and end-to-end user journeys:
+Start the Flask application:
+
+```bash
+python app.py
+```
+
+Then open:
+
+```text
+http://127.0.0.1:5000
+```
+
+---
+
+## ☁️ Vercel Deployment
+
+Campus Retain can be deployed using Vercel.
+
+Configure the required Production environment variables in the Vercel project settings.
+
+At minimum:
+
+```env
+AI_PROVIDER=google
+AI_MODEL=gemini-3.6-flash
+AI_API_KEY=your_google_ai_api_key
+AI_TIMEOUT=15
+```
+
+Additional database, email, SMS, and application secret variables should also be configured according to the deployment environment.
+
+After changing environment variables, redeploy the application so the new values are available to the production runtime.
+
+---
+
+## 🧪 Testing
+
+If the test suite is included in the repository, run:
+
 ```bash
 python -m unittest discover tests
 ```
 
----
+The project includes regression coverage for areas such as:
 
-## 🔒 Privacy, Safety & Security Safeguards
-
-1. **Zero Secret Leakage**: Raw secret identifying details (`secret_detail`) are never exposed in public search responses, browser consoles, assistant chat, or URLs.
-2. **Server-Side Secret Verification**: Exact secret comparisons occur server-side; the AI model is never asked to "guess" secret answers.
-3. **No Automated Decisions**: The AI operates exclusively in an advisory capacity. Claim approval or rejection is strictly reserved for human administrators.
-4. **Offline Deterministic Fallbacks**: If the AI provider is unavailable, unconfigured, or rate-limited, all features (search, matching, claim scoring, assistant) gracefully fall back to local deterministic algorithms with zero downtime.
-5. **Role-Based Access Control**: Sensitive administrative endpoints (`/api/admin/*`) require authenticated administrator sessions.
-
----
-
-## 🌐 Production Deployment
-
-The application is configured for deployment on **Vercel** serverless infrastructure using PostgreSQL (Neon DB).
-
-1. Push your repository to GitHub.
-2. Import the project into Vercel.
-3. Set environment variables (`SECRET_KEY`, `DATABASE_URL`, `AI_PROVIDER`, `AI_API_KEY`, `ADMIN_EMAIL`, etc.).
-4. Deploy!
+- AI provider isolation
+- Gemini vision payloads
+- Image upload isolation
+- Claim security
+- Email/SMS failure handling
+- Item deletion
+- Authorization
+- Transaction rollback
+- Performance-related query behavior
+- AI transient retry handling
 
 ---
 
-## 👨‍💻 Author & Acknowledgments
+## 🛡️ Data Safety
 
-**VISHVANTH**  
-*B.Tech Student & Developer | Alliance University*  
-GitHub: [https://github.com/vishva3019](https://github.com/vishva3019)  
-Live Application: [https://campus-retain-2-0.vercel.app/](https://campus-retain-2-0.vercel.app/)
+Campus Retain is designed to avoid destructive database operations during normal application deployment.
 
-*Developed for the Razorpay AI Builder Internship 2026 / Buildathon.*
+Application-level deletion carefully handles dependent:
+
+- Claims
+- AI match records
+- Items
+
+before committing the deletion.
+
+---
+
+## 🌟 User Workflow
+
+```text
+Student
+   │
+   ▼
+Report Lost / Found Item
+   │
+   ▼
+AI Image Analysis
+   │
+   ▼
+Extract Item Attributes
+   │
+   ▼
+Add Item to Campus Catalog
+   │
+   ▼
+AI Matching Engine
+   │
+   ├───────────────┐
+   ▼               ▼
+Potential Match   Student Search
+   │               │
+   └───────┬───────┘
+           ▼
+      Claim Request
+           │
+           ▼
+    Ownership Verification
+           │
+           ▼
+      Admin Review
+       │         │
+       ▼         ▼
+    Approve    Reject
+       │
+       ▼
+ Notifications
+       │
+       ▼
+ Item Recovery
+```
+
+---
+
+## 🎯 Project Goals
+
+Campus Retain aims to:
+
+1. Reduce the time required to recover lost belongings.
+2. Make reporting lost and found items easier.
+3. Use AI to improve item discovery and matching.
+4. Provide secure ownership verification.
+5. Reduce administrative workload.
+6. Provide students with a modern digital recovery experience.
+
+---
+
+## 🔮 Future Improvements
+
+Potential future improvements include:
+
+- Push notifications
+- Native Android/iOS applications
+- Advanced image similarity search
+- Campus-wide analytics
+- QR-based item identification
+- Automated pickup scheduling
+- Multi-campus support
+- Enhanced AI visual similarity matching
+- Real-time notification delivery
+
+---
+
+## 👨‍💻 Project
+
+**Campus Retain**
+
+AI-powered Lost & Found Platform for University Campuses.
+
+Built using:
+
+```text
+Python
+Flask
+SQLAlchemy
+PostgreSQL
+Google Gemini
+JavaScript
+Tailwind CSS
+Vercel
+```
+
+---
+
+## 📄 License
+
+This project is developed as an academic and technology project.
+
+© Campus Retain. All rights reserved.
