@@ -1,7 +1,8 @@
 import os
 import smtplib
 import base64
-from datetime import datetime
+import random
+from datetime import datetime, timedelta
 from functools import wraps
 from email.mime.text import MIMEText
 
@@ -18,7 +19,7 @@ except:
 app = Flask(__name__)
 
 # ==================================================
-# CONFIG
+# CONFIG & CORE VARIABLES
 # ==================================================
 
 app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret-key")
@@ -36,22 +37,30 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = "static/uploads"
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
-# Email
+# Email Infrastructure Config
 MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
 MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
 MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
 MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
 
-# Twilio
+# Twilio Infrastructure Config
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
 TWILIO_PHONE_NUMBER = os.environ.get("TWILIO_PHONE_NUMBER")
 
-# Admin
+# Admin Infrastructure Config
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
 db = SQLAlchemy(app)
+
+# ==================================================
+# GLOBAL MAINTENANCE TOGGLE
+# ==================================================
+# Change this flag to True to instantly lock public user paths and render
+# the clean 3-dot loading maintenance page during codebase upgrades.
+IS_MAINTENANCE = False
+
 
 # ==================================================
 # MODELS
@@ -103,7 +112,9 @@ def send_email(receiver, subject, body):
     try:
         msg = MIMEText(body)
         msg["Subject"] = subject
-        msg["From"] = MAIL_USERNAME
+        
+        # FIXED: Explicit Display Name configuration added to clear enterprise gateway spam filters
+        msg["From"] = f"CampusRetain Portal <{MAIL_USERNAME}>"
         msg["To"] = receiver
 
         with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as server:
@@ -111,7 +122,7 @@ def send_email(receiver, subject, body):
             server.login(MAIL_USERNAME, MAIL_PASSWORD)
             server.send_message(msg)
 
-        print("Email sent")
+        print("Email sent successfully")
         return True
 
     except Exception as e:
@@ -140,7 +151,7 @@ def send_sms(receiver, body):
             to=receiver
         )
 
-        print("SMS sent")
+        print("SMS sent successfully")
         return True
 
     except Exception as e:
@@ -149,8 +160,22 @@ def send_sms(receiver, body):
 
 
 # ==================================================
-# AUTH DECORATORS
+# AUTH DECORATORS & TRAFFIC INTERCEPTORS
 # ==================================================
+
+@app.before_request
+def check_for_maintenance():
+    bypass_routes = ["static", "admin_login", "admin_dashboard", "logout", "init_db", "reject_claim", "approve_claim", "delete_item", "test_email"]
+    
+    if IS_MAINTENANCE:
+        if request.endpoint and any(route in request.endpoint for route in bypass_routes):
+            return None
+            
+        if session.get("is_admin") == True:
+            return None
+            
+        return render_template("maintenance.html"), 503
+
 
 def login_required(f):
     @wraps(f)
@@ -185,7 +210,7 @@ def index():
     )
 
 
-# ---------------- LOGIN ----------------
+# ---------------- USER AUTHENTICATION ----------------
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -202,7 +227,6 @@ def login():
 
             user = User.query.filter_by(email=email).first()
 
-            # First time register
             if not user:
                 new_user = User(
                     email=email,
@@ -216,12 +240,11 @@ def login():
                 send_email(
                     email,
                     "Campus Retain Registration Successful",
-                    "Welcome to Campus Retain. Your account has been created."
+                    "Welcome to Campus Retain. Your account has been created successfully."
                 )
 
                 return redirect(url_for("index"))
 
-            # Existing user
             try:
                 valid = check_password_hash(user.password, password)
             except:
@@ -233,7 +256,7 @@ def login():
 
             return render_template(
                 "login.html",
-                error="Incorrect password."
+                error="Incorrect password. Click 'Forgot Password?' to reset it."
             )
 
         return render_template("login.html")
@@ -242,7 +265,72 @@ def login():
         return f"Login Error: {str(e)}"
 
 
-# ---------------- ADMIN LOGIN ----------------
+# ---------------- FORGOT PASSWORD (OTP GENERATION) ----------------
+
+@app.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    try:
+        email = request.form.get("email", "").strip().lower()
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            return render_template("login.html", error="This email address is not registered in the network inventory.")
+            
+        otp = str(random.randint(100000, 999999))
+        
+        session["reset_email"] = email
+        session["reset_otp"] = otp
+        session["reset_expiry"] = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
+        
+        email_body = f"Hello,\n\nYou requested a password reset for Campus Retain.\nYour 6-digit verification code OTP is: {otp}\n\nThis code is valid for 10 minutes. If you did not initialize this configuration, please secure your credentials immediately."
+        send_email(email, "Campus Retain - Password Reset Verification OTP", email_body)
+        
+        return render_template("reset_password.html", email=email, message="Verification code has been systematically delivered to your organization inbox.")
+        
+    except Exception as e:
+        return render_template("login.html", error=f"Reset Initialization Fault: {str(e)}")
+
+
+# ---------------- RESET PASSWORD (OTP VERIFICATION) ----------------
+
+@app.route("/reset-password", methods=["POST"])
+def reset_password():
+    try:
+        email = session.get("reset_email")
+        session_otp = session.get("reset_otp")
+        expiry_str = session.get("reset_expiry")
+        
+        input_otp = request.form.get("otp", "").strip()
+        new_password = request.form.get("new_password", "")
+        
+        if not email or not session_otp or not expiry_str:
+            return render_template("login.html", error="Recovery session expired. Please initialize password recovery sequence again.")
+            
+        expiry_time = datetime.fromisoformat(expiry_str)
+        if datetime.utcnow() > expiry_time:
+            return render_template("login.html", error="Verification code token expired. Please try again.")
+            
+        if input_otp != session_otp:
+            return render_template("reset_password.html", email=email, error="Invalid verification code parameters. Please recheck.")
+            
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.password = generate_password_hash(new_password)
+            db.session.commit()
+            
+            session.pop("reset_email", None)
+            session.pop("reset_otp", None)
+            session.pop("reset_expiry", None)
+            
+            return render_template("login.html", success="Security password restructured cleanly! Proceed to access portal.")
+            
+        return render_template("login.html", error="System database user lookup constraint error.")
+        
+    except Exception as e:
+        return render_template("login.html", error=f"Password Restructuring Error: {str(e)}")
+
+
+# ---------------- ADMIN ACCESS AND MANAGEMENT ----------------
 
 @app.route("/admin_login", methods=["GET", "POST"])
 def admin_login():
@@ -257,30 +345,11 @@ def admin_login():
 
         return render_template(
             "admin_login.html",
-            error="Invalid credentials."
+            error="Invalid administrative terminal credentials."
         )
 
     return render_template("admin_login.html")
 
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
-
-
-# ---------------- DB INIT ----------------
-
-@app.route("/init-db")
-def init_db():
-    try:
-        db.create_all()
-        return "Database initialized successfully!"
-    except Exception as e:
-        return f"DB Error: {str(e)}"
-
-
-# ---------------- ADMIN DASHBOARD ----------------
 
 @app.route("/admin")
 @admin_required
@@ -289,11 +358,28 @@ def admin_dashboard():
     return render_template("admin.html", items=items)
 
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# ---------------- DB SCHEMAS INITIALIZATION ----------------
+
+@app.route("/init-db")
+def init_db():
+    try:
+        db.create_all()
+        return "Database architecture schemas initialized successfully!"
+    except Exception as e:
+        return f"Database Schema Construction Fault Error: {str(e)}"
+
+
 # ==================================================
-# API ROUTES
+# API CONTROLLERS ENDPOINTS
 # ==================================================
 
-# ---------- REPORT ITEM ----------
+# ---------- REPORT DISCOVERY PIPELINE ----------
 
 @app.route("/api/report", methods=["POST"])
 @login_required
@@ -320,12 +406,11 @@ def report_item():
         db.session.add(item)
         db.session.commit()
 
-        # Optional notify admin
         if ADMIN_EMAIL:
             send_email(
                 ADMIN_EMAIL,
                 "New Item Reported",
-                f"A new item '{item.name}' has been reported."
+                f"A new discovered asset entry '{item.name}' has been logged into the registry."
             )
 
         return jsonify({"status": "success"})
@@ -334,7 +419,7 @@ def report_item():
         return jsonify({"error": str(e)}), 500
 
 
-# ---------- CLAIM ITEM ----------
+# ---------- ALLOCATE CLAIM QUERY ----------
 
 @app.route("/api/claim", methods=["POST"])
 @login_required
@@ -343,9 +428,8 @@ def claim_item():
         data = request.json
 
         item = db.session.get(Item, data["item_id"])
-
         if not item:
-            return jsonify({"error": "Item not found"}), 404
+            return jsonify({"error": "Target item not found inside current channel"}), 404
 
         item.status = "Pending"
 
@@ -360,12 +444,17 @@ def claim_item():
         db.session.add(claim)
         db.session.commit()
 
-        # Notify student
+        # 1. Notify Student Lifecycle
         send_email(
             data["student_email"],
             "Campus Retain Claim Submitted",
             f"Your claim request for '{item.name}' is submitted and under review."
         )
+
+        # 2. FIXED: Administrative copy alert now triggers properly inside your primary workspace
+        if ADMIN_EMAIL:
+            admin_body = f"Hello Admin,\n\nA new claim request has been submitted for item: '{item.name}'.\n\nStudent ID: {data['student_id']}\nProof Description: {data['proof_description']}\n\nPlease review this inside your Admin Management dashboard."
+            send_email(ADMIN_EMAIL, "Alert: New Claim Submitted", admin_body)
 
         send_sms(
             data.get("phone", ""),
@@ -378,16 +467,15 @@ def claim_item():
         return jsonify({"error": str(e)}), 500
 
 
-# ---------- APPROVE CLAIM ----------
+# ---------- EXECUTE APPROVAL TERMINAL ----------
 
 @app.route("/api/admin/approve/<int:item_id>", methods=["POST"])
 @admin_required
 def approve_claim(item_id):
     try:
         item = db.session.get(Item, item_id)
-
         if not item:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify({"error": "Target entity not found"}), 404
 
         item.status = "Claimed"
 
@@ -402,13 +490,13 @@ def approve_claim(item_id):
         if latest_claim:
             send_email(
                 latest_claim.student_email,
-                "Campus Retain Claim Approved",
-                f"Your claim for '{item.name}' has been approved. Please collect it from office."
+                "Campus Retain Claim Approved 🎉",
+                f"Congratulations! Your ownership verification profile parameters for '{item.name}' matched our requirements. Please physically retrieve the item asset at the DOSS office."
             )
 
             send_sms(
                 latest_claim.phone,
-                f"Campus Retain: Claim approved for {item.name}. Collect from office."
+                f"Campus Retain Notice: Claim approved for asset {item.name}. Visit DOSS office for claim."
             )
 
         return jsonify({"status": "success"})
@@ -417,16 +505,58 @@ def approve_claim(item_id):
         return jsonify({"error": str(e)}), 500
 
 
-# ---------- DELETE ITEM ----------
+# ---------- EXECUTE REJECTION FLOW AND REMARKS ----------
+
+@app.route("/api/admin/reject/<int:item_id>", methods=["POST"])
+@admin_required
+def reject_claim(item_id):
+    try:
+        data = request.json or {}
+        remarks = data.get("remarks", "").strip()
+        if not remarks:
+            remarks = "Verification details provided did not match item specifications."
+        
+        item = db.session.get(Item, item_id)
+        if not item:
+            return jsonify({"error": "Target system item coordinates missing"}), 404
+
+        item.status = "Available"
+
+        latest_claim = Claim.query.filter_by(
+            item_id=item_id
+        ).order_by(
+            Claim.timestamp.desc()
+        ).first()
+
+        db.session.commit()
+
+        if latest_claim:
+            send_email(
+                latest_claim.student_email,
+                "Campus Verification Update - Claim Rejected",
+                f"Your claim request query for item entry '{item.name}' was evaluated and rejected.\n\nFeedback/Remarks from Admin: {remarks}\n\nIf you have further questions, visit the DOSS office for more."
+            )
+
+            send_sms(
+                latest_claim.phone,
+                f"Campus Retain: Claim rejected for asset {item.name}. Remarks feedback parameter: {remarks}"
+            )
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- EXPUNGE ITEM RECORD ----------
 
 @app.route("/api/item/delete/<int:item_id>", methods=["POST"])
 @admin_required
 def delete_item(item_id):
     try:
         item = db.session.get(Item, item_id)
-
         if not item:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify({"error": "Target object not tracked inside database data models"}), 404
 
         db.session.delete(item)
         db.session.commit()
@@ -438,33 +568,41 @@ def delete_item(item_id):
 
 
 # ==================================================
-# LOCAL RUN
+# INFRASTRUCTURE DEPLOYMENT SANITY CHECKS
 # ==================================================
-
-# ---------- TEST EMAIL ----------
 
 @app.route("/test-email")
 def test_email():
-    send_email(
-        "vishvanth3049@gmail.com",
-        "Campus Retain Test Email",
-        "Email notifications are working successfully."
-    )
-    return "Test Email Sent"
+    if not MAIL_USERNAME or not MAIL_PASSWORD:
+        return "Configuration Error: MAIL_USERNAME or MAIL_PASSWORD is completely empty in your Vercel Dashboard!"
 
+    try:
+        msg = MIMEText("Testing SMTP transport layer connections from CampusRetain.")
+        msg["Subject"] = "Campus Retain Diagnostic Check"
+        msg["From"] = f"CampusRetain Portal <{MAIL_USERNAME}>"
+        msg["To"] = ADMIN_EMAIL if ADMIN_EMAIL else "vishvanth3049@gmail.com"
 
-# ---------- TEST SMS ----------
+        server = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        
+        return "Success! Connection authorized and test email sent smoothly to your administrator address."
+    except Exception as e:
+        return f"SMTP Connection Failed! The exact error message from Google is: <br><br><strong>{str(e)}</strong>"
+
 
 @app.route("/test-sms")
 def test_sms():
     send_sms(
         "+919686193049",
-        "Campus Retain SMS notifications are working."
+        "Campus Retain Twilio notification systems channel validation check successful."
     )
-    return "Test SMS Sent"
+    return "Test Cellular Text Transmitted Successfully"
+
 
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-
     app.run(debug=True)

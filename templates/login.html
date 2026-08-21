@@ -3,46 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | CampusRetain</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <title>Login | Campus Retain</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @keyframes meshGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .vibrant-bg {
+            background: linear-gradient(-45deg, #eef2ff, #f5f3ff, #f9b4ed, #f0fdf4);
+            background-size: 300% 300%;
+            animation: meshGradient 12s ease infinite;
+        }
+    </style>
 </head>
-<body class="bg-slate-50 h-screen flex items-center justify-center p-6">
-    <div class="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
-        <div class="p-8 pb-6 bg-indigo-600 text-center text-white">
-            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-indigo-600 font-bold text-3xl mx-auto mb-4 shadow-lg shrink-0">C</div>
-            <h1 class="text-2xl font-bold tracking-tight">CampusRetain</h1>
-            <p class="text-indigo-200 text-sm mt-1">Student Portal Login</p>
-        </div>
-        
-        <div class="p-8">
-            {% if error %}
-            <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-6 text-sm font-medium flex items-center gap-2">
-                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                {{ error }}
-            </div>
-            {% endif %}
+<body class="vibrant-bg min-h-screen flex flex-col justify-between p-6 relative overflow-x-hidden select-none">
 
-            <form action="/login" method="POST" class="space-y-5">
-                <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-2">Organization Email</label>
-                    <input type="email" name="email" placeholder="student@ced.alliance.edu.in" required class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-2">Password</label>
-                    <input type="password" name="password" placeholder="••••••••" required class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
-                </div>
-                
-                <button type="submit" class="w-full py-3 mt-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-indigo-600 transition shadow-lg shadow-slate-200 flex justify-center items-center">
-                    Login / Register
-                </button>
-            </form>
+    <!-- Decorative grid system pattern overlay to eliminate background emptiness -->
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#80808007_1px,transparent_1px),linear-gradient(to_bottom,#80808007_1px,transparent_1px)] bg-[size:20px_30px] pointer-events-none"></div>
+
+    <!-- Central Authentication Unit Wrapper -->
+    <div class="flex-grow flex items-center justify-center w-full relative z-10 py-10">
+        <div class="w-full max-w-md bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-[0_30px_70px_rgba(109,40,217,0.12)] overflow-hidden border border-white/60 transform transition-all duration-500 hover:shadow-[0_40px_80px_rgba(109,40,217,0.18)] animate__animated animate__fadeInUp">
             
-            <div class="mt-8 pt-6 border-t border-slate-100 text-center">
-                <a href="/admin_login" class="text-sm font-semibold text-slate-400 hover:text-indigo-600 transition">Are you an Admin? Login here</a>
+            <div class="p-9 pb-8 bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-700 text-center text-white relative overflow-hidden">
+                <div class="absolute -top-6 -right-6 w-36 h-36 bg-amber-400 rounded-full opacity-20 blur-xl animate-pulse"></div>
+                <div class="absolute -bottom-10 -left-6 w-36 h-36 bg-fuchsia-400 rounded-full opacity-30 blur-2xl"></div>
+                
+                <!-- Fixed Section: Swapped text placeholder 'C' for the official vector shield emblem -->
+                <div class="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_8px_20px_rgba(0,0,0,0.1)] transform transition duration-500 hover:scale-110 hover:rotate-3 cursor-default animate__animated animate__float">
+                    <svg class="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(255,255,255,0.3)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <h1 id="headerTitle" class="text-2xl font-extrabold tracking-tight relative z-10 bg-gradient-to-b from-white to-indigo-100 text-transparent bg-clip-text">Campus Retain</h1>
+                <p id="headerSubtitle" class="text-indigo-200/90 text-xs font-semibold uppercase tracking-widest mt-1.5 relative z-10">Student Portal</p>
+            </div>
+            
+            <div class="p-9">
+                {% if error %}
+                <div class="bg-rose-50 border border-rose-100 text-rose-600 px-4 py-3.5 rounded-2xl mb-6 text-sm font-semibold flex items-center gap-3 animate__animated animate__shakeX">
+                    <div class="p-1 rounded-lg bg-rose-500 text-white shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg></div>
+                    <span>{{ error }}</span>
+                </div>
+                {% endif %}
+
+                {% if success %}
+                <div class="bg-emerald-50 border border-emerald-100 text-emerald-600 px-4 py-3.5 rounded-2xl mb-6 text-sm font-semibold flex items-center gap-3 animate__animated animate__pulse">
+                    <div class="p-1 rounded-lg bg-emerald-500 text-white shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
+                    <span>{{ success }}</span>
+                </div>
+                {% endif %}
+
+                <form id="authForm" action="/login" method="POST" class="space-y-5">
+                    <div class="animate__animated animate__fadeIn animate__delay-1s">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Organization Email</label>
+                        <input type="email" id="loginEmail" name="email" placeholder="student@ced.alliance.edu.in" required 
+                               class="w-full border border-slate-200/80 p-3.5 rounded-xl bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-300 text-slate-700 font-medium placeholder:text-slate-400/80 shadow-inner">
+                    </div>
+
+                    <div id="passwordFieldContainer" class="animate__animated animate__fadeIn animate__delay-1s relative">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Password</label>
+                            <button type="button" onclick="switchToForgotMode()" class="text-xs font-bold text-violet-600 hover:text-violet-700 focus:outline-none transition">Forgot Password?</button>
+                        </div>
+                        <input type="password" id="loginPassword" name="password" placeholder="••••••••" required 
+                               class="w-full border border-slate-200/80 p-3.5 rounded-xl bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-300 text-slate-700 font-medium placeholder:text-slate-400/80 shadow-inner">
+                    </div>
+                    
+                    <button type="submit" id="submitBtn"
+                            class="w-full py-4 mt-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 shadow-[0_10px_25px_rgba(109,40,217,0.25)] hover:shadow-[0_12px_30px_rgba(109,40,217,0.4)] flex justify-center items-center transform active:scale-[0.98] text-sm tracking-wide group animate__animated animate__fadeInUp animate__delay-1s">
+                        <span id="btnText">Login or Register</span>
+                        <svg class="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                        </svg>
+                    </button>
+                </form>
+                
+                <div class="mt-8 pt-6 border-t border-slate-100/80 text-center animate__animated animate__fadeIn animate__delay-1s">
+                    <a href="/admin_login" class="inline-block text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-violet-600 transition-colors duration-300 decoration-2 underline-offset-4 hover:underline">
+                        Administrative Terminal Access
+                    </a>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Premium Campus Footer Integration -->
+    <footer class="w-full py-5 text-center px-4 relative z-10 border-t border-slate-200/20 bg-white/10 backdrop-blur-md rounded-t-3xl animate__animated animate__fadeIn">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-500">
+            <div class="flex items-center gap-1.5 justify-center md:justify-start">
+                <span>© 2026</span>
+                <span class="font-bold text-slate-800">Campus Retain</span>
+                <span class="text-slate-300">|</span>
+                <span class="text-slate-400 font-semibold">Alliance University</span>
+            </div>
+            
+            <div class="flex gap-4 items-center justify-center text-slate-400 font-semibold">
+                <button type="button" onclick="openLegalModal('privacy')" class="hover:text-violet-600 transition focus:outline-none">Privacy Policy</button>
+                <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                <button type="button" onclick="openLegalModal('terms')" class="hover:text-violet-600 transition focus:outline-none">Terms of Service</button>
+                <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                <button type="button" onclick="openLegalModal('support')" class="hover:text-violet-600 transition focus:outline-none">DOSS Support Counter</button>
+            </div>
+            
+            <div class="text-[10px] text-slate-400/80 font-bold uppercase tracking-wider">
+                All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- DYNAMIC LEGAL MODAL CONTAINER -->
+    <div id="legalModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-950/40 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 animate__animated animate__zoomIn animate__fast flex flex-col max-h-[80vh]">
+            
+            <!-- Modal Header -->
+            <div class="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex justify-between items-center shrink-0">
+                <h3 id="modalTitle" class="text-lg font-bold tracking-tight">Document View</h3>
+                <button type="button" onclick="closeLegalModal()" class="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Modal Content (Scrollable Text Area) -->
+            <div id="modalContent" class="p-8 overflow-y-auto text-sm text-slate-600 space-y-4 font-medium leading-relaxed">
+                <!-- Injected dynamically by JavaScript -->
+            </div>
+            
+            <!-- Modal Footer Button -->
+            <div class="p-5 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+                <button type="button" onclick="closeLegalModal()" class="px-5 py-2 bg-slate-950 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-slate-800 transition shadow-md">
+                    Acknowledge
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const legalContent = {
+            privacy: {
+                title: "Privacy Policy",
+                html: `
+                    <p class="font-bold text-slate-800 text-base">Data Processing Parameters</p>
+                    <p>Campus Retain operates exclusively within the Alliance University ecosystem to cross-reference reported verification items with student identity structures.</p>
+                    <p class="font-bold text-slate-800 mt-4">Information We Log</p>
+                    <ul class="list-disc pl-5 space-y-1 text-xs">
+                        <li>Official student organization email endpoints mapped during authentication routing.</li>
+                        <li>Claim property telemetry validation descriptions supplied intentionally by claimants.</li>
+                        <li>Internal platform activity counters monitored directly by our deployment cluster.</li>
+                    </ul>
+                    <p class="font-bold text-slate-800 mt-4">Data Persistence</p>
+                    <p>All recorded registry entries, snapshot files, and security metadata are processed and hosted safely within cloud database environments. Access is stringently gatekept.</p>
+                `
+            },
+            terms: {
+                title: "Terms of Service",
+                html: `
+                    <p class="font-bold text-slate-800 text-base">Organizational Scope & Usage Guidelines</p>
+                    <p>By accessing the Campus Retain portal infrastructure, you agree to comply explicitly with the system parameters established for campus asset verification.</p>
+                    <p class="font-bold text-slate-800 mt-4">User Liabilities</p>
+                    <p>Students must guarantee that all item data, descriptions, and verification files uploaded to the ecosystem are entirely valid and physically accurate. Fabricating data logs is strictly subject to institutional review panels.</p>
+                    <p class="font-bold text-slate-800 mt-4">Property Handling</p>
+                    <p>This application operates as a discovery tracking and matching log engine. The official chain of custody and real-world physical delivery parameters remain completely under the execution of the physical DOSS desk operations.</p>
+                `
+            },
+            support: {
+                title: "DOSS Support Counter",
+                html: `
+                    <p class="font-bold text-slate-800 text-base">Physical Counter Operations</p>
+                    <p>If you have questions about matching attributes or need to execute an immediate handoff for high-value discoveries, please visit the counter directly.</p>
+                    <p class="font-bold text-slate-800 mt-4">Desk Framework Coordinates</p>
+                    <p><strong>Office:</strong> Department of Student Services (DOSS), Central Administration Wing</p>
+                    <p><strong>Working Hours:</strong> 9:00 AM – 5:00 PM (Monday through Friday)</p>
+                    <p class="font-bold text-slate-800 mt-4">System Desk Contact</p>
+                    <p>For application infrastructure maintenance requests or credential reset bugs, reach out to the platform administration cluster directly at: <span class="text-violet-600 font-semibold">support@campusretain.in</span></p>
+                `
+            }
+        };
+
+        function openLegalModal(documentKey) {
+            const data = legalContent[documentKey];
+            if (!data) return;
+
+            document.getElementById('modalTitle').innerText = data.title;
+            document.getElementById('modalContent').innerHTML = data.html;
+            
+            const modal = document.getElementById('legalModal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeLegalModal() {
+            document.getElementById('legalModal').classList.add('hidden');
+        }
+
+        function switchToForgotMode() {
+            const form = document.getElementById('authForm');
+            const passwordContainer = document.getElementById('passwordFieldContainer');
+            const btnText = document.getElementById('btnText');
+            const headerTitle = document.getElementById('headerTitle');
+            const headerSubtitle = document.getElementById('headerSubtitle');
+            
+            form.action = "/forgot-password";
+            passwordContainer.style.display = "none";
+            document.getElementById('loginPassword').required = false;
+            
+            headerTitle.innerText = "Recovery Console";
+            headerSubtitle.innerText = "Request Verification Token";
+            btnText.innerText = "Send Verification OTP";
+            
+            if(!document.getElementById('backToLoginBtn')) {
+                const returnLink = document.createElement('button');
+                returnLink.type = "button";
+                returnLink.id = "backToLoginBtn";
+                returnLink.className = "w-full text-center text-xs font-bold text-slate-400 hover:text-slate-600 mt-4 transition block focus:outline-none";
+                returnLink.innerText = "← Cancel and Return to Login";
+                returnLink.onclick = () => location.reload();
+                form.appendChild(returnLink);
+            }
+        }
+    </script>
+
+    <!-- Vercel Production Web Traffic Analytics Engine Integration -->
+    <script type="module">
+        import { inject } from 'https://cdn.jsdelivr.net/npm/@vercel/analytics@1/dist/index.mjs';
+        inject();
+    </script>
 </body>
 </html>

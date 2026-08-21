@@ -1,0 +1,49 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+ENV/
+
+# ---- Secrets / environment ----
+# Never commit real credentials. Only .env.example belongs in git.
+.env
+.env.*
+!.env.example
+*.pem
+
+# ---- Flask / local database ----
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# ---- Local dev uploads (LocalStorage backend only) ----
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# ---- Tooling caches ----
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# ---- Deployment ----
+.vercel/
+
+# ---- Editors / OS ----
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
