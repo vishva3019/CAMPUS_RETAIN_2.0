@@ -531,20 +531,20 @@ class TestBug1And2Regression(unittest.TestCase):
                 # Confirm secret key is NEVER leaked in response JSON
                 self.assertNotIn(secret_key_value, raw_response_text)
 
-    # TEST 16: Model URL construction with gemini-2.5-flash and prefix handling
-    def test_16_model_url_construction_gemini_2_5_flash(self):
+    # TEST 16: Model URL construction with gemini-3.6-flash and prefix handling
+    def test_16_model_url_construction_gemini_3_6_flash(self):
         from ai.client import GoogleGeminiProvider
 
-        p1 = GoogleGeminiProvider(api_key="test_key", model="gemini-2.5-flash")
+        p1 = GoogleGeminiProvider(api_key="test_key", model="gemini-3.6-flash")
         self.assertEqual(
             p1._get_url(),
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
         )
 
-        p2 = GoogleGeminiProvider(api_key="test_key", model="models/gemini-2.5-flash")
+        p2 = GoogleGeminiProvider(api_key="test_key", model="models/gemini-3.6-flash")
         self.assertEqual(
             p2._get_url(),
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
         )
 
     # TEST 17: Gemini error handling (Rate limit 429 and Server Error 500) fails safely without leaking secrets
@@ -555,7 +555,7 @@ class TestBug1And2Regression(unittest.TestCase):
         # Case A: 429 Rate Limit
         mock_429 = MagicMock()
         mock_429.status_code = 429
-        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-2.5-flash"}, clear=True):
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-3.6-flash"}, clear=True):
             with patch("requests.post", return_value=mock_429):
                 resp = self.client.post("/api/ai/analyze-image", json={"image": f"data:image/png;base64,{base64.b64encode(SAMPLE_PNG_BYTES).decode('utf-8')}"})
                 self.assertEqual(resp.status_code, 200)
@@ -567,7 +567,7 @@ class TestBug1And2Regression(unittest.TestCase):
         mock_500 = MagicMock()
         mock_500.status_code = 500
         mock_500.text = "Internal Server Error"
-        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-2.5-flash"}, clear=True):
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-3.6-flash"}, clear=True):
             with patch("requests.post", return_value=mock_500):
                 resp = self.client.post("/api/ai/analyze-image", json={"image": f"data:image/png;base64,{base64.b64encode(SAMPLE_PNG_BYTES).decode('utf-8')}"})
                 self.assertEqual(resp.status_code, 200)
@@ -598,7 +598,7 @@ class TestBug1And2Regression(unittest.TestCase):
         mock_400.status_code = 400
         mock_400.text = "Invalid JSON payload received. Unknown name 'inline_data'"
         mock_400.json.return_value = {"error": {"message": "Invalid JSON payload received. Unknown name 'inline_data'"}}
-        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-2.5-flash"}, clear=True):
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-3.6-flash"}, clear=True):
             with patch("requests.post", return_value=mock_400):
                 resp = self.client.post("/api/ai/analyze-image", json={"image": f"data:image/png;base64,{base64.b64encode(SAMPLE_PNG_BYTES).decode('utf-8')}"})
                 self.assertEqual(resp.status_code, 200)
@@ -615,7 +615,7 @@ class TestBug1And2Regression(unittest.TestCase):
         mock_404.status_code = 404
         mock_404.text = "models/gemini-old is not found for API version v1beta"
         mock_404.json.return_value = {"error": {"message": "models/gemini-old is not found for API version v1beta"}}
-        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-2.5-flash"}, clear=True):
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-3.6-flash"}, clear=True):
             with patch("requests.post", return_value=mock_404):
                 resp = self.client.post("/api/ai/analyze-image", json={"image": f"data:image/png;base64,{base64.b64encode(SAMPLE_PNG_BYTES).decode('utf-8')}"})
                 self.assertEqual(resp.status_code, 200)
@@ -627,7 +627,7 @@ class TestBug1And2Regression(unittest.TestCase):
     def test_21_gemini_multimodal_payload_structure(self):
         from ai.client import GoogleGeminiProvider
 
-        provider = GoogleGeminiProvider(api_key="secret_test_key", model="gemini-2.5-flash")
+        provider = GoogleGeminiProvider(api_key="secret_test_key", model="gemini-3.6-flash")
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -644,7 +644,12 @@ class TestBug1And2Regression(unittest.TestCase):
         }
 
         with patch("requests.post", return_value=mock_resp) as mock_post:
-            provider.analyze_multimodal("analyze this", SAMPLE_PNG_BYTES, "image/png")
+            provider.analyze_multimodal(
+                "analyze this",
+                SAMPLE_PNG_BYTES,
+                "image/png",
+                system_instruction="Analyze lost and found items accurately."
+            )
 
             mock_post.assert_called_once()
             call_args, call_kwargs = mock_post.call_args
@@ -652,7 +657,7 @@ class TestBug1And2Regression(unittest.TestCase):
             # Verify URL
             self.assertEqual(
                 call_args[0],
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
             )
             # Verify Header
             self.assertEqual(call_kwargs["headers"]["x-goog-api-key"], "secret_test_key")
@@ -667,6 +672,34 @@ class TestBug1And2Regression(unittest.TestCase):
             self.assertEqual(parts[1]["inlineData"]["mimeType"], "image/png")
             self.assertTrue(len(parts[1]["inlineData"]["data"]) > 0)
             self.assertEqual(sent_payload["generationConfig"]["responseMimeType"], "application/json")
+            self.assertNotIn("temperature", sent_payload["generationConfig"])
+            self.assertNotIn("topP", sent_payload.get("generationConfig", {}))
+            self.assertNotIn("topK", sent_payload.get("generationConfig", {}))
+
+            # Verify systemInstruction is camelCase and snake_case is NOT present
+            self.assertIn("systemInstruction", sent_payload)
+            self.assertEqual(
+                sent_payload["systemInstruction"],
+                {"parts": [{"text": "Analyze lost and found items accurately."}]}
+            )
+            self.assertNotIn("system_instruction", sent_payload)
+
+    # TEST 22: Explicit regression test verifying default Google model is gemini-3.6-flash
+    def test_22_default_google_model_is_gemini_3_6_flash(self):
+        from ai.config import AIConfig
+        from ai.client import get_ai_client, GoogleGeminiProvider
+
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key"}, clear=True):
+            self.assertEqual(AIConfig.get_model(), "gemini-3.6-flash")
+            self.assertNotEqual(AIConfig.get_model(), "gemini-2.5-flash")
+            self.assertNotEqual(AIConfig.get_model(), "gemini-1.5-flash")
+            client = get_ai_client(require_configured=True)
+            self.assertIsInstance(client, GoogleGeminiProvider)
+            self.assertEqual(client.model, "gemini-3.6-flash")
+            self.assertEqual(
+                client._get_url(),
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent"
+            )
 
 
 if __name__ == "__main__":

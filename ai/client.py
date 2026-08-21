@@ -213,10 +213,9 @@ class GoogleGeminiProvider(BaseAIProvider):
     def generate_text(self, prompt: str, system_instruction: str | None = None) -> str:
         payload: dict[str, Any] = {
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.2},
         }
         if system_instruction:
-            payload["system_instruction"] = {"parts": [{"text": system_instruction}]}
+            payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
         data = self._execute_request(payload)
         try:
@@ -230,12 +229,11 @@ class GoogleGeminiProvider(BaseAIProvider):
         payload: dict[str, Any] = {
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
-                "temperature": 0.1,
                 "responseMimeType": "application/json",
             },
         }
         if system_instruction:
-            payload["system_instruction"] = {"parts": [{"text": system_instruction}]}
+            payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
         data = self._execute_request(payload)
         try:
@@ -270,12 +268,11 @@ class GoogleGeminiProvider(BaseAIProvider):
                 }
             ],
             "generationConfig": {
-                "temperature": 0.1,
                 "responseMimeType": "application/json",
             },
         }
         if system_instruction:
-            payload["system_instruction"] = {"parts": [{"text": system_instruction}]}
+            payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
         data = self._execute_request(payload)
         try:

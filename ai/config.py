@@ -58,7 +58,7 @@ class AIConfig:
         """Returns the configured model name with a safe default."""
         provider = AIConfig.get_provider()
         default_model = (
-            "gemini-2.5-flash" if provider in ("google", "gemini") else "gpt-4o-mini"
+            "gemini-3.6-flash" if provider in ("google", "gemini") else "gpt-4o-mini"
         )
         return (os.environ.get("AI_MODEL") or default_model).strip()
 
