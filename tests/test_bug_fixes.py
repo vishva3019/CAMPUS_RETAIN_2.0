@@ -589,6 +589,85 @@ class TestBug1And2Regression(unittest.TestCase):
                 "https://generativelanguage.googleapis.com/v1beta/models/custom-vision-model-v1:generateContent"
             )
 
+    # TEST 19: Gemini 400 Bad Request error handling
+    def test_19_gemini_400_bad_request_fails_safely(self):
+        with self.client.session_transaction() as sess:
+            sess["user_email"] = "student@ced.alliance.edu.in"
+
+        mock_400 = MagicMock()
+        mock_400.status_code = 400
+        mock_400.text = "Invalid JSON payload received. Unknown name 'inline_data'"
+        mock_400.json.return_value = {"error": {"message": "Invalid JSON payload received. Unknown name 'inline_data'"}}
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-2.5-flash"}, clear=True):
+            with patch("requests.post", return_value=mock_400):
+                resp = self.client.post("/api/ai/analyze-image", json={"image": f"data:image/png;base64,{base64.b64encode(SAMPLE_PNG_BYTES).decode('utf-8')}"})
+                self.assertEqual(resp.status_code, 200)
+                data = resp.get_json()
+                self.assertFalse(data["success"])
+                self.assertIn("invalid", data["error"].lower())
+
+    # TEST 20: Gemini 404 Model Not Found error handling
+    def test_20_gemini_404_model_not_found_fails_safely(self):
+        with self.client.session_transaction() as sess:
+            sess["user_email"] = "student@ced.alliance.edu.in"
+
+        mock_404 = MagicMock()
+        mock_404.status_code = 404
+        mock_404.text = "models/gemini-old is not found for API version v1beta"
+        mock_404.json.return_value = {"error": {"message": "models/gemini-old is not found for API version v1beta"}}
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-2.5-flash"}, clear=True):
+            with patch("requests.post", return_value=mock_404):
+                resp = self.client.post("/api/ai/analyze-image", json={"image": f"data:image/png;base64,{base64.b64encode(SAMPLE_PNG_BYTES).decode('utf-8')}"})
+                self.assertEqual(resp.status_code, 200)
+                data = resp.get_json()
+                self.assertFalse(data["success"])
+                self.assertIn("unavailable", data["error"].lower())
+
+    # TEST 21: Verify payload structure sent to Gemini contains inlineData, mimeType, responseMimeType
+    def test_21_gemini_multimodal_payload_structure(self):
+        from ai.client import GoogleGeminiProvider
+
+        provider = GoogleGeminiProvider(api_key="secret_test_key", model="gemini-2.5-flash")
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {"text": json.dumps({"category": "electronics", "brand": "Apple"})}
+                        ]
+                    }
+                }
+            ]
+        }
+
+        with patch("requests.post", return_value=mock_resp) as mock_post:
+            provider.analyze_multimodal("analyze this", SAMPLE_PNG_BYTES, "image/png")
+
+            mock_post.assert_called_once()
+            call_args, call_kwargs = mock_post.call_args
+
+            # Verify URL
+            self.assertEqual(
+                call_args[0],
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+            )
+            # Verify Header
+            self.assertEqual(call_kwargs["headers"]["x-goog-api-key"], "secret_test_key")
+            self.assertNotIn("?key=", call_args[0])
+
+            # Verify Payload JSON
+            sent_payload = call_kwargs["json"]
+            self.assertIn("contents", sent_payload)
+            parts = sent_payload["contents"][0]["parts"]
+            self.assertEqual(parts[0]["text"], "analyze this")
+            self.assertIn("inlineData", parts[1])
+            self.assertEqual(parts[1]["inlineData"]["mimeType"], "image/png")
+            self.assertTrue(len(parts[1]["inlineData"]["data"]) > 0)
+            self.assertEqual(sent_payload["generationConfig"]["responseMimeType"], "application/json")
+
 
 if __name__ == "__main__":
     unittest.main()

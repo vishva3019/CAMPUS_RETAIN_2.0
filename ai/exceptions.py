@@ -82,3 +82,25 @@ class AIInvalidResponseError(AIError):
             user_safe_message
             or "AI analysis response could not be parsed. Standard reporting is still available.",
         )
+
+
+class AIRequestError(AIError):
+    """Raised when the request parameters or payload are invalid."""
+
+    def __init__(self, message: str, user_safe_message: str | None = None):
+        super().__init__(
+            message,
+            user_safe_message
+            or "AI image analysis request was invalid. Please try another photo.",
+        )
+
+
+class AIModelNotFoundError(AIError):
+    """Raised when the specified AI model or endpoint cannot be found."""
+
+    def __init__(self, message: str, user_safe_message: str | None = None):
+        super().__init__(
+            message,
+            user_safe_message
+            or "AI image analysis model is temporarily unavailable. Please try again.",
+        )

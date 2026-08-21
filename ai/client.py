@@ -22,8 +22,10 @@ from ai.exceptions import (
     AIConfigurationError,
     AIError,
     AIInvalidResponseError,
+    AIModelNotFoundError,
     AIProviderError,
     AIRateLimitError,
+    AIRequestError,
     AITimeoutError,
 )
 
@@ -125,36 +127,70 @@ class GoogleGeminiProvider(BaseAIProvider):
                 timeout=self.timeout,
             )
         except requests.exceptions.Timeout as exc:
+            logger.warning(f"Google Gemini request timed out: model={self.model}, timeout={self.timeout}s")
             raise AITimeoutError(
-                f"Google Gemini request timed out after {self.timeout}s."
+                f"Google Gemini request timed out after {self.timeout}s.",
+                user_safe_message="AI analysis timed out. Please try again."
             ) from exc
         except requests.exceptions.RequestException as exc:
+            logger.warning(f"Google Gemini network fault: model={self.model}, err={exc}")
             raise AIProviderError(
-                f"Network communication fault with Google Gemini: {exc}"
+                f"Network communication fault with Google Gemini: {exc}",
+                user_safe_message="AI provider is temporarily unavailable. Standard reporting is still available."
             ) from exc
 
-        if response.status_code in (401, 403):
-            raise AIAuthenticationError("Invalid or unauthorized Google AI API key.")
-        if response.status_code == 429:
-            raise AIRateLimitError(
-                "Google AI quota rate limit exceeded. Please retry in a moment."
-            )
-        if response.status_code >= 500:
-            raise AIProviderError(
-                f"Google AI upstream server error (HTTP {response.status_code})."
-            )
+        # Extract sanitized message from upstream error payload
+        err_msg = ""
         if response.status_code != 200:
             try:
                 err_body = response.json()
-                msg = err_body.get("error", {}).get("message", response.text)
+                err_msg = err_body.get("error", {}).get("message", response.text)
             except Exception:
-                msg = response.text
-            raise AIProviderError(f"Google AI error (HTTP {response.status_code}): {msg}")
+                err_msg = response.text[:200]
+
+            logger.warning(
+                f"Gemini request failed: status={response.status_code}, "
+                f"model={self.model}, msg={err_msg}"
+            )
+
+        if response.status_code in (401, 403):
+            raise AIAuthenticationError(
+                "Invalid or unauthorized Google AI API key.",
+                user_safe_message="AI service authentication failed. Please contact the administrator."
+            )
+        if response.status_code == 404:
+            raise AIModelNotFoundError(
+                f"Google AI model '{self.model}' not found (HTTP 404): {err_msg}",
+                user_safe_message="AI image analysis is temporarily unavailable. Please try again."
+            )
+        if response.status_code == 429:
+            raise AIRateLimitError(
+                "Google AI quota rate limit exceeded. Please retry in a moment.",
+                user_safe_message="AI rate limit reached. Please wait a moment and try again."
+            )
+        if response.status_code == 400:
+            raise AIRequestError(
+                f"Google AI request payload invalid (HTTP 400): {err_msg}",
+                user_safe_message="AI image analysis request was invalid. Please try another photo."
+            )
+        if response.status_code >= 500:
+            raise AIProviderError(
+                f"Google AI upstream server error (HTTP {response.status_code}).",
+                user_safe_message="AI provider is temporarily unavailable. Standard reporting is still available."
+            )
+        if response.status_code != 200:
+            raise AIProviderError(
+                f"Google AI error (HTTP {response.status_code}): {err_msg}",
+                user_safe_message="AI image analysis is temporarily unavailable. Please try again."
+            )
 
         try:
             return response.json()
         except Exception as exc:
-            raise AIInvalidResponseError("Invalid JSON from Gemini API.") from exc
+            raise AIInvalidResponseError(
+                "Invalid JSON from Gemini API.",
+                user_safe_message="AI analysis response could not be parsed. Standard reporting is still available."
+            ) from exc
 
     def generate_text(self, prompt: str, system_instruction: str | None = None) -> str:
         payload: dict[str, Any] = {
@@ -177,7 +213,7 @@ class GoogleGeminiProvider(BaseAIProvider):
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "temperature": 0.1,
-                "response_mime_type": "application/json",
+                "responseMimeType": "application/json",
             },
         }
         if system_instruction:
@@ -207,8 +243,8 @@ class GoogleGeminiProvider(BaseAIProvider):
                     "parts": [
                         {"text": prompt},
                         {
-                            "inline_data": {
-                                "mime_type": mime_type,
+                            "inlineData": {
+                                "mimeType": mime_type,
                                 "data": b64_data,
                             }
                         },
@@ -217,7 +253,7 @@ class GoogleGeminiProvider(BaseAIProvider):
             ],
             "generationConfig": {
                 "temperature": 0.1,
-                "response_mime_type": "application/json",
+                "responseMimeType": "application/json",
             },
         }
         if system_instruction:
@@ -248,32 +284,69 @@ class OpenAIProvider(BaseAIProvider):
                 url, json=payload, headers=headers, timeout=self.timeout
             )
         except requests.exceptions.Timeout as exc:
+            logger.warning(f"OpenAI request timed out: model={self.model}, timeout={self.timeout}s")
             raise AITimeoutError(
-                f"OpenAI request timed out after {self.timeout}s."
+                f"OpenAI request timed out after {self.timeout}s.",
+                user_safe_message="AI analysis timed out. Please try again."
             ) from exc
         except requests.exceptions.RequestException as exc:
-            raise AIProviderError(f"Network error connecting to OpenAI: {exc}") from exc
-
-        if response.status_code in (401, 403):
-            raise AIAuthenticationError("Invalid or unauthorized OpenAI API key.")
-        if response.status_code == 429:
-            raise AIRateLimitError("OpenAI rate limit quota exceeded.")
-        if response.status_code >= 500:
+            logger.warning(f"OpenAI network fault: model={self.model}, err={exc}")
             raise AIProviderError(
-                f"OpenAI server error (HTTP {response.status_code})."
-            )
+                f"Network error connecting to OpenAI: {exc}",
+                user_safe_message="AI provider is temporarily unavailable. Standard reporting is still available."
+            ) from exc
+
+        err_msg = ""
         if response.status_code != 200:
             try:
                 err_body = response.json()
-                msg = err_body.get("error", {}).get("message", response.text)
+                err_msg = err_body.get("error", {}).get("message", response.text)
             except Exception:
-                msg = response.text
-            raise AIProviderError(f"OpenAI error (HTTP {response.status_code}): {msg}")
+                err_msg = response.text[:200]
+
+            logger.warning(
+                f"OpenAI request failed: status={response.status_code}, "
+                f"model={self.model}, msg={err_msg}"
+            )
+
+        if response.status_code in (401, 403):
+            raise AIAuthenticationError(
+                "Invalid or unauthorized OpenAI API key.",
+                user_safe_message="AI service authentication failed. Please contact the administrator."
+            )
+        if response.status_code == 404:
+            raise AIModelNotFoundError(
+                f"OpenAI model '{self.model}' not found (HTTP 404): {err_msg}",
+                user_safe_message="AI image analysis is temporarily unavailable. Please try again."
+            )
+        if response.status_code == 429:
+            raise AIRateLimitError(
+                "OpenAI rate limit quota exceeded.",
+                user_safe_message="AI rate limit reached. Please wait a moment and try again."
+            )
+        if response.status_code == 400:
+            raise AIRequestError(
+                f"OpenAI request payload invalid (HTTP 400): {err_msg}",
+                user_safe_message="AI image analysis request was invalid. Please try another photo."
+            )
+        if response.status_code >= 500:
+            raise AIProviderError(
+                f"OpenAI server error (HTTP {response.status_code}).",
+                user_safe_message="AI provider is temporarily unavailable. Standard reporting is still available."
+            )
+        if response.status_code != 200:
+            raise AIProviderError(
+                f"OpenAI error (HTTP {response.status_code}): {err_msg}",
+                user_safe_message="AI image analysis is temporarily unavailable. Please try again."
+            )
 
         try:
             return response.json()
         except Exception as exc:
-            raise AIInvalidResponseError("Invalid JSON from OpenAI API.") from exc
+            raise AIInvalidResponseError(
+                "Invalid JSON from OpenAI API.",
+                user_safe_message="AI analysis response could not be parsed. Standard reporting is still available."
+            ) from exc
 
     def generate_text(self, prompt: str, system_instruction: str | None = None) -> str:
         messages = []

@@ -98,12 +98,15 @@ class TestAIExceptions(unittest.TestCase):
     """Test AI exception hierarchy and user-safe messaging."""
 
     def test_exception_inheritance(self):
+        from ai.exceptions import AIRequestError, AIModelNotFoundError
         self.assertTrue(issubclass(AIConfigurationError, AIError))
         self.assertTrue(issubclass(AIAuthenticationError, AIError))
         self.assertTrue(issubclass(AIRateLimitError, AIError))
         self.assertTrue(issubclass(AITimeoutError, AIError))
         self.assertTrue(issubclass(AIProviderError, AIError))
         self.assertTrue(issubclass(AIInvalidResponseError, AIError))
+        self.assertTrue(issubclass(AIRequestError, AIError))
+        self.assertTrue(issubclass(AIModelNotFoundError, AIError))
 
     def test_user_safe_message_default(self):
         err = AIError("Internal stack details that should not reach user")
