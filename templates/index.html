@@ -121,21 +121,89 @@
             <p class="text-xs font-semibold text-rose-600 bg-rose-50 p-3.5 rounded-xl border border-rose-100 mt-3 mb-5 flex gap-2"><span class="shrink-0">⚠️</span><span><strong>IMPORTANT:</strong> Hand discovered items over to the DOSS office physical counter immediately following dispatch parameters.</span></p>
             
             <form id="reportForm" class="space-y-4">
-                <input type="text" name="name" placeholder="Item Name *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
+                <input type="text" id="reportItemName" name="name" placeholder="Item Name *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
                 <div class="grid grid-cols-2 gap-4">
-                    <select name="category" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-semibold text-sm text-slate-600">
-                        <option>Electronics</option><option>Accessories</option><option>Books</option><option>Clothing</option><option>Other</option>
+                    <select id="reportCategory" name="category" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-semibold text-sm text-slate-600">
+                        <option value="Electronics">Electronics</option>
+                        <option value="Accessories">Accessories</option>
+                        <option value="Books">Books</option>
+                        <option value="Clothing">Clothing</option>
+                        <option value="ID & Cards">ID & Cards</option>
+                        <option value="Keys">Keys</option>
+                        <option value="Water Bottles">Water Bottles</option>
+                        <option value="Other">Other</option>
                     </select>
                     <input type="text" name="location" placeholder="Found Location *" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
                 </div>
-                <textarea name="secret_detail" placeholder="Secret Identification Detail (Hidden from general public view)..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all text-sm font-medium min-h-[90px]"></textarea>
+                <textarea name="secret_detail" placeholder="Secret Identification Detail (Hidden from general public view)..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all text-sm font-medium min-h-[80px]"></textarea>
 
-                <div class="mt-1 w-full">
+                <div class="mt-1 w-full space-y-3">
                     <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100/70 transition-all relative overflow-hidden group">
-                        <div id="imagePlaceholder" class="flex flex-col items-center justify-center py-5 group-hover:-translate-y-0.5 transition-transform"><svg class="w-8 h-8 mb-1.5 text-violet-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><p class="text-xs text-slate-600 font-bold">Upload Snapshot Verification</p></div>
+                        <div id="imagePlaceholder" class="flex flex-col items-center justify-center py-5 group-hover:-translate-y-0.5 transition-transform">
+                            <svg class="w-8 h-8 mb-1.5 text-violet-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <p class="text-xs text-slate-600 font-bold">Upload Item Photo for AI Analysis</p>
+                        </div>
                         <img id="imagePreview" src="" class="hidden absolute inset-0 w-full h-full object-cover">
-                        <input id="image" name="image" type="file" class="hidden" accept="image/*" onchange="previewImage(event)"/>
+                        <input id="image" name="image" type="file" class="hidden" accept="image/*" onchange="previewAndAnalyzeImage(event)"/>
                     </label>
+
+                    <!-- AI Analysis Progress State -->
+                    <div id="aiAnalysisLoading" class="hidden p-3.5 rounded-2xl bg-violet-50/80 border border-violet-100 text-violet-800 flex items-center gap-3 animate__animated animate__fadeIn">
+                        <div class="w-7 h-7 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0">
+                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </div>
+                        <div class="text-xs">
+                            <span class="font-extrabold block text-violet-900">🤖 Analyzing image with Multimodal AI...</span>
+                            <span class="text-[11px] text-violet-600 font-medium">Extracting category, colors, brand, and distinctive features</span>
+                        </div>
+                    </div>
+
+                    <!-- AI Analysis Structured Result Card -->
+                    <div id="aiAnalysisResult" class="hidden p-4 rounded-2xl bg-gradient-to-br from-violet-50/90 via-indigo-50/70 to-purple-50/60 border border-violet-200/80 space-y-3 animate__animated animate__fadeIn">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-black text-violet-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                                    AI Item Analysis
+                                </span>
+                            </div>
+                            <span id="aiConfidenceBadge" class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-violet-600 text-white shadow-xs">92% Confidence</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="bg-white/80 p-2.5 rounded-xl border border-violet-100/70 shadow-xs">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Category</span>
+                                <span id="aiResultCategory" class="font-bold text-slate-800 capitalize">-</span>
+                            </div>
+                            <div class="bg-white/80 p-2.5 rounded-xl border border-violet-100/70 shadow-xs">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Primary Color</span>
+                                <span id="aiResultColor" class="font-bold text-slate-800 capitalize">-</span>
+                            </div>
+                        </div>
+
+                        <div id="aiBrandRow" class="hidden bg-white/80 p-2.5 rounded-xl border border-violet-100/70 shadow-xs text-xs">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Identified Brand / Model</span>
+                            <span id="aiResultBrand" class="font-bold text-slate-800">-</span>
+                        </div>
+
+                        <div id="aiFeaturesRow" class="hidden bg-white/80 p-2.5 rounded-xl border border-violet-100/70 shadow-xs text-xs">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Distinctive Characteristics</span>
+                            <ul id="aiResultFeatures" class="list-disc list-inside text-slate-700 font-medium text-[11px] space-y-0.5"></ul>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1 text-[11px]">
+                            <span class="text-slate-400 font-medium">Fields auto-filled above. You can freely edit them.</span>
+                        </div>
+
+                        <!-- Hidden serialized AI payload -->
+                        <input type="hidden" name="ai_metadata" id="aiMetadataInput">
+                    </div>
+
+                    <!-- AI Unavailable / Safe Notice -->
+                    <div id="aiAnalysisNotice" class="hidden p-3 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium flex items-center gap-2">
+                        <span>ℹ️</span>
+                        <span id="aiNoticeText">AI analysis is temporarily unavailable. Manual item reporting is ready.</span>
+                    </div>
                 </div>
 
                 <div class="flex gap-3 pt-3">
@@ -169,7 +237,6 @@
             </div>
         </div>
     </div>
-
     <div id="toastContainer" class="fixed bottom-6 right-6 z-[80] flex flex-col gap-3"></div>
 
     <script>
@@ -195,16 +262,145 @@
             });
         }
 
-        function previewImage(event) {
+        const CATEGORY_MAP = {
+            'smartphone': 'Electronics',
+            'phone': 'Electronics',
+            'laptop': 'Electronics',
+            'tablet': 'Electronics',
+            'headphones': 'Electronics',
+            'earbuds': 'Electronics',
+            'charger': 'Electronics',
+            'watch': 'Accessories',
+            'smartwatch': 'Electronics',
+            'backpack': 'Accessories',
+            'bag': 'Accessories',
+            'wallet': 'Accessories',
+            'purse': 'Accessories',
+            'glasses': 'Accessories',
+            'sunglasses': 'Accessories',
+            'umbrella': 'Accessories',
+            'keys': 'Keys',
+            'keychain': 'Keys',
+            'id card': 'ID & Cards',
+            'card': 'ID & Cards',
+            'book': 'Books',
+            'notebook': 'Books',
+            'textbook': 'Books',
+            'water bottle': 'Water Bottles',
+            'bottle': 'Water Bottles',
+            'flask': 'Water Bottles',
+            'clothing': 'Clothing',
+            'jacket': 'Clothing',
+            'hoodie': 'Clothing',
+            'shirt': 'Clothing',
+            'shoes': 'Clothing',
+            'cap': 'Clothing'
+        };
+
+        async function previewAndAnalyzeImage(event) {
             const input = event.target;
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    document.getElementById('imagePreview').src = e.target.result;
-                    document.getElementById('imagePreview').classList.remove('hidden');
-                    document.getElementById('imagePlaceholder').classList.add('opacity-0');
+            if (!input.files || !input.files[0]) return;
+
+            const file = input.files[0];
+
+            // 1. Show immediate image preview
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const previewEl = document.getElementById('imagePreview');
+                previewEl.src = e.target.result;
+                previewEl.classList.remove('hidden');
+                document.getElementById('imagePlaceholder').classList.add('opacity-0');
+            };
+            reader.readAsDataURL(file);
+
+            // 2. Trigger AI Vision Analysis
+            const loadingEl = document.getElementById('aiAnalysisLoading');
+            const resultEl = document.getElementById('aiAnalysisResult');
+            const noticeEl = document.getElementById('aiAnalysisNotice');
+
+            loadingEl.classList.remove('hidden');
+            resultEl.classList.add('hidden');
+            noticeEl.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await fetch('/api/ai/analyze-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const res = await response.json();
+
+                if (res.success && res.data) {
+                    const d = res.data;
+                    document.getElementById('aiMetadataInput').value = JSON.stringify(d);
+
+                    // Populate UI result card
+                    document.getElementById('aiResultCategory').innerText = d.category || 'Unknown';
+                    document.getElementById('aiResultColor').innerText = d.primary_color || 'Unknown';
+
+                    const brandRow = document.getElementById('aiBrandRow');
+                    if (d.brand || d.model) {
+                        const brandText = [d.brand, d.model].filter(Boolean).join(' - ');
+                        document.getElementById('aiResultBrand').innerText = brandText;
+                        brandRow.classList.remove('hidden');
+                    } else {
+                        brandRow.classList.add('hidden');
+                    }
+
+                    const featRow = document.getElementById('aiFeaturesRow');
+                    const featList = document.getElementById('aiResultFeatures');
+                    featList.innerHTML = '';
+                    if (d.distinctive_features && d.distinctive_features.length > 0) {
+                        d.distinctive_features.forEach(f => {
+                            const li = document.createElement('li');
+                            li.textContent = f;
+                            featList.appendChild(li);
+                        });
+                        featRow.classList.remove('hidden');
+                    } else {
+                        featRow.classList.add('hidden');
+                    }
+
+                    const confPct = Math.round((d.confidence || 0.85) * 100);
+                    document.getElementById('aiConfidenceBadge').innerText = `${confPct}% Confidence`;
+
+                    // Smart auto-fill form inputs if user hasn't typed yet
+                    const nameInput = document.getElementById('reportItemName');
+                    if (!nameInput.value || nameInput.value.trim() === '') {
+                        const parts = [];
+                        if (d.primary_color && d.primary_color !== 'unknown') parts.push(d.primary_color);
+                        if (d.brand) parts.push(d.brand);
+                        if (d.model) parts.push(d.model);
+                        if (d.category && d.category !== 'other') parts.push(d.category);
+                        if (parts.length > 0) {
+                            nameInput.value = parts.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                        }
+                    }
+
+                    // Map category select
+                    const categorySelect = document.getElementById('reportCategory');
+                    const normalizedCat = (d.category || '').toLowerCase();
+                    const mappedCategory = CATEGORY_MAP[normalizedCat] || 'Other';
+                    for (let opt of categorySelect.options) {
+                        if (opt.value.toLowerCase() === mappedCategory.toLowerCase()) {
+                            categorySelect.value = opt.value;
+                            break;
+                        }
+                    }
+
+                    resultEl.classList.remove('hidden');
+                    showToast('🤖 AI Vision analyzed item attributes!', 'success');
+                } else {
+                    document.getElementById('aiNoticeText').innerText = res.error || 'AI analysis temporarily unavailable. You can enter details manually.';
+                    noticeEl.classList.remove('hidden');
                 }
-                reader.readAsDataURL(input.files[0]);
+            } catch (err) {
+                document.getElementById('aiNoticeText').innerText = 'AI analysis temporarily unavailable. Manual item reporting is ready.';
+                noticeEl.classList.remove('hidden');
+            } finally {
+                loadingEl.classList.add('hidden');
             }
         }
 

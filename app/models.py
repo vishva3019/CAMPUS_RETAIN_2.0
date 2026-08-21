@@ -276,6 +276,19 @@ class Item(db.Model):
     date_found = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
     reported_by = db.Column(db.String(255), nullable=True)
 
+    # AI Visual & Metadata fields
+    ai_category = db.Column(db.String(50), nullable=True)
+    ai_primary_color = db.Column(db.String(50), nullable=True)
+    ai_secondary_colors = db.Column(db.JSON, nullable=True)
+    ai_brand = db.Column(db.String(100), nullable=True)
+    ai_model = db.Column(db.String(100), nullable=True)
+    ai_visible_text = db.Column(db.JSON, nullable=True)
+    ai_distinctive_features = db.Column(db.JSON, nullable=True)
+    ai_condition = db.Column(db.String(30), nullable=True)
+    ai_confidence = db.Column(db.Float, nullable=True)
+    ai_analysis_status = db.Column(db.String(30), default="pending")
+    ai_analyzed_at = db.Column(db.DateTime, nullable=True)
+
     claims = db.relationship(
         "Claim",
         back_populates="item",

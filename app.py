@@ -1,14 +1,22 @@
 import os
 import smtplib
 import base64
+import json
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from email.mime.text import MIMEText
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+
+from ai.vision import analyze_item_image
+from ai.config import AIConfig
+
+def utcnow():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 
 # Optional Twilio
 try:
@@ -80,7 +88,20 @@ class Item(db.Model):
     secret_detail = db.Column(db.Text)
     image_data = db.Column(db.Text)
     status = db.Column(db.String(30), default="Available")
-    date_found = db.Column(db.DateTime, default=datetime.utcnow)
+    date_found = db.Column(db.DateTime, default=utcnow)
+
+    # AI Visual & Metadata Fields
+    ai_category = db.Column(db.String(50), nullable=True)
+    ai_primary_color = db.Column(db.String(50), nullable=True)
+    ai_secondary_colors = db.Column(db.JSON, nullable=True)
+    ai_brand = db.Column(db.String(100), nullable=True)
+    ai_model = db.Column(db.String(100), nullable=True)
+    ai_visible_text = db.Column(db.JSON, nullable=True)
+    ai_distinctive_features = db.Column(db.JSON, nullable=True)
+    ai_condition = db.Column(db.String(30), nullable=True)
+    ai_confidence = db.Column(db.Float, nullable=True)
+    ai_analysis_status = db.Column(db.String(30), default="pending")
+    ai_analyzed_at = db.Column(db.DateTime, nullable=True)
 
     claims = db.relationship(
         "Claim",
@@ -379,6 +400,41 @@ def init_db():
 # API CONTROLLERS ENDPOINTS
 # ==================================================
 
+# ---------- AI IMAGE ANALYSIS PIPELINE ----------
+
+@app.route("/api/ai/analyze-image", methods=["POST"])
+@login_required
+def api_analyze_image():
+    """Endpoint for instant asynchronous AI item image analysis."""
+    try:
+        image_input = None
+        if "image" in request.files and request.files["image"].filename:
+            image_input = request.files["image"]
+        elif request.is_json and request.json:
+            image_input = request.json.get("image")
+        elif "image" in request.form and request.form.get("image"):
+            image_input = request.form.get("image")
+
+        if not image_input:
+            return jsonify({
+                "success": False,
+                "error": "No image payload provided for analysis.",
+                "data": None
+            }), 400
+
+        result = analyze_item_image(image_input)
+        status_code = 200 if result.get("success") else 400
+        return jsonify(result), status_code
+
+    except Exception as e:
+        app.logger.exception("AI image analysis endpoint error")
+        return jsonify({
+            "success": False,
+            "error": "AI analysis is temporarily unavailable.",
+            "data": None
+        }), 200
+
+
 # ---------- REPORT DISCOVERY PIPELINE ----------
 
 @app.route("/api/report", methods=["POST"])
@@ -387,20 +443,57 @@ def report_item():
     try:
         f = request.files.get("image")
         image_b64 = None
+        raw_bytes = None
 
         if f and f.filename:
+            raw_bytes = f.read()
             image_b64 = (
-                "data:" + f.content_type +
+                "data:" + (f.content_type or "image/jpeg") +
                 ";base64," +
-                base64.b64encode(f.read()).decode()
+                base64.b64encode(raw_bytes).decode()
             )
+
+        # Parse client-submitted AI metadata if present
+        ai_data = None
+        raw_ai_meta = request.form.get("ai_metadata")
+        if raw_ai_meta:
+            try:
+                ai_data = json.loads(raw_ai_meta)
+            except Exception:
+                ai_data = None
+
+        ai_status = "not_applicable"
+        if ai_data:
+            ai_status = "completed"
+        elif raw_bytes:
+            # Fallback automatic analysis if user did not preview
+            try:
+                ai_res = analyze_item_image(raw_bytes)
+                if ai_res.get("success") and ai_res.get("data"):
+                    ai_data = ai_res["data"]
+                    ai_status = "completed"
+                else:
+                    ai_status = "failed"
+            except Exception:
+                ai_status = "failed"
 
         item = Item(
             name=request.form["name"],
             category=request.form.get("category", "Other"),
             location=request.form["location"],
             secret_detail=request.form.get("secret_detail", ""),
-            image_data=image_b64
+            image_data=image_b64,
+            ai_category=ai_data.get("category") if ai_data else None,
+            ai_primary_color=ai_data.get("primary_color") if ai_data else None,
+            ai_secondary_colors=ai_data.get("secondary_colors") if ai_data else None,
+            ai_brand=ai_data.get("brand") if ai_data else None,
+            ai_model=ai_data.get("model") if ai_data else None,
+            ai_visible_text=ai_data.get("visible_text") if ai_data else None,
+            ai_distinctive_features=ai_data.get("distinctive_features") if ai_data else None,
+            ai_condition=ai_data.get("condition") if ai_data else None,
+            ai_confidence=ai_data.get("confidence") if ai_data else None,
+            ai_analysis_status=ai_status,
+            ai_analyzed_at=utcnow() if ai_data else None
         )
 
         db.session.add(item)
@@ -413,10 +506,12 @@ def report_item():
                 f"A new discovered asset entry '{item.name}' has been logged into the registry."
             )
 
-        return jsonify({"status": "success"})
+        return jsonify({"status": "success", "item_id": item.id, "ai_status": ai_status})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.exception("Error during item reporting")
+        return jsonify({"error": "Failed to log item into inventory."}), 500
+
 
 
 # ---------- ALLOCATE CLAIM QUERY ----------
