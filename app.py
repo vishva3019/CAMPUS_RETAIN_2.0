@@ -13,6 +13,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from ai.vision import analyze_item_image
 from ai.matching import find_potential_matches
+from ai.search import semantic_search
 from ai.config import AIConfig
 
 def utcnow():
@@ -839,6 +840,54 @@ def trigger_item_match(item_id: int):
     except Exception as e:
         app.logger.exception("Error triggering matching")
         return jsonify({"success": False, "error": "Failed to run AI matching engine."}), 500
+
+
+# ---------- AI NATURAL LANGUAGE SEARCH PIPELINE ----------
+
+@app.route("/api/ai/search", methods=["POST"])
+@login_required
+def api_ai_search():
+    """Natural language AI search endpoint."""
+    try:
+        query = ""
+        target = "all"
+        if request.is_json and request.json:
+            query = request.json.get("query", "").strip()
+            target = request.json.get("target", "all")
+        elif request.form:
+            query = request.form.get("query", "").strip()
+            target = request.form.get("target", "all")
+
+        if not query:
+            return jsonify({
+                "success": False,
+                "error": "Search query cannot be empty.",
+                "data": None
+            }), 400
+
+        # Query items from database based on target
+        if target == "found":
+            db_items = Item.query.filter(
+                (Item.item_type == "found") | (Item.item_type == None)
+            ).all()
+        elif target == "lost":
+            db_items = Item.query.filter_by(item_type="lost").all()
+        else:
+            db_items = Item.query.all()
+
+        item_dicts = [it.to_dict() for it in db_items]
+
+        # Execute semantic search pipeline
+        res = semantic_search(query, item_dicts, top_n=20)
+        return jsonify(res)
+
+    except Exception as e:
+        app.logger.exception("AI search endpoint error")
+        return jsonify({
+            "success": False,
+            "error": "Search service is temporarily unavailable.",
+            "data": None
+        }), 200
 
 
 
