@@ -61,6 +61,37 @@ class TestAIConfig(unittest.TestCase):
             self.assertNotIn("secret_key_12345", str(summary))
             self.assertIn("masked_key", summary)
 
+    def test_provider_key_isolation_google(self):
+        # When provider is google, OPENAI_API_KEY must not be used
+        env = {
+            "AI_PROVIDER": "google",
+            "OPENAI_API_KEY": "sk-openai-secret",
+            "GEMINI_API_KEY": "gemini-secret-123",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            self.assertEqual(AIConfig.get_api_key(), "gemini-secret-123")
+            self.assertEqual(AIConfig.get_api_key("google"), "gemini-secret-123")
+
+    def test_provider_key_isolation_openai(self):
+        # When provider is openai, GEMINI_API_KEY must not be used
+        env = {
+            "AI_PROVIDER": "openai",
+            "GEMINI_API_KEY": "gemini-secret-123",
+            "OPENAI_API_KEY": "sk-openai-secret",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            self.assertEqual(AIConfig.get_api_key(), "sk-openai-secret")
+            self.assertEqual(AIConfig.get_api_key("openai"), "sk-openai-secret")
+
+    def test_openai_auto_detection(self):
+        # When AI_PROVIDER is unset but OPENAI_API_KEY is present
+        env = {
+            "OPENAI_API_KEY": "sk-openai-secret",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            self.assertEqual(AIConfig.get_provider(), "openai")
+            self.assertEqual(AIConfig.get_api_key(), "sk-openai-secret")
+
 
 class TestAIExceptions(unittest.TestCase):
     """Test AI exception hierarchy and user-safe messaging."""
@@ -104,6 +135,7 @@ class TestAIClientFactory(unittest.TestCase):
             client = get_ai_client()
             self.assertIsInstance(client, GoogleGeminiProvider)
             self.assertEqual(client.model, "gemini-1.5-flash")
+            self.assertNotIn("?key=", client._get_url())
 
     def test_configured_openai_provider(self):
         env = {

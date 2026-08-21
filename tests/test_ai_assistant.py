@@ -168,6 +168,28 @@ class TestFlaskAssistantEndpoint(unittest.TestCase):
         self.assertIn("message", data["data"])
         self.assertGreaterEqual(len(data["data"]["results"]), 1)
 
+    def test_chat_endpoint_unauthenticated_public_access(self):
+        # Public visitors/students can interact with AI assistant without logging in
+        resp = self.client.post(
+            "/api/ai/chat",
+            json={"message": "How do I claim an item?"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["data"]["intent"], "claim_guidance")
+        self.assertIn("Claim Property", data["data"]["message"])
+
+    def test_search_endpoint_unauthenticated_public_access(self):
+        # Public search on homepage works without authentication redirect
+        resp = self.client.post(
+            "/api/ai/search",
+            json={"query": "black backpack"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertTrue(data["success"])
+
 
 if __name__ == "__main__":
     unittest.main()

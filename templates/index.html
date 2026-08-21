@@ -648,17 +648,32 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: message })
                 });
-                const res = await response.json();
+
                 document.getElementById(typingId)?.remove();
 
-                if (res.success && res.data) {
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        renderAssistantText("Please sign in with your student account to continue.");
+                    } else if (response.status >= 500) {
+                        renderAssistantText("Campus Retain AI is temporarily unavailable. Please try standard search.");
+                    } else {
+                        renderAssistantText("Unable to process this request right now. Please try again.");
+                    }
+                    return;
+                }
+
+                const res = await response.json();
+
+                if (res && res.success && res.data) {
+                    renderAssistantReply(res.data);
+                } else if (res && res.data && res.data.message) {
                     renderAssistantReply(res.data);
                 } else {
-                    renderAssistantText("Campus Retain AI is temporarily unable to process this request. Please try standard search.");
+                    renderAssistantText((res && res.error) || "Campus Retain AI is temporarily unable to process this request. Please try standard search.");
                 }
             } catch (err) {
                 document.getElementById(typingId)?.remove();
-                renderAssistantText("A network fault occurred. Please check your connection and retry.");
+                renderAssistantText("Unable to reach Campus Retain AI service. Please check your connection and retry.");
             }
         }
 

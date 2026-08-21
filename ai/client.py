@@ -109,7 +109,7 @@ class GoogleGeminiProvider(BaseAIProvider):
         # Standard Google Gemini REST endpoint
         return (
             f"https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{self.model}:generateContent?key={self.api_key}"
+            f"{self.model}:generateContent"
         )
 
     def _execute_request(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -118,7 +118,10 @@ class GoogleGeminiProvider(BaseAIProvider):
             response = requests.post(
                 url,
                 json=payload,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": self.api_key,
+                },
                 timeout=self.timeout,
             )
         except requests.exceptions.Timeout as exc:

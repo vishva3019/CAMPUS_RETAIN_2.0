@@ -10,6 +10,7 @@ from email.mime.text import MIMEText
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from ai.vision import analyze_item_image
@@ -264,6 +265,103 @@ def send_sms(receiver, body):
 
 
 # ==================================================
+# SAFE SCHEMA SYNCHRONIZATION & MIGRATION
+# ==================================================
+
+_schema_initialized = False
+
+def ensure_schema():
+    """Idempotently synchronizes the database schema by adding missing columns/tables
+    without data loss or table drops. Safe for both PostgreSQL (Neon) and SQLite.
+    """
+    global _schema_initialized
+    try:
+        # Step 1: Create any missing tables (e.g. item_match, user, claim, item)
+        db.create_all()
+
+        dialect = db.engine.dialect.name
+        with db.engine.begin() as conn:
+            if dialect == "sqlite":
+                item_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(item)")).fetchall()]
+                claim_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(claim)")).fetchall()]
+
+                item_additions = [
+                    ("item_type", "VARCHAR(20) DEFAULT 'found'"),
+                    ("reported_by", "VARCHAR(120)"),
+                    ("date_lost", "TIMESTAMP"),
+                    ("ai_category", "VARCHAR(50)"),
+                    ("ai_primary_color", "VARCHAR(30)"),
+                    ("ai_secondary_colors", "JSON"),
+                    ("ai_brand", "VARCHAR(50)"),
+                    ("ai_model", "VARCHAR(50)"),
+                    ("ai_visible_text", "JSON"),
+                    ("ai_distinctive_features", "JSON"),
+                    ("ai_condition", "VARCHAR(30)"),
+                    ("ai_confidence", "FLOAT"),
+                    ("ai_analysis_status", "VARCHAR(20) DEFAULT 'not_applicable'"),
+                    ("ai_analyzed_at", "TIMESTAMP"),
+                ]
+                for col_name, col_type in item_additions:
+                    if col_name not in item_cols:
+                        conn.execute(text(f"ALTER TABLE item ADD COLUMN {col_name} {col_type}"))
+
+                claim_additions = [
+                    ("ai_confidence_score", "INTEGER"),
+                    ("ai_confidence_level", "VARCHAR(20)"),
+                    ("ai_matching_factors", "JSON"),
+                    ("ai_conflicting_factors", "JSON"),
+                    ("ai_explanation", "TEXT"),
+                    ("ai_recommendation", "VARCHAR(50) DEFAULT 'manual_review'"),
+                    ("ai_analysis_status", "VARCHAR(20) DEFAULT 'pending'"),
+                    ("ai_analyzed_at", "TIMESTAMP"),
+                ]
+                for col_name, col_type in claim_additions:
+                    if col_name not in claim_cols:
+                        conn.execute(text(f"ALTER TABLE claim ADD COLUMN {col_name} {col_type}"))
+
+                conn.execute(text("UPDATE item SET item_type = 'found' WHERE item_type IS NULL"))
+
+            elif dialect == "postgresql":
+                postgres_sql = """
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS item_type VARCHAR(20) DEFAULT 'found';
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS reported_by VARCHAR(120);
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS date_lost TIMESTAMP;
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_category VARCHAR(50);
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_primary_color VARCHAR(30);
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_secondary_colors JSON;
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_brand VARCHAR(50);
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_model VARCHAR(50);
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_visible_text JSON;
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_distinctive_features JSON;
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_condition VARCHAR(30);
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_confidence FLOAT;
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_analysis_status VARCHAR(20) DEFAULT 'not_applicable';
+                ALTER TABLE item ADD COLUMN IF NOT EXISTS ai_analyzed_at TIMESTAMP;
+
+                UPDATE item SET item_type = 'found' WHERE item_type IS NULL;
+
+                ALTER TABLE claim ADD COLUMN IF NOT EXISTS ai_confidence_score INTEGER;
+                ALTER TABLE claim ADD COLUMN IF NOT EXISTS ai_confidence_level VARCHAR(20);
+                ALTER TABLE claim ADD COLUMN IF NOT EXISTS ai_matching_factors JSON;
+                ALTER TABLE claim ADD COLUMN IF NOT EXISTS ai_conflicting_factors JSON;
+                ALTER TABLE claim ADD COLUMN IF NOT EXISTS ai_explanation TEXT;
+                ALTER TABLE claim ADD COLUMN IF NOT EXISTS ai_recommendation VARCHAR(50) DEFAULT 'manual_review';
+                ALTER TABLE claim ADD COLUMN IF NOT EXISTS ai_analysis_status VARCHAR(20) DEFAULT 'pending';
+                ALTER TABLE claim ADD COLUMN IF NOT EXISTS ai_analyzed_at TIMESTAMP;
+                """
+                for statement in postgres_sql.strip().split(";"):
+                    stmt = statement.strip()
+                    if stmt:
+                        conn.execute(text(stmt))
+
+        _schema_initialized = True
+        return True
+    except Exception as e:
+        app.logger.warning(f"Schema synchronization warning: {e}")
+        return False
+
+
+# ==================================================
 # AUTH DECORATORS & TRAFFIC INTERCEPTORS
 # ==================================================
 
@@ -271,7 +369,7 @@ def send_sms(receiver, body):
 def check_for_maintenance():
     bypass_routes = [
         "static", "login", "admin_login", "admin_dashboard", "logout",
-        "init_db", "reject_claim", "approve_claim", "delete_item", "test_email",
+        "reject_claim", "approve_claim", "delete_item", "test_email",
         "forgot_password", "reset_password"
     ]
     
@@ -289,6 +387,8 @@ def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "user_email" not in session:
+            if request.path.startswith("/api/") or request.is_json:
+                return jsonify({"error": "Authentication required. Please sign in.", "success": False}), 401
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return wrapper
@@ -298,6 +398,8 @@ def admin_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if not session.get("is_admin"):
+            if request.path.startswith("/api/") or request.is_json:
+                return jsonify({"error": "Administrator authorization required.", "success": False}), 403
             return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
     return wrapper
@@ -540,15 +642,7 @@ def logout():
     return redirect(url_for("login"))
 
 
-# ---------------- DB SCHEMAS INITIALIZATION ----------------
 
-@app.route("/init-db")
-def init_db():
-    try:
-        db.create_all()
-        return "Database architecture schemas initialized successfully!"
-    except Exception as e:
-        return f"Database Schema Construction Fault Error: {str(e)}"
 
 
 # ---------- AI MULTIMODAL IMAGE ANALYSIS ENDPOINT ----------
@@ -861,7 +955,6 @@ def report_lost_item():
 # ---------- RETRIEVE MATCHES FOR AN ITEM ----------
 
 @app.route("/api/ai/matches/<int:item_id>", methods=["GET"])
-@login_required
 def api_get_item_matches(item_id):
     try:
         item = db.session.get(Item, item_id)
@@ -892,7 +985,6 @@ def api_get_item_matches(item_id):
 # ---------- AI NATURAL LANGUAGE SEARCH ENDPOINT ----------
 
 @app.route("/api/ai/search", methods=["POST"])
-@login_required
 def api_ai_search():
     """Natural Language semantic search endpoint."""
     try:
@@ -907,11 +999,14 @@ def api_ai_search():
             }), 400
 
         # Retrieve candidate items from database
-        db_items = Item.query.filter(
-            (Item.status != "Claimed") | (Item.status == None)
-        ).all()
-
-        item_dicts = [it.to_dict() for it in db_items]
+        try:
+            db_items = Item.query.filter(
+                (Item.status != "Claimed") | (Item.status == None)
+            ).all()
+            item_dicts = [it.to_dict() for it in db_items]
+        except Exception as db_err:
+            app.logger.warning(f"Database query error in AI search: {db_err}")
+            item_dicts = []
 
         # Execute semantic search pipeline
         res = semantic_search(query, item_dicts, top_n=20)
@@ -929,9 +1024,8 @@ def api_ai_search():
 # ---------- AI CONVERSATIONAL ASSISTANT ENDPOINT ----------
 
 @app.route("/api/ai/chat", methods=["POST"])
-@login_required
 def api_ai_chat():
-    """Conversational AI Assistant endpoint for students."""
+    """Conversational AI Assistant endpoint for students and visitors."""
     try:
         message = ""
         history = []
@@ -942,10 +1036,14 @@ def api_ai_chat():
             message = request.form.get("message", "").strip()
 
         # Retrieve available inventory items from database for grounding
-        db_items = Item.query.filter(
-            (Item.status != "Claimed") | (Item.status == None)
-        ).all()
-        item_dicts = [it.to_dict() for it in db_items]
+        try:
+            db_items = Item.query.filter(
+                (Item.status != "Claimed") | (Item.status == None)
+            ).all()
+            item_dicts = [it.to_dict() for it in db_items]
+        except Exception as db_err:
+            app.logger.warning(f"Database query error in AI chat: {db_err}")
+            item_dicts = []
 
         res = handle_chat_interaction(message, item_dicts, history=history)
         return jsonify(res)

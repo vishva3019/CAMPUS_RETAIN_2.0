@@ -1,7 +1,7 @@
 """AI Configuration Management.
 
 Reads and validates AI provider settings from environment variables safely.
-Never leaks raw credentials.
+Never leaks raw credentials or cross-contaminates provider keys.
 """
 
 from __future__ import annotations
@@ -15,12 +15,43 @@ class AIConfig:
     @staticmethod
     def get_provider() -> str:
         """Returns the configured AI provider, normalized to lowercase (default: 'google')."""
-        return (os.environ.get("AI_PROVIDER") or "google").strip().lower()
+        provider = os.environ.get("AI_PROVIDER")
+        if provider:
+            return provider.strip().lower()
+        # Auto-detect provider if OPENAI_API_KEY is present without Google keys
+        if os.environ.get("OPENAI_API_KEY") and not (
+            os.environ.get("AI_API_KEY")
+            or os.environ.get("GEMINI_API_KEY")
+            or os.environ.get("GOOGLE_API_KEY")
+        ):
+            return "openai"
+        return "google"
 
     @staticmethod
-    def get_api_key() -> str:
-        """Returns the AI API key or empty string if not configured."""
-        return (os.environ.get("AI_API_KEY") or "").strip()
+    def get_api_key(provider: str | None = None) -> str:
+        """Returns the appropriate API key for the selected AI provider.
+
+        Strictly isolates keys to prevent cross-provider leakage.
+        """
+        target_provider = (provider or AIConfig.get_provider()).lower()
+
+        if target_provider in ("google", "gemini"):
+            return (
+                os.environ.get("AI_API_KEY")
+                or os.environ.get("GEMINI_API_KEY")
+                or os.environ.get("GOOGLE_API_KEY")
+                or ""
+            ).strip()
+        elif target_provider in ("openai",):
+            return (
+                os.environ.get("OPENAI_API_KEY")
+                or os.environ.get("AI_API_KEY")
+                or ""
+            ).strip()
+        elif target_provider in ("mock", "test"):
+            return (os.environ.get("AI_API_KEY") or "mock-key").strip()
+        else:
+            return (os.environ.get("AI_API_KEY") or "").strip()
 
     @staticmethod
     def get_model() -> str:
@@ -41,7 +72,7 @@ class AIConfig:
 
     @classmethod
     def is_configured(cls) -> bool:
-        """True if an AI API key is configured."""
+        """True if an AI API key is configured for the current provider."""
         return bool(cls.get_api_key())
 
     @classmethod
