@@ -35,7 +35,8 @@ class TestAIConfig(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             self.assertEqual(AIConfig.get_provider(), "google")
             self.assertEqual(AIConfig.get_api_key(), "")
-            self.assertEqual(AIConfig.get_model(), "gemini-1.5-flash")
+            self.assertEqual(AIConfig.get_model(), "gemini-2.5-flash")
+            self.assertNotEqual(AIConfig.get_model(), "gemini-1.5-flash")
             self.assertFalse(AIConfig.is_configured())
             self.assertEqual(AIConfig.get_masked_api_key(), "NOT_CONFIGURED")
 
@@ -129,12 +130,16 @@ class TestAIClientFactory(unittest.TestCase):
         env = {
             "AI_PROVIDER": "google",
             "AI_API_KEY": "valid_test_api_key",
-            "AI_MODEL": "gemini-1.5-flash",
+            "AI_MODEL": "gemini-2.5-flash",
         }
         with patch.dict(os.environ, env, clear=True):
             client = get_ai_client()
             self.assertIsInstance(client, GoogleGeminiProvider)
-            self.assertEqual(client.model, "gemini-1.5-flash")
+            self.assertEqual(client.model, "gemini-2.5-flash")
+            self.assertEqual(
+                client._get_url(),
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+            )
             self.assertNotIn("?key=", client._get_url())
 
     def test_configured_openai_provider(self):

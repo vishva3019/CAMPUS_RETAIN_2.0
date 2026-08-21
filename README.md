@@ -213,7 +213,7 @@ DATABASE_URL=sqlite:///campusretain.db
 
 AI_PROVIDER=google
 AI_API_KEY=your-google-gemini-api-key
-AI_MODEL=gemini-1.5-flash
+AI_MODEL=gemini-2.5-flash
 
 ADMIN_EMAIL=admin@ced.alliance.edu.in
 ADMIN_PASSWORD=your_admin_password

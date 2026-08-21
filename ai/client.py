@@ -107,10 +107,10 @@ class GoogleGeminiProvider(BaseAIProvider):
 
     def _get_url(self) -> str:
         # Standard Google Gemini REST endpoint
-        return (
-            f"https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{self.model}:generateContent"
-        )
+        clean_model = self.model.strip()
+        if clean_model.startswith("models/"):
+            clean_model = clean_model[7:]
+        return f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent"
 
     def _execute_request(self, payload: dict[str, Any]) -> dict[str, Any]:
         url = self._get_url()
@@ -364,19 +364,27 @@ def get_ai_client(require_configured: bool = False) -> BaseAIProvider:
     If require_configured is False and no API key is present, returns a MockAIProvider
     to prevent application crashes.
     """
-    if not AIConfig.is_configured():
-        if require_configured:
-            raise AIConfigurationError(
-                "AI_API_KEY environment variable is not configured."
-            )
-        return MockAIProvider(
-            api_key="", model=AIConfig.get_model(), timeout=AIConfig.get_timeout()
-        )
-
     provider = AIConfig.get_provider()
-    key = AIConfig.get_api_key()
+    key = AIConfig.get_api_key(provider)
     model = AIConfig.get_model()
     timeout = AIConfig.get_timeout()
+    is_conf = bool(key)
+
+    logger.info(
+        f"AI Provider selected: {provider} | "
+        f"AI configuration status: {'configured' if is_conf else 'not configured'} | "
+        f"AI model: {model} | "
+        f"AI key status: {'configured' if is_conf else 'missing'}"
+    )
+
+    if not is_conf:
+        if require_configured:
+            raise AIConfigurationError(
+                f"AI service is not configured for provider '{provider}'."
+            )
+        return MockAIProvider(
+            api_key="", model=model, timeout=timeout
+        )
 
     if provider in ("google", "gemini"):
         return GoogleGeminiProvider(api_key=key, model=model, timeout=timeout)
@@ -386,9 +394,9 @@ def get_ai_client(require_configured: bool = False) -> BaseAIProvider:
         return MockAIProvider(api_key=key, model=model, timeout=timeout)
     else:
         logger.warning(
-            "Unknown AI_PROVIDER '%s'. Falling back to MockAIProvider.", provider
+            f"Unknown AI_PROVIDER '{provider}'. Falling back to GoogleGeminiProvider.",
         )
-        return MockAIProvider(api_key=key, model=model, timeout=timeout)
+        return GoogleGeminiProvider(api_key=key, model=model, timeout=timeout)
 
 
 def format_ai_response(

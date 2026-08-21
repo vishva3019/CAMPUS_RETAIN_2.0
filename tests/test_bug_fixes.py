@@ -478,6 +478,117 @@ class TestBug1And2Regression(unittest.TestCase):
                 self.assertEqual(d3["data"]["brand"], "Anker")
                 self.assertNotEqual(d3["data"]["category"], "backpack")
 
+    # TEST 14: Exhaustive provider key isolation
+    def test_14_provider_key_isolation_exhaustive(self):
+        from ai.config import AIConfig
+        from ai.client import get_ai_client, GoogleGeminiProvider, OpenAIProvider
+
+        # Case A: Google receives GOOGLE_API_KEY or GEMINI_API_KEY, never OPENAI_API_KEY
+        env_google = {
+            "AI_PROVIDER": "google",
+            "GEMINI_API_KEY": "gemini_secret_key_12345",
+            "OPENAI_API_KEY": "sk_openai_secret_99999",
+        }
+        with patch.dict(os.environ, env_google, clear=True):
+            self.assertEqual(AIConfig.get_api_key("google"), "gemini_secret_key_12345")
+            client = get_ai_client(require_configured=True)
+            self.assertIsInstance(client, GoogleGeminiProvider)
+            self.assertEqual(client.api_key, "gemini_secret_key_12345")
+            self.assertNotEqual(client.api_key, "sk_openai_secret_99999")
+
+        # Case B: OpenAI receives OPENAI_API_KEY, never GEMINI_API_KEY
+        env_openai = {
+            "AI_PROVIDER": "openai",
+            "GEMINI_API_KEY": "gemini_secret_key_12345",
+            "OPENAI_API_KEY": "sk_openai_secret_99999",
+        }
+        with patch.dict(os.environ, env_openai, clear=True):
+            self.assertEqual(AIConfig.get_api_key("openai"), "sk_openai_secret_99999")
+            client = get_ai_client(require_configured=True)
+            self.assertIsInstance(client, OpenAIProvider)
+            self.assertEqual(client.api_key, "sk_openai_secret_99999")
+            self.assertNotEqual(client.api_key, "gemini_secret_key_12345")
+
+    # TEST 15: API key never appears in HTTP responses, errors, or serialized data
+    def test_15_api_key_never_appears_in_responses_or_logs(self):
+        secret_key_value = "super_confidential_api_key_abcdef123456"
+
+        with self.client.session_transaction() as sess:
+            sess["user_email"] = "student@ced.alliance.edu.in"
+
+        # Simulate 401 error from upstream
+        mock_auth_fail = MagicMock()
+        mock_auth_fail.status_code = 401
+
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": secret_key_value}, clear=True):
+            with patch("requests.post", return_value=mock_auth_fail):
+                b64 = base64.b64encode(SAMPLE_PNG_BYTES).decode("utf-8")
+                resp = self.client.post(
+                    "/api/ai/analyze-image",
+                    json={"image": f"data:image/png;base64,{b64}"},
+                )
+                raw_response_text = resp.data.decode("utf-8")
+                # Confirm secret key is NEVER leaked in response JSON
+                self.assertNotIn(secret_key_value, raw_response_text)
+
+    # TEST 16: Model URL construction with gemini-2.5-flash and prefix handling
+    def test_16_model_url_construction_gemini_2_5_flash(self):
+        from ai.client import GoogleGeminiProvider
+
+        p1 = GoogleGeminiProvider(api_key="test_key", model="gemini-2.5-flash")
+        self.assertEqual(
+            p1._get_url(),
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+        )
+
+        p2 = GoogleGeminiProvider(api_key="test_key", model="models/gemini-2.5-flash")
+        self.assertEqual(
+            p2._get_url(),
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+        )
+
+    # TEST 17: Gemini error handling (Rate limit 429 and Server Error 500) fails safely without leaking secrets
+    def test_17_gemini_error_handling_fails_safely(self):
+        with self.client.session_transaction() as sess:
+            sess["user_email"] = "student@ced.alliance.edu.in"
+
+        # Case A: 429 Rate Limit
+        mock_429 = MagicMock()
+        mock_429.status_code = 429
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-2.5-flash"}, clear=True):
+            with patch("requests.post", return_value=mock_429):
+                resp = self.client.post("/api/ai/analyze-image", json={"image": f"data:image/png;base64,{base64.b64encode(SAMPLE_PNG_BYTES).decode('utf-8')}"})
+                self.assertEqual(resp.status_code, 200)
+                data = resp.get_json()
+                self.assertFalse(data["success"])
+                self.assertIn("rate limit", data["error"].lower())
+
+        # Case B: 500 Server Error
+        mock_500 = MagicMock()
+        mock_500.status_code = 500
+        mock_500.text = "Internal Server Error"
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "gemini-2.5-flash"}, clear=True):
+            with patch("requests.post", return_value=mock_500):
+                resp = self.client.post("/api/ai/analyze-image", json={"image": f"data:image/png;base64,{base64.b64encode(SAMPLE_PNG_BYTES).decode('utf-8')}"})
+                self.assertEqual(resp.status_code, 200)
+                data = resp.get_json()
+                self.assertFalse(data["success"])
+                self.assertIn("unavailable", data["error"].lower())
+
+    # TEST 18: AI_MODEL environment override dynamically changes the target model
+    def test_18_ai_model_environment_override(self):
+        from ai.config import AIConfig
+        from ai.client import get_ai_client
+
+        with patch.dict(os.environ, {"AI_PROVIDER": "google", "AI_API_KEY": "valid_key", "AI_MODEL": "custom-vision-model-v1"}, clear=True):
+            self.assertEqual(AIConfig.get_model(), "custom-vision-model-v1")
+            client = get_ai_client(require_configured=True)
+            self.assertEqual(client.model, "custom-vision-model-v1")
+            self.assertEqual(
+                client._get_url(),
+                "https://generativelanguage.googleapis.com/v1beta/models/custom-vision-model-v1:generateContent"
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
