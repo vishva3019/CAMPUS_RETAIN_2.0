@@ -36,10 +36,7 @@ app = Flask(__name__)
 
 app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret-key")
 
-db_url = os.environ.get("DATABASE_URL")
-
-if not db_url:
-    raise Exception("DATABASE_URL is not set.")
+db_url = os.environ.get("DATABASE_URL", "sqlite:///campusretain.db")
 
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
@@ -167,7 +164,7 @@ class Claim(db.Model):
     student_email = db.Column(db.String(120))
     phone = db.Column(db.String(20))
     proof_description = db.Column(db.Text)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=utcnow)
 
     # Phase 6: AI-Assisted Claim Verification Metadata
     ai_confidence_score = db.Column(db.Integer, nullable=True)
@@ -407,7 +404,7 @@ def forgot_password():
         
         session["reset_email"] = email
         session["reset_otp"] = otp
-        session["reset_expiry"] = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
+        session["reset_expiry"] = (utcnow() + timedelta(minutes=10)).isoformat()
         
         email_body = f"Hello,\n\nYou requested a password reset for Campus Retain.\nYour 6-digit verification code OTP is: {otp}\n\nThis code is valid for 10 minutes. If you did not initialize this configuration, please secure your credentials immediately."
         send_email(email, "Campus Retain - Password Reset Verification OTP", email_body)
@@ -434,7 +431,7 @@ def reset_password():
             return render_template("login.html", error="Recovery session expired. Please initialize password recovery sequence again.")
             
         expiry_time = datetime.fromisoformat(expiry_str)
-        if datetime.utcnow() > expiry_time:
+        if utcnow() > expiry_time:
             return render_template("login.html", error="Verification code token expired. Please try again.")
             
         if input_otp != session_otp:

@@ -19,3 +19,4 @@ twilio==9.10.5
 Flask-WTF>=1.2,<2.0
 Flask-Migrate>=4.0,<5.0
 cloudinary>=1.40,<2.0
+requests>=2.31.0,<3.0

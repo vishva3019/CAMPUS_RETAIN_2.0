@@ -96,13 +96,13 @@ def detect_user_intent(message: str) -> str:
     if any(p in norm for p in ["report lost", "report a lost", "how to report lost", "how do i report lost", "how do i report a lost", "register lost", "lost report"]):
         return "report_lost_help"
 
-    # 5. General platform help
-    if any(p in norm for p in ["how does this work", "how does campus retain work", "how it works", "help me", "what is campus retain", "features"]):
-        return "platform_help"
-
-    # 6. Specific search queries
+    # 5. Specific search queries
     if any(p in norm for p in ["lost", "found", "looking for", "find", "search", "anyone seen", "where is", "backpack", "phone", "bottle", "keys", "wallet", "calculator", "umbrella"]):
         return "search"
+
+    # 6. General platform help
+    if any(p in norm for p in ["how does this work", "how does campus retain work", "how it works", "what is campus retain", "features", "about campus retain", "platform help"]):
+        return "platform_help"
 
     # Default general conversation
     return "conversation"
