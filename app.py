@@ -15,6 +15,7 @@ from ai.vision import analyze_item_image
 from ai.matching import find_potential_matches
 from ai.search import semantic_search
 from ai.claims import analyze_claim
+from ai.assistant import handle_chat_interaction
 from ai.config import AIConfig
 
 def utcnow():
@@ -917,6 +918,44 @@ def api_ai_search():
             "success": False,
             "error": "Search service is temporarily unavailable.",
             "data": None
+        }), 200
+
+
+# ---------- AI CONVERSATIONAL ASSISTANT ENDPOINT ----------
+
+@app.route("/api/ai/chat", methods=["POST"])
+@login_required
+def api_ai_chat():
+    """Conversational AI Assistant endpoint for students."""
+    try:
+        message = ""
+        history = []
+        if request.is_json and request.json:
+            message = request.json.get("message", "").strip()
+            history = request.json.get("history", [])
+        elif request.form:
+            message = request.form.get("message", "").strip()
+
+        # Retrieve available inventory items from database for grounding
+        db_items = Item.query.filter(
+            (Item.status != "Claimed") | (Item.status == None)
+        ).all()
+        item_dicts = [it.to_dict() for it in db_items]
+
+        res = handle_chat_interaction(message, item_dicts, history=history)
+        return jsonify(res)
+
+    except Exception as e:
+        app.logger.exception("AI assistant endpoint error")
+        return jsonify({
+            "success": True,
+            "data": {
+                "message": "Campus Retain AI is temporarily unavailable. You can still use the normal search and lost/found reporting features.",
+                "intent": "error",
+                "results": [],
+                "suggested_actions": ["🔎 Search inventory", "📝 Report lost item"]
+            },
+            "error": None
         }), 200
 
 
