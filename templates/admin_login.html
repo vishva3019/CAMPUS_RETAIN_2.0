@@ -1,91 +1,191 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login | CampusRetain</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        @keyframes darkMeshGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .cyber-dark-bg {
-            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #311042, #020617);
-            background-size: 300% 300%;
-            animation: darkMeshGradient 12s ease infinite;
-        }
-    </style>
-</head>
-<body class="cyber-dark-bg h-screen flex items-center justify-center p-6">
 
-    <div class="w-full max-w-md bg-slate-900/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-800/80 transform transition-all duration-500 hover:shadow-[0_40px_80px_rgba(6,182,212,0.15)] animate__animated animate__fadeInUp">
-        
-        <div class="p-9 pb-8 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-center text-white relative overflow-hidden border-b border-slate-800/60">
-            <div class="absolute -top-6 -right-6 w-36 h-36 bg-cyan-500 rounded-full opacity-10 blur-xl animate-pulse"></div>
-            <div class="absolute -bottom-10 -left-6 w-36 h-36 bg-purple-500 rounded-full opacity-15 blur-2xl"></div>
-            
-            <div class="flex flex-col items-center justify-center space-y-3 relative z-10">
-                <div class="w-14 h-14 bg-slate-800/60 rounded-2xl flex items-center justify-center text-cyan-400 font-black shadow-lg border border-slate-700/30 transform transition duration-500 hover:scale-110 hover:rotate-6 cursor-default">
-                    <svg class="w-7 h-7 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-extrabold tracking-tight bg-gradient-to-b from-white to-slate-400 text-transparent bg-clip-text">CampusRetain</h1>
-                    <p class="text-cyan-400/90 text-[10px] font-bold uppercase tracking-widest mt-1.5 bg-cyan-950/50 border border-cyan-500/30 px-3 py-0.5 rounded-full inline-block">
-                        Administrative Terminal Access
-                    </p>
-                </div>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Portal Access | Campus Retain AI</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+
+
+    <style>
+
+        body {
+
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+            background-color: #020617;
+
+            color: #f8fafc;
+
+        }
+
+
+
+        .cyber-dark-bg {
+
+            background:
+
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.1) 0px, transparent 50%),
+
+                radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+
+                radial-gradient(at 50% 100%, rgba(15, 23, 42, 0.8) 0px, transparent 50%);
+
+        }
+
+
+
+        .dark-glass {
+
+            background: rgba(15, 23, 42, 0.75);
+
+            backdrop-filter: blur(20px);
+
+            -webkit-backdrop-filter: blur(20px);
+
+            border: 1px solid rgba(51, 65, 85, 0.7);
+
+        }
+
+
+
+        .hover-card {
+
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+        }
+
+        .hover-card:hover {
+
+            transform: translateY(-2px);
+
+            box-shadow: 0 25px 50px -12px rgba(6, 182, 212, 0.15);
+
+            border-color: rgba(6, 182, 212, 0.4);
+
+        }
+
+    </style>
+
+</head>
+
+<body class="cyber-dark-bg min-h-screen flex items-center justify-center p-4 sm:p-6 relative">
+
+
+
+    <div class="w-full max-w-md dark-glass rounded-3xl shadow-2xl overflow-hidden hover-card">
+
+
+
+        <div class="p-8 pb-7 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-center text-white relative overflow-hidden border-b border-slate-800">
+
+            <div class="w-12 h-12 bg-cyan-950/60 border border-cyan-500/30 rounded-2xl flex items-center justify-center text-cyan-400 font-black mx-auto mb-3 shadow-lg">
+
+                <svg class="w-6 h-6 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+
+                </svg>
+
             </div>
+
+            <h1 class="text-2xl font-black tracking-tight text-white">Campus Retain</h1>
+
+            <p class="text-cyan-400 text-[10px] font-bold uppercase tracking-widest mt-1 bg-cyan-950/60 border border-cyan-500/30 px-3 py-0.5 rounded-full inline-block">
+
+                Administrative Terminal
+
+            </p>
+
         </div>
-        
-        <div class="p-9">
+
+
+
+        <div class="p-8">
+
             {% if error %}
-            <div class="bg-rose-950/30 border border-rose-500/30 text-rose-400 px-4 py-3.5 rounded-2xl mb-6 text-sm font-semibold flex items-center gap-3 animate__animated animate__shakeX">
-                <div class="p-1 rounded-lg bg-rose-600 text-white shrink-0 shadow-md">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </div>
+
+            <div class="bg-rose-950/40 border border-rose-500/30 text-rose-400 px-4 py-3 rounded-2xl mb-5 text-xs font-semibold flex items-center gap-2.5">
+
+                <span class="shrink-0 text-sm">❌</span>
+
                 <span>{{ error }}</span>
+
             </div>
+
             {% endif %}
 
-            <form action="/admin_login" method="POST" class="space-y-5">
-                <div class="animate__animated animate__fadeIn animate__delay-1s">
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Admin Email</label>
-                    <input type="email" name="email" placeholder="admin@ced.alliance.edu.in" required 
-                           class="w-full border border-slate-800 p-3.5 rounded-xl bg-slate-950/50 focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 text-slate-200 font-medium placeholder:text-slate-600 shadow-inner">
+
+
+            <form action="/admin_login" method="POST" class="space-y-4">
+
+                <div>
+
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">Administrative Email</label>
+
+                    <input type="email" name="email" placeholder="admin@ced.alliance.edu.in" required
+
+                           class="w-full border border-slate-800 p-3.5 rounded-xl bg-slate-950/60 focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition text-sm font-medium text-slate-200 placeholder:text-slate-600">
+
                 </div>
 
-                <div class="animate__animated animate__fadeIn animate__delay-1s">
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Password</label>
-                    <input type="password" name="password" placeholder="••••••••" required 
-                           class="w-full border border-slate-800 p-3.5 rounded-xl bg-slate-950/50 focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all duration-300 text-slate-200 font-medium placeholder:text-slate-600 shadow-inner">
+
+
+                <div>
+
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">Terminal Key Password</label>
+
+                    <input type="password" name="password" placeholder="••••••••" required
+
+                           class="w-full border border-slate-800 p-3.5 rounded-xl bg-slate-950/60 focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition text-sm font-medium text-slate-200 placeholder:text-slate-600">
+
                 </div>
-                
-                <button type="submit" 
-                        class="w-full py-4 mt-6 bg-gradient-to-r from-indigo-600 to-cyan-600 text-white rounded-xl font-bold hover:from-indigo-500 hover:to-cyan-500 transition-all duration-300 shadow-[0_10px_25px_rgba(6,182,212,0.15)] hover:shadow-[0_12px_30px_rgba(6,182,212,0.3)] flex justify-center items-center transform active:scale-[0.98] text-sm tracking-wide group animate__animated animate__fadeInUp animate__delay-1s">
-                    <span>Enter Management Dashboard</span>
-                    <svg class="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                    </svg>
+
+
+
+                <button type="submit"
+
+                        class="w-full py-3.5 mt-2 bg-gradient-to-r from-indigo-600 via-indigo-700 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white rounded-xl font-bold transition shadow-lg shadow-cyan-950/30 flex justify-center items-center gap-2 text-sm tracking-wide">
+
+                    <span>Enter Control Console</span>
+
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+
                 </button>
+
             </form>
-            
-            <div class="mt-8 pt-6 border-t border-slate-800/80 text-center animate__animated animate__fadeIn animate__delay-1s">
-                <a href="/login" class="inline-block text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-cyan-400 transition-colors duration-300 decoration-2 underline-offset-4 hover:underline">
+
+
+
+            <div class="mt-6 pt-5 border-t border-slate-800/80 text-center">
+
+                <a href="/login" class="text-xs font-bold text-slate-500 hover:text-cyan-400 transition">
+
                     ← Return to Student Portal
+
                 </a>
+
             </div>
+
         </div>
+
     </div>
 
+
+
 </body>
+
 </html>

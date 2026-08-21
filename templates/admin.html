@@ -1,366 +1,753 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <title>Admin Dashboard | CampusRetain AI</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Control Terminal | Campus Retain AI</title>
+
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+
+
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .admin-bg {
-            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #111827, #0f172a);
-            background-size: 400% 400%;
-            animation: darkMesh 15s ease infinite;
+
+        body {
+
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+            background-color: #020617;
+
+            color: #f8fafc;
+
         }
-        @keyframes darkMesh {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+
+
+
+        .cyber-dark-bg {
+
+            background:
+
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+
+                radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+
+                radial-gradient(at 50% 100%, rgba(15, 23, 42, 0.9) 0px, transparent 50%);
+
         }
+
+
+
+        .dark-glass {
+
+            background: rgba(15, 23, 42, 0.75);
+
+            backdrop-filter: blur(20px);
+
+            -webkit-backdrop-filter: blur(20px);
+
+            border: 1px solid rgba(51, 65, 85, 0.6);
+
+        }
+
+
+
+        .hover-card {
+
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+        }
+
+        .hover-card:hover {
+
+            border-color: rgba(6, 182, 212, 0.3);
+
+            transform: translateY(-2px);
+
+        }
+
+
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .hover-card:hover { transform: none !important; }
+
+            * { transition-duration: 0.01ms !important; }
+
+        }
+
     </style>
+
 </head>
-<body class="bg-slate-950 text-slate-100 p-6 md:p-10 font-[Inter] min-h-screen admin-bg">
-    <div class="max-w-7xl mx-auto space-y-10">
-        
+
+<body class="cyber-dark-bg min-h-screen p-4 sm:p-6 lg:p-8 flex flex-col justify-between">
+
+
+
+    <div class="max-w-7xl mx-auto w-full space-y-8">
+
+
+
         <!-- HEADER -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate__animated animate__fadeInDown">
-            <div class="flex items-center space-x-3 cursor-pointer group" onclick="location.reload()">
-                <div class="relative w-11 h-11 bg-gradient-to-br from-cyan-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-[0_4px_20px_rgba(6,182,212,0.25)] transform transition duration-300 group-hover:scale-110 group-hover:rotate-3">
+
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800/80 pb-6">
+
+            <div class="flex items-center gap-3">
+
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-cyan-600 flex items-center justify-center text-white shadow-lg shadow-cyan-950/40">
+
                     <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+
                     </svg>
+
                 </div>
-                <div class="flex flex-col">
-                    <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent transform transition duration-300 group-hover:translate-x-0.5">
-                        Campus<span class="text-cyan-400">Retain</span> <span class="text-[10px] uppercase bg-cyan-950 text-cyan-400 font-bold px-2 py-0.5 rounded-full border border-cyan-800">AI Admin</span>
-                    </span>
-                    <span class="text-[9px] font-bold tracking-widest text-slate-500 uppercase -mt-0.5">Control Terminal</span>
+
+                <div>
+
+                    <h1 class="text-xl font-black tracking-tight text-white flex items-center gap-2">
+
+                        Campus<span class="text-cyan-400">Retain</span>
+
+                        <span class="text-[9px] uppercase bg-cyan-950/80 text-cyan-400 font-bold px-2 py-0.5 rounded-full border border-cyan-800">Admin Control</span>
+
+                    </h1>
+
+                    <p class="text-[10px] font-semibold text-slate-500 tracking-wider uppercase -mt-0.5">Alliance University DOSS</p>
+
                 </div>
+
             </div>
-            
-            <div class="flex gap-3 items-center w-full sm:w-auto">
-                <a href="{{ url_for('index') }}" class="flex-1 sm:flex-initial text-center text-cyan-400 font-bold text-xs uppercase tracking-wider border border-cyan-500/30 hover:bg-cyan-500/10 px-6 py-3 rounded-xl transition duration-300">← Public View</a>
-                <a href="/logout" class="flex-1 sm:flex-initial text-center text-rose-400 font-bold text-xs uppercase tracking-wider border border-rose-500/20 bg-rose-950/20 hover:bg-rose-900/30 px-6 py-3 rounded-xl transition duration-300">Logout</a>
+
+
+
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+
+                <a href="{{ url_for('index') }}" class="flex-1 sm:flex-initial text-center px-4 py-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl transition">
+
+                    ← Public Portal View
+
+                </a>
+
+                <a href="/logout" class="flex-1 sm:flex-initial text-center px-4 py-2 text-xs font-bold text-rose-400 hover:text-rose-300 bg-rose-950/30 hover:bg-rose-950/60 border border-rose-800/40 rounded-xl transition">
+
+                    Logout
+
+                </a>
+
             </div>
-        </div>
+
+        </header>
+
+
 
         {% set total_items = items|length %}
+
         {% set pending_claims = items | selectattr('status', 'equalto', 'Pending') | list | length %}
+
         {% set claimed_items = items | selectattr('status', 'equalto', 'Claimed') | list | length %}
+
         {% set total_matches = matches|length if matches else 0 %}
-        
+
+
+
         <!-- METRICS GRID -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 animate__animated animate__fadeInUp">
-            <div class="bg-slate-900/50 backdrop-blur-md p-6 rounded-3xl border border-slate-800/60 flex items-center gap-4 shadow-xl">
-                <div class="w-12 h-12 bg-cyan-500/10 text-cyan-400 rounded-2xl flex items-center justify-center border border-cyan-500/20 shrink-0"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg></div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            <div class="dark-glass p-5 rounded-2xl border border-slate-800 flex items-center gap-4 hover-card">
+
+                <div class="w-11 h-11 bg-cyan-950/80 text-cyan-400 rounded-xl flex items-center justify-center border border-cyan-500/20 shrink-0 font-bold text-lg">📦</div>
+
                 <div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inventory Entries</div>
+
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Registered Items</div>
+
                     <div class="text-2xl font-black text-white mt-0.5">{{ total_items }}</div>
+
                 </div>
+
             </div>
 
-            <!-- AI MATCHES METRIC -->
-            <div class="bg-slate-900/50 backdrop-blur-md p-6 rounded-3xl border border-indigo-500/30 flex items-center gap-4 shadow-xl">
-                <div class="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center border border-indigo-500/20 shrink-0 text-xl font-black">🤖</div>
+
+
+            <div class="dark-glass p-5 rounded-2xl border border-indigo-900/50 flex items-center gap-4 hover-card">
+
+                <div class="w-11 h-11 bg-indigo-950/80 text-indigo-400 rounded-xl flex items-center justify-center border border-indigo-500/30 shrink-0 font-bold text-lg">🤖</div>
+
                 <div>
-                    <div class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">AI Potential Matches</div>
+
+                    <div class="text-[10px] font-bold text-indigo-300 uppercase tracking-wider">AI Discovered Matches</div>
+
                     <div class="text-2xl font-black text-indigo-300 mt-0.5">{{ total_matches }}</div>
+
                 </div>
+
             </div>
 
-            <div class="bg-slate-900/50 backdrop-blur-md p-6 rounded-3xl border border-slate-800/60 flex items-center gap-4 shadow-xl">
-                <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center border border-amber-500/20 shrink-0"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+
+
+            <div class="dark-glass p-5 rounded-2xl border border-slate-800 flex items-center gap-4 hover-card">
+
+                <div class="w-11 h-11 bg-amber-950/80 text-amber-400 rounded-xl flex items-center justify-center border border-amber-500/20 shrink-0 font-bold text-lg">⏳</div>
+
                 <div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Claims</div>
+
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pending Claims Review</div>
+
                     <div class="text-2xl font-black text-amber-400 mt-0.5">{{ pending_claims }}</div>
+
                 </div>
+
             </div>
 
-            <div class="bg-slate-900/50 backdrop-blur-md p-6 rounded-3xl border border-slate-800/60 flex items-center gap-4 shadow-xl">
-                <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center border border-emerald-500/20 shrink-0"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
+
+
+            <div class="dark-glass p-5 rounded-2xl border border-slate-800 flex items-center gap-4 hover-card">
+
+                <div class="w-11 h-11 bg-emerald-950/80 text-emerald-400 rounded-xl flex items-center justify-center border border-emerald-500/20 shrink-0 font-bold text-lg">✓</div>
+
                 <div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Claimed Items</div>
+
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recovered / Claimed</div>
+
                     <div class="text-2xl font-black text-emerald-400 mt-0.5">{{ claimed_items }}</div>
+
                 </div>
+
             </div>
+
         </div>
 
-        <!-- AI DISCOVERED MATCHES SECTION -->
+
+
+        <!-- AI DISCOVERED MATCHES (If any) -->
+
         {% if matches %}
-        <div class="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-indigo-500/20 shadow-2xl p-6 md:p-8 overflow-hidden animate__animated animate__fadeInUp">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-800">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">🤖</div>
+
+        <div class="dark-glass rounded-3xl p-6 border border-indigo-900/50 space-y-4">
+
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+
+                <div class="flex items-center gap-2.5">
+
+                    <span class="text-lg">🤖</span>
+
                     <div>
-                        <h3 class="text-lg font-black text-white">AI Discovered Lost & Found Matches</h3>
-                        <p class="text-xs text-slate-400 font-medium">Automatic multi-attribute pairings identified by the matching engine</p>
+
+                        <h2 class="text-base font-black text-white">AI Discovered Lost & Found Match Pairs</h2>
+
+                        <p class="text-xs text-slate-400 font-medium">Automatic cross-report pairings identified by the matching engine</p>
+
                     </div>
+
                 </div>
-                <span class="text-xs font-black text-indigo-300 bg-indigo-950 border border-indigo-500/30 px-3.5 py-1 rounded-full self-start sm:self-auto">{{ matches|length }} Discovered Match Pairs</span>
+
+                <span class="text-xs font-bold text-indigo-300 bg-indigo-950 border border-indigo-500/30 px-3 py-0.5 rounded-full">{{ matches|length }} Discovered Pairs</span>
+
             </div>
+
+
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
                 {% for m in matches %}
-                <div class="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-indigo-500/40 transition space-y-4">
+
+                <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
+
                     <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Pair Reference #{{ m.id }}</span>
+
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pair ID #{{ m.id }}</span>
+
                         {% if m.match_score >= 80 %}
-                        <span class="text-xs font-black px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{{ m.match_score }}% Match (High Confidence)</span>
+
+                        <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">{{ m.match_score }}% Match (High Confidence)</span>
+
                         {% elif m.match_score >= 60 %}
-                        <span class="text-xs font-black px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">{{ m.match_score }}% Match (Medium Confidence)</span>
+
+                        <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">{{ m.match_score }}% Match (Medium Confidence)</span>
+
                         {% else %}
-                        <span class="text-xs font-black px-3 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">{{ m.match_score }}% Match (Possible)</span>
+
+                        <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400">{{ m.match_score }}% Match (Possible)</span>
+
                         {% endif %}
+
                     </div>
+
+
 
                     <div class="grid grid-cols-2 gap-3 text-xs">
-                        <div class="p-3 bg-slate-900/70 rounded-xl border border-rose-500/20">
-                            <span class="text-[9px] font-extrabold uppercase tracking-widest text-rose-400 block mb-1">Lost Report</span>
-                            <div class="font-bold text-white text-sm truncate">{{ m.lost_item.name if m.lost_item else 'Item #' + m.lost_item_id|string }}</div>
-                            <div class="text-slate-400 text-[11px] truncate mt-0.5">📍 {{ m.lost_item.location if m.lost_item else '-' }}</div>
-                            <div class="text-slate-500 text-[10px] mt-1">{{ m.lost_item.category if m.lost_item else '' }}</div>
+
+                        <div class="p-3 bg-slate-900/80 rounded-xl border border-rose-500/20 space-y-1">
+
+                            <span class="text-[9px] font-bold text-rose-400 uppercase tracking-wider">Lost Report</span>
+
+                            <div class="font-bold text-white truncate">{{ m.lost_item.name if m.lost_item else 'Item #' + m.lost_item_id|string }}</div>
+
+                            <div class="text-slate-400 text-[11px] truncate">📍 {{ m.lost_item.location if m.lost_item else '-' }}</div>
+
                         </div>
 
-                        <div class="p-3 bg-slate-900/70 rounded-xl border border-emerald-500/20">
-                            <span class="text-[9px] font-extrabold uppercase tracking-widest text-emerald-400 block mb-1">Found Item</span>
-                            <div class="font-bold text-white text-sm truncate">{{ m.found_item.name if m.found_item else 'Item #' + m.found_item_id|string }}</div>
-                            <div class="text-slate-400 text-[11px] truncate mt-0.5">📍 {{ m.found_item.location if m.found_item else '-' }}</div>
-                            <div class="text-slate-500 text-[10px] mt-1">{{ m.found_item.category if m.found_item else '' }}</div>
+
+
+                        <div class="p-3 bg-slate-900/80 rounded-xl border border-emerald-500/20 space-y-1">
+
+                            <span class="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">Found Item</span>
+
+                            <div class="font-bold text-white truncate">{{ m.found_item.name if m.found_item else 'Item #' + m.found_item_id|string }}</div>
+
+                            <div class="text-slate-400 text-[11px] truncate">📍 {{ m.found_item.location if m.found_item else '-' }}</div>
+
                         </div>
+
                     </div>
+
+
 
                     {% if m.matching_attributes %}
-                    <div class="text-xs space-y-1 bg-slate-900/40 p-3 rounded-xl border border-slate-800/80">
-                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Matching Evidence</span>
+
+                    <div class="text-xs space-y-1 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+
+                        <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Matching Evidence</span>
+
                         {% for attr in m.matching_attributes %}
-                        <div class="text-emerald-400 font-medium text-[11px] flex items-center gap-1.5">
-                            <span>✓</span> <span>{{ attr }}</span>
-                        </div>
+
+                        <div class="text-emerald-400 text-[11px] flex items-center gap-1.5">✓ <span>{{ attr }}</span></div>
+
                         {% endfor %}
+
                         {% if m.differences %}
+
                         {% for diff in m.differences %}
-                        <div class="text-amber-400/80 font-medium text-[11px] flex items-center gap-1.5 pt-1">
-                            <span>•</span> <span>{{ diff }}</span>
-                        </div>
+
+                        <div class="text-amber-400/80 text-[11px] flex items-center gap-1.5 pt-0.5">• <span>{{ diff }}</span></div>
+
                         {% endfor %}
+
                         {% endif %}
+
                     </div>
+
                     {% endif %}
 
-                    {% if m.explanation %}
-                    <p class="text-[11px] text-slate-400 italic">"{{ m.explanation }}"</p>
-                    {% endif %}
                 </div>
+
                 {% endfor %}
+
             </div>
+
         </div>
+
         {% endif %}
 
-        <!-- INVENTORY TABLE -->
-        <div class="bg-slate-900/40 backdrop-blur-md rounded-3xl shadow-3xl border border-slate-800/50 overflow-hidden animate__animated animate__fadeInUp">
-            <div class="p-6 border-b border-slate-800/80 flex items-center justify-between">
+
+
+        <!-- INVENTORY AND CLAIMS MANAGEMENT TABLE -->
+
+        <div class="dark-glass rounded-3xl border border-slate-800 overflow-hidden shadow-2xl">
+
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+
                 <div>
-                    <h3 class="text-lg font-black text-white">Campus Inventory & Discovery Channel</h3>
-                    <p class="text-xs text-slate-400 font-medium">All recorded lost reports and found asset items</p>
+
+                    <h2 class="text-base font-black text-white">Campus Inventory & Claims Verification</h2>
+
+                    <p class="text-xs text-slate-400 font-medium">Review submitted claims, AI evidence evaluations, and item statuses.</p>
+
                 </div>
+
             </div>
+
+
 
             <div class="overflow-x-auto w-full">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-950/80 border-b border-slate-800 text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+
+                <table class="w-full text-left border-collapse text-xs">
+
+                    <thead class="bg-slate-950/80 border-b border-slate-800 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+
                         <tr>
-                            <th class="p-5">Asset Metadata & Location</th>
-                            <th class="p-5">Type / Category</th>
-                            <th class="p-5">Verification Coordinates</th>
-                            <th class="p-5">Claim Logs & AI Assistance</th>
-                            <th class="p-5">Operational Status</th>
-                            <th class="p-5 text-right">System Actions</th>
+
+                            <th class="p-4">Item & Location</th>
+
+                            <th class="p-4">Type / Category</th>
+
+                            <th class="p-4">Secret Identifier</th>
+
+                            <th class="p-4">Claim Submissions & AI Assessment</th>
+
+                            <th class="p-4">Status</th>
+
+                            <th class="p-4 text-right">Actions</th>
+
                         </tr>
+
                     </thead>
-                    <tbody class="divide-y divide-slate-800/60 font-medium text-sm text-slate-300">
+
+                    <tbody class="divide-y divide-slate-800/60 text-slate-300 font-medium">
+
                         {% for item in items %}
-                        <tr class="hover:bg-slate-900/30 transition duration-200">
-                            <td class="p-5">
-                                <div class="flex items-center gap-4">
-                                    <img src="{{ item.image_data if item.image_data else 'https://via.placeholder.com/60x60?text=No+Image' }}" class="w-12 h-12 rounded-xl object-cover bg-slate-950 border border-slate-800 shadow-inner shrink-0">
-                                    <div class="truncate max-w-[180px]">
-                                        <div class="font-bold text-white text-base truncate">{{ item.name }}</div>
-                                        <div class="text-xs font-semibold text-slate-500 flex items-center gap-1 mt-1">
-                                            <svg class="w-3.5 h-3.5 text-cyan-500/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-                                            <span class="truncate">{{ item.location }}</span>
-                                        </div>
+
+                        <tr class="hover:bg-slate-900/40 transition">
+
+                            <td class="p-4">
+
+                                <div class="flex items-center gap-3">
+
+                                    <img src="{{ item.image_data if item.image_data else 'https://via.placeholder.com/60x60?text=No+Image' }}" class="w-11 h-11 rounded-xl object-cover bg-slate-950 border border-slate-800 shrink-0">
+
+                                    <div class="max-w-[160px] truncate">
+
+                                        <div class="font-bold text-white text-sm truncate">{{ item.name }}</div>
+
+                                        <div class="text-slate-400 text-[11px] truncate mt-0.5">📍 {{ item.location }}</div>
+
                                     </div>
+
                                 </div>
+
                             </td>
-                            <td class="p-5">
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md {% if item.item_type == 'lost' %}bg-rose-500/10 text-rose-400 border border-rose-500/20{% else %}bg-cyan-500/10 text-cyan-400 border border-cyan-500/20{% endif %} uppercase tracking-wider block w-fit mb-1">
+
+
+
+                            <td class="p-4">
+
+                                <span class="text-[9px] font-bold px-2 py-0.5 rounded {% if item.item_type == 'lost' %}bg-rose-500/20 text-rose-400 border border-rose-500/30{% else %}bg-cyan-500/20 text-cyan-400 border border-cyan-500/30{% endif %} uppercase tracking-wider inline-block mb-1">
+
                                     {{ item.item_type|upper if item.item_type else 'FOUND' }}
+
                                 </span>
-                                <span class="text-xs text-slate-400 font-medium">{{ item.category }}</span>
+
+                                <div class="text-slate-400 text-[11px]">{{ item.category }}</div>
+
                             </td>
-                            <td class="p-5 text-xs text-cyan-400 font-semibold italic max-w-[150px] truncate">"{{ item.secret_detail or 'N/A' }}"</td>
-                            <td class="p-5">
+
+
+
+                            <td class="p-4 text-cyan-400 font-semibold italic max-w-[140px] truncate">
+
+                                "{{ item.secret_detail or 'N/A' }}"
+
+                            </td>
+
+
+
+                            <td class="p-4">
+
                                 {% if item.claims %}
-                                    <div class="max-h-60 overflow-y-auto space-y-3 pr-1 min-w-[280px]">
-                                        {% for claim in item.claims | reverse %}
-                                            <div class="p-3.5 rounded-2xl border text-slate-300 text-xs {% if loop.first and item.status == 'Pending' %}bg-amber-500/5 border-amber-500/30 shadow-sm{% else %}bg-slate-950/40 border-slate-800/80 opacity-60{% endif %} space-y-2">
-                                                <div class="flex justify-between items-center">
-                                                    <span class="font-extrabold text-white text-xs">{{ claim.student_id }}</span>
-                                                    <span class="text-[9px] text-slate-500 font-bold">{{ claim.timestamp.strftime('%m-%d %H:%M') if claim.timestamp else 'Recent' }}</span>
-                                                </div>
-                                                <span class="text-[10px] text-slate-400 block font-medium">{{ claim.student_email }} | {{ claim.phone }}</span>
-                                                <span class="italic block text-slate-300 font-medium border-t border-slate-800/50 pt-1.5">"{{ claim.proof_description }}"</span>
 
-                                                <!-- Phase 6: AI-Assisted Claim Assessment Card -->
-                                                {% if claim.ai_confidence_score is not none %}
-                                                <div class="mt-2 pt-2 border-t border-slate-800/80 space-y-1.5 bg-slate-900/60 p-2.5 rounded-xl">
-                                                    <div class="flex items-center justify-between">
-                                                        <span class="text-[9px] font-black uppercase tracking-wider text-indigo-300 flex items-center gap-1">
-                                                            <span>🤖</span> AI Verification Assessment
-                                                        </span>
-                                                        {% if claim.ai_confidence_score >= 80 %}
-                                                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">{{ claim.ai_confidence_score }}% (HIGH)</span>
-                                                        {% elif claim.ai_confidence_score >= 60 %}
-                                                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">{{ claim.ai_confidence_score }}% (MEDIUM)</span>
-                                                        {% else %}
-                                                        <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">{{ claim.ai_confidence_score }}% (LOW)</span>
-                                                        {% endif %}
-                                                    </div>
+                                <div class="space-y-2.5 max-h-56 overflow-y-auto pr-1 min-w-[280px]">
 
-                                                    {% if claim.ai_matching_factors %}
-                                                    <div class="space-y-0.5">
-                                                        {% for factor in claim.ai_matching_factors %}
-                                                        <div class="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
-                                                            <span>✓</span> <span>{{ factor }}</span>
-                                                        </div>
-                                                        {% endfor %}
-                                                    </div>
-                                                    {% endif %}
+                                    {% for claim in item.claims | reverse %}
 
-                                                    {% if claim.ai_conflicting_factors %}
-                                                    <div class="space-y-0.5">
-                                                        {% for conflict in claim.ai_conflicting_factors %}
-                                                        <div class="text-[10px] text-rose-400 font-medium flex items-center gap-1">
-                                                            <span>⚠</span> <span>{{ conflict }}</span>
-                                                        </div>
-                                                        {% endfor %}
-                                                    </div>
-                                                    {% endif %}
+                                    <div class="p-3 rounded-xl border text-xs {% if loop.first and item.status == 'Pending' %}bg-amber-500/10 border-amber-500/40{% else %}bg-slate-950/60 border-slate-800{% endif %} space-y-1.5">
 
-                                                    {% if claim.ai_explanation %}
-                                                    <p class="text-[10px] text-slate-400 italic">"{{ claim.ai_explanation }}"</p>
-                                                    {% endif %}
+                                        <div class="flex justify-between items-center">
 
-                                                    <div class="flex items-center justify-between pt-1 border-t border-slate-800/40 text-[8px] font-bold tracking-widest text-slate-500 uppercase">
-                                                        <span>Recommendation:</span>
-                                                        <span class="text-indigo-400 font-black">MANUAL ADMIN REVIEW</span>
-                                                    </div>
-                                                </div>
+                                            <span class="font-black text-white text-xs">{{ claim.student_id }}</span>
+
+                                            <span class="text-[9px] text-slate-400 font-bold">{{ claim.timestamp.strftime('%m-%d %H:%M') if claim.timestamp else 'Recent' }}</span>
+
+                                        </div>
+
+                                        <div class="text-[10px] text-slate-400">{{ claim.student_email }} | {{ claim.phone }}</div>
+
+                                        <p class="italic text-slate-200 text-[11px] border-t border-slate-800/80 pt-1">"{{ claim.proof_description }}"</p>
+
+
+
+                                        <!-- AI Verification Card -->
+
+                                        {% if claim.ai_confidence_score is not none %}
+
+                                        <div class="mt-2 pt-2 border-t border-slate-800 space-y-1 bg-slate-900/70 p-2 rounded-lg">
+
+                                            <div class="flex items-center justify-between">
+
+                                                <span class="text-[9px] font-black uppercase tracking-wider text-indigo-300 flex items-center gap-1">
+
+                                                    <span>🤖</span> AI Claim Assessment
+
+                                                </span>
+
+                                                {% if claim.ai_confidence_score >= 80 %}
+
+                                                <span class="text-[9px] font-black px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">{{ claim.ai_confidence_score }}% (HIGH)</span>
+
+                                                {% elif claim.ai_confidence_score >= 60 %}
+
+                                                <span class="text-[9px] font-black px-2 py-0.5 rounded bg-amber-500/20 text-amber-400">{{ claim.ai_confidence_score }}% (MEDIUM)</span>
+
+                                                {% else %}
+
+                                                <span class="text-[9px] font-black px-2 py-0.5 rounded bg-rose-500/20 text-rose-400">{{ claim.ai_confidence_score }}% (LOW)</span>
+
                                                 {% endif %}
+
                                             </div>
-                                        {% endfor %}
+
+
+
+                                            {% if claim.ai_matching_factors %}
+
+                                            <div class="space-y-0.5">
+
+                                                {% for factor in claim.ai_matching_factors %}
+
+                                                <div class="text-[10px] text-emerald-400">✓ {{ factor }}</div>
+
+                                                {% endfor %}
+
+                                            </div>
+
+                                            {% endif %}
+
+
+
+                                            {% if claim.ai_conflicting_factors %}
+
+                                            <div class="space-y-0.5">
+
+                                                {% for conflict in claim.ai_conflicting_factors %}
+
+                                                <div class="text-[10px] text-rose-400">⚠ {{ conflict }}</div>
+
+                                                {% endfor %}
+
+                                            </div>
+
+                                            {% endif %}
+
+
+
+                                            {% if claim.ai_explanation %}
+
+                                            <p class="text-[10px] text-slate-400 italic">"{{ claim.ai_explanation }}"</p>
+
+                                            {% endif %}
+
+                                        </div>
+
+                                        {% endif %}
+
                                     </div>
-                                {% else %}
-                                    <span class="bg-slate-950 text-slate-600 border border-slate-900 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">No Claims Logs</span>
-                                {% endif %}
-                            </td>
-                            <td class="p-5">
-                                {% if item.status == 'Available' or item.status == 'Active' %}
-                                    <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-inner">{{ item.status }}</span>
-                                {% elif item.status == 'Pending' %}
-                                    <span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-inner animate-pulse">Review</span>
-                                {% elif item.status == 'Claimed' %}
-                                    <span class="bg-slate-950 text-slate-500 border border-slate-800 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-inner">Claimed</span>
-                                {% endif %}
-                            </td>
-                            <td class="p-5 text-right">
-                                <div class="flex items-center justify-end gap-2">
-                                    {% if item.status == 'Pending' %}
-                                    <button type="button" data-id="{{ item.id }}" onclick="handleAction('approve', this, this.getAttribute('data-id'))" class="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:from-indigo-500 hover:to-cyan-500 transition-all shadow-md flex items-center gap-1">
-                                        Approve Claim
-                                    </button>
-                                    <button type="button" data-id="{{ item.id }}" onclick="handleAction('reject', this, this.getAttribute('data-id'))" class="bg-rose-950/50 text-rose-400 border border-rose-500/20 px-4 py-2 rounded-xl text-xs font-bold hover:bg-rose-900/30 transition-all flex items-center gap-1">
-                                        Reject Claim
-                                    </button>
-                                    {% endif %}
-                                    <button type="button" data-id="{{ item.id }}" onclick="handleAction('delete', this, this.getAttribute('data-id'))" class="border border-slate-800 bg-slate-950/40 p-2 rounded-xl text-slate-500 hover:text-rose-500 hover:border-rose-500/30 transition duration-200">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>
+
+                                    {% endfor %}
+
                                 </div>
+
+                                {% else %}
+
+                                <span class="text-slate-600 text-[10px] uppercase font-bold tracking-wider">No Claims Submitted</span>
+
+                                {% endif %}
+
                             </td>
+
+
+
+                            <td class="p-4">
+
+                                {% if item.status == 'Available' or item.status == 'Active' %}
+
+                                <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">{{ item.status }}</span>
+
+                                {% elif item.status == 'Pending' %}
+
+                                <span class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase animate-pulse">Under Review</span>
+
+                                {% elif item.status == 'Claimed' %}
+
+                                <span class="bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">Claimed</span>
+
+                                {% endif %}
+
+                            </td>
+
+
+
+                            <td class="p-4 text-right">
+
+                                <div class="flex items-center justify-end gap-1.5">
+
+                                    {% if item.status == 'Pending' %}
+
+                                    <button type="button" data-id="{{ item.id }}" onclick="handleAction('approve', this, this.getAttribute('data-id'))" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
+
+                                        Approve
+
+                                    </button>
+
+                                    <button type="button" data-id="{{ item.id }}" onclick="handleAction('reject', this, this.getAttribute('data-id'))" class="bg-rose-950 text-rose-400 border border-rose-800/40 hover:bg-rose-900 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+
+                                        Reject
+
+                                    </button>
+
+                                    {% endif %}
+
+                                    <button type="button" data-id="{{ item.id }}" onclick="handleAction('delete', this, this.getAttribute('data-id'))" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition">
+
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+
+                                    </button>
+
+                                </div>
+
+                            </td>
+
                         </tr>
+
                         {% else %}
+
                         <tr>
-                            <td colspan="6" class="p-20 text-center text-slate-500">
-                                <svg class="w-16 h-16 mx-auto text-slate-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                                <p class="text-base font-bold text-slate-400">Inventory channel clear</p>
-                                <p class="text-xs text-slate-600 mt-0.5">When public users post discoveries or lost reports, entries appear in this registry.</p>
-                            </td>
+
+                            <td colspan="6" class="p-12 text-center text-slate-500">No records found.</td>
+
                         </tr>
+
                         {% endfor %}
+
                     </tbody>
+
                 </table>
+
             </div>
+
         </div>
+
     </div>
+
+
 
     <div id="toastContainer" class="fixed bottom-6 right-6 z-[80] flex flex-col gap-3"></div>
 
-    <script>
-        function showToast(message, type='success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            let iconSvg = type === 'success' ? `<svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>` : `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
-            let bgClass = type === 'success' ? 'bg-slate-900 border-l-4 border-cyan-500' : 'bg-rose-600 border-l-4 border-rose-800';
 
-            toast.className = `flex items-center gap-3 ${bgClass} text-white px-5 py-4 rounded-xl shadow-2xl transform translate-y-12 opacity-0 transition-all duration-300 min-w-[300px] text-xs font-bold uppercase tracking-wider animate__animated animate__fadeInUp animate__fast`;
-            toast.innerHTML = `<div class="shrink-0 flex items-center justify-center">${iconSvg}</div><span>${message}</span>`;
-            
+
+    <script>
+
+        function showToast(message, type = 'success') {
+
+            const container = document.getElementById('toastContainer');
+
+            const toast = document.createElement('div');
+
+            const bgClass = type === 'success' ? 'bg-slate-900 border-cyan-500 text-cyan-300' : 'bg-rose-950 border-rose-500 text-rose-300';
+
+
+
+            toast.className = `flex items-center gap-3 ${bgClass} border-l-4 px-4 py-3 rounded-xl shadow-2xl text-xs font-bold transition-all duration-300`;
+
+            toast.innerHTML = `<span>${type === 'success' ? '✓' : '❌'}</span><span>${message}</span>`;
+
+
+
             container.appendChild(toast);
-            setTimeout(() => { 
-                toast.classList.add('translate-y-12', 'opacity-0'); 
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
+
+            setTimeout(() => toast.remove(), 3500);
+
         }
+
+
 
         async function handleAction(action, btnElement, itemId) {
+
             let endpoint = '';
+
             let requestBody = null;
+
             let remarks = '';
 
+
+
             if (action === 'approve') {
+
                 endpoint = `/api/admin/approve/${itemId}`;
+
             } else if (action === 'reject') {
+
                 endpoint = `/api/admin/reject/${itemId}`;
-                remarks = prompt("Enter the rejection context parameter rationale to include in student alert notification channel:");
-                if (remarks === null) return; 
-                requestBody = JSON.stringify({ remarks: remarks.trim() ? remarks.trim() : "Verification profile attributes did not reconcile with requested parameters." });
+
+                remarks = prompt("Enter the rejection reason to send to student:");
+
+                if (remarks === null) return;
+
+                requestBody = JSON.stringify({ remarks: remarks.trim() ? remarks.trim() : "Verification profile attributes did not reconcile." });
+
             } else {
+
                 endpoint = `/api/item/delete/${itemId}`;
+
             }
-            
-            if (confirm(`Confirm ${action.toUpperCase()} deployment execution on target system parameters?`)) {
+
+
+
+            if (confirm(`Confirm ${action.toUpperCase()} action on item #${itemId}?`)) {
+
                 const originalHtml = btnElement.innerHTML;
+
                 btnElement.disabled = true;
-                btnElement.innerHTML = `<svg class="animate-spin h-4 w-4 mx-auto text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-                
+
+                btnElement.innerHTML = `<span>...</span>`;
+
+
+
                 try {
-                    const res = await fetch(endpoint, { 
-                        method: 'POST', 
+
+                    const res = await fetch(endpoint, {
+
+                        method: 'POST',
+
                         headers: {'Content-Type': 'application/json'},
+
                         body: requestBody
+
                     });
+
                     if (res.ok) {
-                        showToast(`Pipeline execution success: ${action}!`, 'success');
+
+                        showToast(`Action ${action} completed!`, 'success');
+
                         setTimeout(() => location.reload(), 1000);
+
                     } else {
-                        showToast(`Target rejection/operation fault.`, 'error');
-                        btnElement.disabled = false; btnElement.innerHTML = originalHtml;
+
+                        showToast(`Action failed.`, 'error');
+
+                        btnElement.disabled = false;
+
+                        btnElement.innerHTML = originalHtml;
+
                     }
-                } catch(e) { showToast('An interface connectivity fault occurred.', 'error'); btnElement.disabled = false; btnElement.innerHTML = originalHtml; }
+
+                } catch (e) {
+
+                    showToast('Network error.', 'error');
+
+                    btnElement.disabled = false;
+
+                    btnElement.innerHTML = originalHtml;
+
+                }
+
             }
+
         }
+
     </script>
+
 </body>
+
 </html>

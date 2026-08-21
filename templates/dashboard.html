@@ -1,1292 +1,2139 @@
 <!DOCTYPE html>
-<html lang="en">
+
+<html lang="en" class="scroll-smooth">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CampusRetain AI | Alliance University</title>
+
+    <title>Student Dashboard | Campus Retain AI</title>
+
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
+
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+
+
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .vibrant-bg {
-            background: linear-gradient(-45deg, #eef2ff, #f5f3ff, #fdf2f8, #f0fdf4);
-            background-size: 400% 400%;
-            animation: meshGradient 15s ease infinite;
+
+        :root {
+
+            --primary: #4f46e5;
+
+            --primary-dark: #3730a3;
+
+            --accent: #7c3aed;
+
+            --surface: #ffffff;
+
+            --bg-light: #f8fafc;
+
         }
-        @keyframes meshGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+
+
+
+        body {
+
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+            background-color: #f8fafc;
+
+            color: #0f172a;
+
+            -webkit-font-smoothing: antialiased;
+
         }
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+
+
+
+        .ambient-mesh {
+
+            background:
+
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.12) 0px, transparent 50%),
+
+                radial-gradient(at 50% 100%, rgba(224, 231, 255, 0.4) 0px, transparent 50%);
+
         }
+
+
+
+        .glass-panel {
+
+            background: rgba(255, 255, 255, 0.85);
+
+            backdrop-filter: blur(16px);
+
+            -webkit-backdrop-filter: blur(16px);
+
+            border: 1px solid rgba(226, 232, 240, 0.8);
+
+        }
+
+
+
+        .hover-card {
+
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+        }
+
+        .hover-card:hover {
+
+            transform: translateY(-4px);
+
+            box-shadow: 0 20px 40px -15px rgba(79, 70, 229, 0.12);
+
+        }
+
+
+
+        .reveal-on-scroll {
+
+            opacity: 0;
+
+            transform: translateY(20px);
+
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+
+        }
+
+        .reveal-on-scroll.revealed {
+
+            opacity: 1;
+
+            transform: translateY(0);
+
+        }
+
+
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .reveal-on-scroll {
+
+                opacity: 1 !important;
+
+                transform: none !important;
+
+                transition: none !important;
+
+            }
+
+            .hover-card:hover {
+
+                transform: none !important;
+
+            }
+
+            * {
+
+                animation-duration: 0.01ms !important;
+
+                animation-iteration-count: 1 !important;
+
+                transition-duration: 0.01ms !important;
+
+            }
+
+        }
+
     </style>
+
 </head>
-<body class="bg-slate-50/50 text-slate-900 scroll-smooth min-h-screen flex flex-col relative">
+
+<body class="min-h-screen flex flex-col relative selection:bg-indigo-500 selection:text-white">
+
+
+
+    <!-- GLOBAL TOAST NOTIFICATION CONTAINER -->
+
+    <div id="toastContainer" class="fixed top-6 right-6 z-[120] flex flex-col gap-3 pointer-events-none max-w-sm w-full"></div>
+
+
+
+    <!-- ================================================== -->
 
     <!-- NAVIGATION BAR -->
-    <nav class="sticky top-0 z-50 border-b border-slate-100 glass-nav transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="flex items-center space-x-3 cursor-pointer group" onclick="location.reload()">
-                <div class="relative w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-[0_4px_12px_rgba(109,40,217,0.3)] transform transition duration-300 group-hover:scale-110 group-hover:rotate-3">
+
+    <!-- ================================================== -->
+
+    <nav id="navbar" class="sticky top-0 z-50 transition-all duration-300 glass-panel border-b border-slate-200/80">
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+
+
+
+            <!-- Brand Logo -->
+
+            <a href="/" class="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl p-1">
+
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-700 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 group-hover:shadow-indigo-500/30 transition-all duration-300">
+
                     <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+
                     </svg>
+
                 </div>
+
                 <div class="flex flex-col">
-                    <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent transform transition duration-300 group-hover:translate-x-0.5">
-                        Campus<span class="text-violet-600">Retain</span> <span class="text-xs uppercase bg-violet-100 text-violet-700 font-black px-2 py-0.5 rounded-full ml-1 border border-violet-200">AI</span>
+
+                    <span class="text-xl font-black tracking-tight text-slate-900 flex items-center gap-1.5">
+
+                        Campus<span class="text-indigo-600">Retain</span>
+
+                        <span class="text-[10px] uppercase font-extrabold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200/80">Student</span>
+
                     </span>
+
+                    <span class="text-[10px] font-semibold text-slate-400 -mt-0.5 tracking-wide">Alliance University</span>
+
                 </div>
+
+            </a>
+
+
+
+            <!-- Desktop Nav Links -->
+
+            <div class="hidden lg:flex items-center gap-8 text-sm font-semibold text-slate-600">
+
+                <a href="#browse" class="hover:text-indigo-600 transition">Find Items</a>
+
+                <a href="#myLostSection" class="hover:text-indigo-600 transition">My Lost Reports</a>
+
+                <button type="button" onclick="toggleAssistantDrawer()" class="hover:text-indigo-600 transition flex items-center gap-1.5">
+
+                    <span class="text-indigo-600">🤖</span> Ask AI Assistant
+
+                </button>
+
             </div>
-            
-            <div class="flex items-center gap-3 md:gap-4">
-                {% if user_email %}
-                <span class="hidden lg:inline text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200/60 px-3.5 py-1.5 rounded-full shadow-inner">{{ user_email }}</span>
-                <button onclick="toggleModal('reportLostModal')"
-                    class="border border-violet-200 text-violet-700 bg-violet-50/80 hover:bg-violet-100 px-4 py-2 rounded-full font-bold text-xs md:text-sm transition shadow-xs flex items-center gap-1.5 transform active:scale-[0.98]">
-                    <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+
+
+
+            <!-- Header Action Controls -->
+
+            <div class="hidden sm:flex items-center gap-3">
+
+                <div class="flex items-center gap-2 bg-slate-100/80 border border-slate-200/80 px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-700">
+
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+
+                    <span class="max-w-[140px] truncate">{{ user_email }}</span>
+
+                </div>
+
+                <button type="button" onclick="toggleModal('reportLostModal')" class="px-4 py-2 text-xs font-bold text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 border border-indigo-200/80 rounded-xl transition shadow-xs">
+
                     Report Lost
+
                 </button>
-                <button onclick="toggleModal('reportModal')"
-                    class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-5 py-2 rounded-full font-bold text-xs md:text-sm hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 shadow-[0_4px_15px_rgba(109,40,217,0.25)] hover:shadow-[0_6px_20px_rgba(109,40,217,0.4)] transform active:scale-[0.98]">
-                    Report Found
+
+                <button type="button" onclick="toggleModal('reportModal')" class="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 rounded-xl transition shadow-sm shadow-indigo-500/20">
+
+                    + Report Found
+
                 </button>
-                <a href="/logout"
-                    class="text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-rose-600 transition pl-3 border-l border-slate-200">Logout</a>
-                {% else %}
-                <a href="/login"
-                    class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-6 py-2.5 rounded-full font-bold text-xs md:text-sm hover:from-violet-700 hover:to-indigo-700 transition shadow-md">
-                    Student Sign In
-                </a>
-                <a href="/admin_login"
-                    class="text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-cyan-600 transition pl-3 border-l border-slate-200">Admin</a>
-                {% endif %}
+
+                <a href="/logout" class="text-xs font-bold text-slate-400 hover:text-rose-600 transition px-2 py-1 border-l border-slate-200">Logout</a>
+
             </div>
+
+
+
+            <!-- Mobile Hamburger Button -->
+
+            <div class="flex sm:hidden items-center gap-2">
+
+                <button type="button" onclick="toggleMobileMenu()" aria-label="Toggle Menu" class="p-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
+
+                </button>
+
+            </div>
+
         </div>
+
+
+
+        <!-- Mobile Navigation Menu -->
+
+        <div id="mobileMenu" class="hidden sm:hidden border-t border-slate-200 bg-white/95 px-6 py-5 space-y-4">
+
+            <div class="flex flex-col gap-3 font-semibold text-sm text-slate-700">
+
+                <div class="text-xs font-bold text-indigo-700 bg-indigo-50 p-2 rounded-lg truncate">{{ user_email }}</div>
+
+                <a href="#browse" onclick="toggleMobileMenu()" class="py-1 hover:text-indigo-600">Find Items</a>
+
+                <a href="#myLostSection" onclick="toggleMobileMenu()" class="py-1 hover:text-indigo-600">My Lost Reports</a>
+
+                <button type="button" onclick="toggleMobileMenu(); toggleAssistantDrawer();" class="text-left py-1 text-indigo-600 font-bold flex items-center gap-2">
+
+                    <span>🤖</span> Open Campus Retain AI
+
+                </button>
+
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex flex-col gap-2.5">
+
+                <button type="button" onclick="toggleMobileMenu(); toggleModal('reportLostModal');" class="w-full py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl">Report Lost Item</button>
+
+                <button type="button" onclick="toggleMobileMenu(); toggleModal('reportModal');" class="w-full py-2.5 text-xs font-bold text-white bg-indigo-600 rounded-xl">+ Report Found Item</button>
+
+                <a href="/logout" class="text-center py-2 text-xs font-bold text-rose-600">Logout</a>
+
+            </div>
+
+        </div>
+
     </nav>
 
-    <!-- HERO SECTION & NATURAL LANGUAGE SEARCH -->
-    <header class="py-14 md:py-20 px-6 vibrant-bg border-b border-slate-200/50 text-center relative overflow-hidden">
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent"></div>
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100/80 border border-violet-200/80 text-violet-800 text-xs font-bold mb-4 animate__animated animate__fadeInDown">
-            <span class="w-2 h-2 rounded-full bg-violet-600 animate-ping"></span>
-            🤖 AI Natural Language Search & Assistant Active
-        </div>
-        <h1 class="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 relative z-10 animate__animated animate__fadeInDown">
-            Lost it? <span class="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Find what you lost, faster with AI.</span>
-        </h1>
-        <p class="mt-3 text-slate-500 font-medium text-xs md:text-sm lg:text-base relative z-10 max-w-xl mx-auto animate__animated animate__fadeIn animate__delay-1s">
-            Describe what you are looking for in normal human language. AI extracts categories, brands, colors, and locations.
-        </p>
-        
-        <!-- SEARCH INPUT BOX -->
-        <div class="mt-8 max-w-3xl mx-auto relative z-10 animate__animated animate__fadeInUp">
-            <form id="searchForm" onsubmit="executeAISearch(event)" class="flex flex-col sm:flex-row items-center gap-2 bg-white p-2 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-slate-100/90 focus-within:ring-2 ring-violet-500 transition-all">
-                <div class="flex items-center w-full px-3 gap-2">
-                    <svg class="w-5 h-5 text-violet-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    <input type="text" id="searchInput" oninput="handleSearchInput()" placeholder="Describe what you lost (e.g. 'I lost my black Nike backpack near the library yesterday')..." class="w-full py-3 outline-none rounded-xl text-xs md:text-sm font-medium text-slate-800 placeholder:text-slate-400">
-                </div>
-                <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
-                    <button type="submit" id="searchBtn" class="w-full sm:w-auto bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-6 py-3.5 rounded-xl font-bold text-xs md:text-sm hover:from-violet-700 hover:to-indigo-700 transition shadow-md flex items-center justify-center gap-1.5 transform active:scale-[0.98]">
-                        <span>🤖</span>
-                        <span>Search with AI</span>
-                    </button>
-                </div>
-            </form>
 
-            <!-- EXAMPLE QUERY PILLS -->
-            <div class="mt-3 flex flex-wrap items-center justify-center gap-2 text-[11px] text-slate-500">
-                <span class="font-bold text-slate-400">Try searching:</span>
-                <button type="button" onclick="searchExample('I lost a black Nike backpack near the library yesterday')" class="bg-white/80 hover:bg-white border border-slate-200/80 px-2.5 py-1 rounded-full text-slate-600 hover:text-violet-700 transition shadow-2xs font-medium cursor-pointer">"Black Nike backpack near library"</button>
-                <button type="button" onclick="searchExample('Has anyone found a blue water bottle near cafeteria?')" class="bg-white/80 hover:bg-white border border-slate-200/80 px-2.5 py-1 rounded-full text-slate-600 hover:text-violet-700 transition shadow-2xs font-medium cursor-pointer">"Blue water bottle near cafeteria"</button>
-                <button type="button" onclick="searchExample('Casio calculator in LH-101')" class="bg-white/80 hover:bg-white border border-slate-200/80 px-2.5 py-1 rounded-full text-slate-600 hover:text-violet-700 transition shadow-2xs font-medium cursor-pointer">"Casio calculator in LH-101"</button>
-                <button type="button" onclick="searchExample('Keys near main gate')" class="bg-white/80 hover:bg-white border border-slate-200/80 px-2.5 py-1 rounded-full text-slate-600 hover:text-violet-700 transition shadow-2xs font-medium cursor-pointer">"Keys near main gate"</button>
+
+    <!-- ================================================== -->
+
+    <!-- DASHBOARD HEADER & QUICK STATS -->
+
+    <!-- ================================================== -->
+
+    <header class="ambient-mesh border-b border-slate-200/60 pt-10 pb-12 px-4 sm:px-6 lg:px-8">
+
+        <div class="max-w-7xl mx-auto space-y-6">
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+                <div>
+
+                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Student Recovery Portal</h1>
+
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Welcome back, <strong class="text-slate-800">{{ user_email }}</strong></p>
+
+                </div>
+
+                <div class="flex items-center gap-3">
+
+                    <button type="button" onclick="toggleModal('reportLostModal')" class="px-4 py-2.5 bg-white hover:bg-slate-50 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-200 shadow-xs transition hover-card flex items-center gap-1.5">
+
+                        <span>📝</span> Report Lost
+
+                    </button>
+
+                    <button type="button" onclick="toggleModal('reportModal')" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-500/20 transition hover-card flex items-center gap-1.5">
+
+                        <span>+</span> Report Found
+
+                    </button>
+
+                </div>
+
             </div>
+
+
+
+            <!-- Stats Bar -->
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+
+                <div class="bg-white/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg">📦</div>
+
+                    <div>
+
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Campus Catalog</div>
+
+                        <div class="text-xl font-black text-slate-900">{{ items|length }} Items</div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="bg-white/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+
+                    <div class="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center font-bold text-lg">📝</div>
+
+                    <div>
+
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">My Lost Reports</div>
+
+                        <div class="text-xl font-black text-slate-900">{{ my_lost_items|length if my_lost_items else 0 }} Active</div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="bg-white/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">🤖</div>
+
+                    <div>
+
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">AI Engine Status</div>
+
+                        <div class="text-xl font-black text-emerald-600">Active & Ready</div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
+
     </header>
 
-    <!-- MAIN INVENTORY & SEARCH RESULTS -->
-    <main id="browse" class="max-w-7xl mx-auto px-6 py-10 flex-grow w-full space-y-10">
 
-        <!-- AI SEARCH UNDERSTANDING BANNER (Rendered when AI Search is active) -->
-        <div id="aiSearchBanner" class="hidden bg-gradient-to-r from-violet-600/10 via-indigo-600/10 to-purple-600/10 border border-violet-200 rounded-3xl p-6 shadow-sm animate__animated animate__fadeIn">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div class="space-y-2">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-black uppercase tracking-wider text-violet-800 bg-violet-100 px-3 py-1 rounded-full flex items-center gap-1.5">
-                            <span>🤖</span> AI Query Understanding
-                        </span>
-                        <span id="searchResultCountBadge" class="text-xs font-bold text-slate-500">0 items ranked by relevance</span>
+
+    <!-- ================================================== -->
+
+    <!-- MAIN INVENTORY & SEARCH -->
+
+    <!-- ================================================== -->
+
+    <main id="browse" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full space-y-12">
+
+
+
+        <!-- AI SEARCH INPUT -->
+
+        <div class="max-w-3xl mx-auto">
+
+            <form id="searchForm" onsubmit="executeAISearch(event)" class="relative group">
+
+                <div class="flex flex-col sm:flex-row items-center gap-2 bg-white p-2 sm:p-2.5 rounded-2xl shadow-lg border border-slate-200/90 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all duration-300">
+
+                    <div class="flex items-center w-full px-3 gap-3">
+
+                        <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold text-sm">
+
+                            🤖
+
+                        </div>
+
+                        <input type="text" id="searchInput" oninput="handleSearchInput()" placeholder="Search using AI (e.g. 'black laptop charger in library')..." class="w-full py-2.5 text-xs sm:text-sm font-medium text-slate-800 placeholder:text-slate-400 bg-transparent outline-none">
+
                     </div>
-                    <p id="searchBannerQueryText" class="text-sm font-bold text-slate-800"></p>
-                    <div id="searchTagsContainer" class="flex flex-wrap items-center gap-2 pt-1">
-                        <!-- Entity tags inserted dynamically -->
-                    </div>
+
+                    <button type="submit" id="searchBtn" class="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-md shadow-indigo-500/20 shrink-0 flex items-center justify-center gap-2">
+
+                        <span>Search with AI</span>
+
+                    </button>
+
                 </div>
-                <button onclick="resetSearch()" class="self-start md:self-center px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5">
-                    <span>✕</span>
-                    <span>Reset / View All Items</span>
-                </button>
-            </div>
+
+            </form>
+
         </div>
 
-        <!-- USER'S REPORTED LOST ITEMS (IF ANY) -->
-        {% if my_lost_items %}
-        <section id="myLostSection" class="bg-gradient-to-r from-violet-500/10 via-indigo-500/5 to-purple-500/10 rounded-3xl p-6 md:p-8 border border-violet-100/80 shadow-sm animate__animated animate__fadeIn">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                        <span class="w-2.5 h-6 bg-indigo-600 rounded-full inline-block"></span>
-                        My Reported Lost Items
-                    </h2>
-                    <p class="text-xs text-slate-500 font-medium mt-0.5">The AI matching engine continuously monitors new found reports for your items.</p>
+
+
+        <!-- AI SEARCH UNDERSTANDING BANNER (Rendered on AI Search) -->
+
+        <div id="aiSearchBanner" class="hidden bg-gradient-to-br from-indigo-50/90 via-violet-50/70 to-slate-50 border border-indigo-200 rounded-3xl p-6 shadow-sm animate__animated animate__fadeIn">
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+                <div class="space-y-2">
+
+                    <div class="flex items-center gap-2">
+
+                        <span class="text-xs font-black uppercase tracking-wider text-indigo-700 bg-indigo-100/90 px-3 py-1 rounded-full flex items-center gap-1.5 border border-indigo-200">
+
+                            <span>🤖</span> AI Semantic Query Understanding
+
+                        </span>
+
+                        <span id="searchResultCountBadge" class="text-xs font-bold text-slate-600">0 items ranked</span>
+
+                    </div>
+
+                    <p id="searchBannerQueryText" class="text-sm font-bold text-slate-800"></p>
+
+                    <div id="searchTagsContainer" class="flex flex-wrap items-center gap-2 pt-1">
+
+                        <!-- Entity tags injected dynamically -->
+
+                    </div>
+
                 </div>
-                <button onclick="toggleModal('reportLostModal')" class="self-start sm:self-auto text-xs font-bold text-violet-700 bg-white hover:bg-violet-50 px-4 py-2 rounded-xl border border-violet-200 transition shadow-xs flex items-center gap-1">
-                    <span>+ Report Another Lost Item</span>
+
+                <button type="button" onclick="resetSearch()" class="self-start md:self-center px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5">
+
+                    <span>✕</span>
+
+                    <span>Reset / View All Items</span>
+
                 </button>
+
             </div>
+
+        </div>
+
+
+
+        <!-- USER'S REPORTED LOST ITEMS -->
+
+        {% if my_lost_items %}
+
+        <section id="myLostSection" class="bg-gradient-to-r from-indigo-500/5 via-violet-500/5 to-slate-50 rounded-3xl p-6 md:p-8 border border-indigo-100 shadow-xs">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+
+                <div>
+
+                    <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+
+                        <span class="w-2.5 h-6 bg-indigo-600 rounded-full inline-block"></span>
+
+                        My Active Lost Reports
+
+                    </h2>
+
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">The AI engine continuously scans catalog arrivals against these items.</p>
+
+                </div>
+
+                <button type="button" onclick="toggleModal('reportLostModal')" class="self-start sm:self-auto text-xs font-bold text-indigo-700 bg-white hover:bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-200 transition shadow-xs">
+
+                    + Report Another Lost Item
+
+                </button>
+
+            </div>
+
+
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
                 {% for item in my_lost_items %}
-                <div class="bg-white rounded-2xl p-5 border border-slate-200/70 shadow-xs flex flex-col justify-between">
+
+                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover-card flex flex-col justify-between">
+
                     <div>
+
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-[9px] font-extrabold text-violet-600 uppercase tracking-widest bg-violet-50 px-2 py-0.5 rounded-md">{{ item.category }}</span>
+
+                            <span class="text-[10px] font-extrabold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">{{ item.category }}</span>
+
                             <span class="text-[10px] font-bold text-slate-400">{{ item.date_found.strftime('%b %d') if item.date_found else 'Recent' }}</span>
+
                         </div>
-                        <h3 class="font-bold text-slate-800 text-base">{{ item.name }}</h3>
-                        <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+
+                        <h3 class="font-bold text-slate-900 text-base">{{ item.name }}</h3>
+
+                        <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+
+                            <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+
                             <span class="truncate">{{ item.location }}</span>
+
                         </p>
+
                     </div>
 
-                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+
+
+                    <div class="mt-4 pt-3 border-t border-slate-100">
+
                         {% if item.match_count > 0 %}
-                        <button onclick="openMatchesModal('{{ item.id }}', '{{ item.name }}')" class="w-full py-2 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold text-xs shadow-sm hover:from-emerald-700 hover:to-teal-700 transition flex items-center justify-center gap-1.5">
+
+                        <button type="button" onclick="openMatchesModal('{{ item.id }}', '{{ item.name }}')" class="w-full py-2 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold text-xs shadow-sm hover:from-emerald-700 hover:to-teal-700 transition flex items-center justify-center gap-1.5">
+
                             <span>🤖</span>
+
                             <span>{{ item.match_count }} AI Potential Match{% if item.match_count > 1 %}es{% endif %} Found!</span>
+
                         </button>
+
                         {% else %}
-                        <button onclick="openMatchesModal('{{ item.id }}', '{{ item.name }}')" class="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-1.5">
+
+                        <button type="button" onclick="openMatchesModal('{{ item.id }}', '{{ item.name }}')" class="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-1.5">
+
                             <span>🤖 Check AI Matches</span>
+
                         </button>
+
                         {% endif %}
+
                     </div>
+
                 </div>
+
                 {% endfor %}
+
             </div>
+
         </section>
+
         {% endif %}
 
-        <!-- RECENTLY FOUND ITEMS INVENTORY / SEARCH RESULTS GRID -->
-        <section>
-            <div class="flex items-center justify-between mb-6">
-                <h2 id="catalogHeaderTitle" class="text-2xl font-extrabold tracking-tight text-slate-800 flex items-center gap-2">
-                    <span class="w-2.5 h-6 bg-violet-600 rounded-full inline-block"></span>
-                    Recently Found Items
-                </h2>
+
+
+        <!-- CATALOG SECTION -->
+
+        <section class="space-y-6">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+                <div>
+
+                    <h2 id="catalogHeaderTitle" class="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+
+                        <span class="w-2.5 h-6 bg-indigo-600 rounded-full inline-block"></span>
+
+                        Discovered Campus Items
+
+                    </h2>
+
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">Found belongings currently awaiting claim verification.</p>
+
+                </div>
+
+
+
+                <!-- Category Filters -->
+
+                <div class="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-600">
+
+                    <button type="button" onclick="filterCategory('all')" class="cat-pill active px-3 py-1.5 rounded-lg bg-indigo-600 text-white transition">All</button>
+
+                    <button type="button" onclick="filterCategory('Electronics')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition">Electronics</button>
+
+                    <button type="button" onclick="filterCategory('Accessories')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition">Accessories</button>
+
+                    <button type="button" onclick="filterCategory('ID & Cards')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition">ID & Cards</button>
+
+                    <button type="button" onclick="filterCategory('Books')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition">Books</button>
+
+                    <button type="button" onclick="filterCategory('Keys')" class="cat-pill px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition">Keys</button>
+
+                </div>
+
             </div>
-            
-            <div id="itemGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+
+
+            <!-- Item Grid -->
+
+            <div id="itemGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
                 {% for item in items %}
-                <div class="card bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgba(109,40,217,0.06)] transform transition-all duration-300 hover:-translate-y-1 group flex flex-col justify-between" data-name="{{ item.name }}" data-category="{{ item.category }}" data-location="{{ item.location }}">
+
+                <div class="item-card group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs hover-card flex flex-col justify-between" data-name="{{ item.name }}" data-category="{{ item.category }}" data-location="{{ item.location }}">
+
                     <div>
-                        <div class="relative overflow-hidden aspect-[4/3] bg-slate-50">
-                            <img src="{{ item.image_data if item.image_data else 'https://via.placeholder.com/400x300?text=No+Image+Provided' }}"
-                                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                            {% if item.status == 'Pending' %}
-                            <div class="absolute inset-0 bg-white/70 backdrop-blur-xs flex items-center justify-center z-10 animate__animated animate__fadeIn">
-                                <span class="bg-amber-500 text-white px-4 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest shadow-md border border-amber-400">Under Review</span>
+
+                        <!-- Media Preview -->
+
+                        <div class="relative overflow-hidden aspect-[4/3] bg-slate-100">
+
+                            {% if item.image_data %}
+
+                            <img src="{{ item.image_data }}" alt="{{ item.name }}" loading="lazy" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+
+                            {% else %}
+
+                            <div class="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-slate-50">
+
+                                <svg class="w-10 h-10 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+
+                                <span class="text-[10px] font-bold text-slate-400">Photo Secured</span>
+
                             </div>
+
                             {% endif %}
-                        </div>
-                        <div class="p-6">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[9px] font-extrabold text-violet-600 uppercase tracking-widest bg-violet-50 border border-violet-100/50 px-2.5 py-1 rounded-md inline-block shadow-xs">{{ item.category }}</span>
-                                {% if item.ai_primary_color %}
-                                <span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md capitalize">{{ item.ai_primary_color }}</span>
-                                {% endif %}
+
+
+
+                            {% if item.status == 'Pending' %}
+
+                            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center">
+
+                                <span class="bg-amber-500 text-white px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md">Under Verification</span>
+
                             </div>
-                            <h3 class="font-bold text-slate-800 text-lg mt-2.5 group-hover:text-violet-600 transition-colors duration-300 truncate">{{ item.name }}</h3>
-                            <p class="text-slate-400 text-xs mt-1 font-medium flex items-center gap-1">
-                                <svg class="w-3.5 h-3.5 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+
+                            {% elif item.status == 'Claimed' %}
+
+                            <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center">
+
+                                <span class="bg-emerald-600 text-white px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md">Recovered / Claimed</span>
+
+                            </div>
+
+                            {% endif %}
+
+                        </div>
+
+
+
+                        <!-- Card Body -->
+
+                        <div class="p-5 space-y-2.5">
+
+                            <div class="flex items-center justify-between gap-2">
+
+                                <span class="text-[10px] font-extrabold text-indigo-700 uppercase tracking-wider bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">{{ item.category }}</span>
+
+                                {% if item.ai_primary_color %}
+
+                                <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md capitalize">{{ item.ai_primary_color }}</span>
+
+                                {% endif %}
+
+                            </div>
+
+
+
+                            <h3 class="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition truncate">{{ item.name }}</h3>
+
+
+
+                            <p class="text-xs text-slate-500 font-medium flex items-center gap-1.5">
+
+                                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+
                                 <span class="truncate">{{ item.location }}</span>
+
                             </p>
 
-                            <!-- AI Match Notification Badge on Card -->
+
+
                             {% if item.match_count and item.match_count > 0 %}
-                            <div class="mt-3">
-                                <button onclick="openMatchesModal('{{ item.id }}', '{{ item.name }}')"
-                                    class="w-full py-1.5 px-2.5 bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 hover:border-indigo-200 text-indigo-700 rounded-xl font-bold text-[11px] transition flex items-center justify-center gap-1.5">
-                                    <span>🤖</span>
-                                    <span>{{ item.match_count }} AI Potential Match{% if item.match_count > 1 %}es{% endif %}</span>
-                                </button>
-                            </div>
+
+                            <button type="button" onclick="openMatchesModal('{{ item.id }}', '{{ item.name }}')" class="w-full py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5">
+
+                                <span>🤖</span>
+
+                                <span>{{ item.match_count }} Potential Match{% if item.match_count > 1 %}es{% endif %}</span>
+
+                            </button>
+
                             {% endif %}
+
                         </div>
+
                     </div>
 
-                    <div class="px-6 pb-6">
+
+
+                    <div class="px-5 pb-5 pt-2">
+
                         {% if item.status == 'Available' %}
-                        <button onclick="openClaimModal('{{ item.id }}', '{{ item.name }}')"
-                            class="w-full py-3 bg-slate-950 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-violet-600 transition-all duration-300 shadow-md group-hover:shadow-[0_8px_20px_rgba(109,40,217,0.2)] flex items-center justify-center gap-1 transform active:scale-[0.98]">
+
+                        <button type="button" onclick="openClaimModal('{{ item.id }}', '{{ item.name }}')" class="w-full py-2.5 bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-xs">
+
                             Claim Property
+
                         </button>
+
                         {% else %}
-                        <button disabled class="w-full py-3 bg-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider rounded-xl cursor-not-allowed border border-slate-200/30">Claimed</button>
+
+                        <button type="button" disabled class="w-full py-2.5 bg-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider rounded-xl cursor-not-allowed">
+
+                            {{ item.status or 'Unavailable' }}
+
+                        </button>
+
                         {% endif %}
+
                     </div>
+
                 </div>
+
                 {% else %}
-                <div class="col-span-full py-20 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl bg-white/50 animate__animated animate__fadeIn">
-                    <svg class="w-16 h-16 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                    <p class="text-lg font-bold text-slate-600">No active discoveries listed</p>
-                    <p class="text-xs font-medium text-slate-400 mt-0.5">When items are recorded on campus, they will appear in this channel.</p>
+
+                <div class="col-span-full py-16 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-white/60 p-8 space-y-3">
+
+                    <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto text-xl font-bold">📦</div>
+
+                    <h3 class="text-base font-bold text-slate-800">No active discoveries</h3>
+
+                    <p class="text-xs text-slate-500 max-w-sm mx-auto">When items are recorded, they will appear in this catalog automatically.</p>
+
                 </div>
+
                 {% endfor %}
+
             </div>
+
         </section>
 
-        <!-- PLATFORM FEATURES -->
-        <section id="features" class="py-16 bg-white rounded-3xl p-8 md:p-12 border border-slate-100 shadow-xs">
-            <div class="text-center max-w-3xl mx-auto mb-12">
-                <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 flex items-center justify-center gap-2">
-                    <span class="w-2.5 h-6 bg-violet-600 rounded-full inline-block"></span>
-                    Engineered for Rapid Campus Recovery
-                </h2>
-                <p class="mt-2 text-slate-500 text-xs md:text-sm font-medium">Find what you lost faster with intelligent multimodal AI and instant match discovery.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition">
-                    <div class="h-10 w-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mb-4 text-xl">🤖</div>
-                    <h3 class="text-base font-bold text-slate-900 mb-1">AI Image Analysis</h3>
-                    <p class="text-slate-500 text-xs leading-relaxed font-medium">Upload photos to automatically extract categories, colors, brands, and distinctive features.</p>
-                </div>
-
-                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition">
-                    <div class="h-10 w-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4 text-xl">⚡</div>
-                    <h3 class="text-base font-bold text-slate-900 mb-1">Real-Time AI Matching</h3>
-                    <p class="text-slate-500 text-xs leading-relaxed font-medium">Multi-factor algorithms automatically cross-reference lost reports with found inventory.</p>
-                </div>
-
-                <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg transition">
-                    <div class="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 text-xl">🛡️</div>
-                    <h3 class="text-base font-bold text-slate-900 mb-1">AI Claim Assistance</h3>
-                    <p class="text-slate-500 text-xs leading-relaxed font-medium">Evaluates claimant proof descriptions against secret details to assist administrators in verification.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- HOW IT WORKS -->
-        <section id="how-it-works" class="py-12 bg-slate-50/80 rounded-3xl p-8 border border-slate-200/60">
-            <div class="text-center max-w-3xl mx-auto mb-10">
-                <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Seamless Handoff Path</h2>
-                <p class="mt-1.5 text-slate-500 text-xs font-medium">The optimized pipeline from losing an item to successful safe recovery.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                <div>
-                    <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-violet-600 text-sm font-black flex items-center justify-center mx-auto mb-4 shadow-xs">1</div>
-                    <h4 class="text-sm font-bold text-slate-900 mb-1">Report or Search</h4>
-                    <p class="text-xs text-slate-500 max-w-xs mx-auto font-medium">Describe your lost item in natural language or upload photos with AI vision.</p>
-                </div>
-                <div>
-                    <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-violet-600 text-sm font-black flex items-center justify-center mx-auto mb-4 shadow-xs">2</div>
-                    <h4 class="text-sm font-bold text-slate-900 mb-1">Discover Matches</h4>
-                    <p class="text-xs text-slate-500 max-w-xs mx-auto font-medium">Review potential matches paired automatically with confidence scores.</p>
-                </div>
-                <div>
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white text-sm font-black flex items-center justify-center mx-auto mb-4 shadow-md shadow-violet-100">3</div>
-                    <h4 class="text-sm font-bold text-slate-900 mb-1">Claim & Collect</h4>
-                    <p class="text-xs text-slate-500 max-w-xs mx-auto font-medium">Submit ownership verification proof and collect your item at the DOSS office counter.</p>
-                </div>
-            </div>
-        </section>
     </main>
 
+
+
+    <!-- ================================================== -->
+
     <!-- FOOTER -->
-    <footer class="w-full py-8 text-center px-6 border-t border-slate-200/40 bg-white/60 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-500">
-            <div class="flex items-center gap-1.5">
-                <span>&copy; 2026</span>
-                <span class="font-bold text-slate-800">Campus Retain AI</span>
-                <span class="text-slate-300">|</span>
-                <span class="text-slate-400">Alliance University</span>
+
+    <!-- ================================================== -->
+
+    <footer class="w-full border-t border-slate-200 bg-white py-10 px-4 sm:px-6 lg:px-8 mt-auto">
+
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-500 font-medium">
+
+            <div class="flex items-center gap-3">
+
+                <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">CR</div>
+
+                <div>
+
+                    <span class="font-bold text-slate-900">Campus Retain AI</span>
+
+                    <span class="text-slate-300 mx-2">|</span>
+
+                    <span>Alliance University Bangalore</span>
+
+                </div>
+
             </div>
-            <div class="flex gap-6 font-semibold text-slate-400">
-                <a href="/admin_login" class="hover:text-violet-600 transition">Administrative Terminal Access</a>
+
+
+
+            <div class="flex flex-wrap items-center justify-center gap-6 font-semibold text-slate-600">
+
+                <a href="#browse" class="hover:text-indigo-600 transition">Find Items</a>
+
+                <a href="#myLostSection" class="hover:text-indigo-600 transition">My Reports</a>
+
+                <a href="/logout" class="text-rose-600 transition">Sign Out</a>
+
             </div>
+
+
+
+            <div class="text-slate-400 text-[11px]">
+
+                &copy; 2026 Campus Retain. All rights reserved.
+
+            </div>
+
         </div>
+
     </footer>
 
-    <!-- FLOATING AI ASSISTANT TRIGGER BUTTON -->
+
+
+    <!-- ================================================== -->
+
+    <!-- FLOATING AI ASSISTANT TRIGGER -->
+
+    <!-- ================================================== -->
+
     <div class="fixed bottom-6 right-6 z-40">
-        <button onclick="toggleAssistantDrawer()" class="group bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-5 py-3.5 rounded-full font-extrabold text-xs md:text-sm shadow-[0_10px_25px_rgba(109,40,217,0.35)] hover:shadow-[0_15px_30px_rgba(109,40,217,0.5)] transform hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 border border-violet-400/40">
+
+        <button type="button" onclick="toggleAssistantDrawer()" class="group bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-700 text-white px-5 py-3.5 rounded-full font-bold text-xs sm:text-sm shadow-xl shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2.5 border border-white/20">
+
             <span class="relative flex h-2.5 w-2.5">
+
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+
                 <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+
             </span>
+
             <span>🤖 Campus Retain AI</span>
+
         </button>
+
     </div>
 
-    <!-- FLOATING AI ASSISTANT CHAT DRAWER -->
-    <div id="assistantChatDrawer" class="hidden fixed bottom-6 right-6 z-50 w-full max-w-sm sm:max-w-md h-[560px] max-h-[85vh] bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.2)] border border-slate-200/90 flex flex-col overflow-hidden animate__animated animate__fadeInUp animate__faster">
-        <!-- Assistant Header -->
+
+
+    <!-- ================================================== -->
+
+    <!-- AI ASSISTANT CHAT DRAWER -->
+
+    <!-- ================================================== -->
+
+    <div id="assistantChatDrawer" class="hidden fixed bottom-6 right-6 z-50 w-full max-w-sm sm:max-w-md h-[580px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate__animated animate__fadeInUp animate__faster">
+
         <div class="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-violet-500/20 border border-violet-400/30 flex items-center justify-center text-lg shadow-inner">🤖</div>
+
+            <div class="flex items-center gap-3">
+
+                <div class="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-lg shadow-inner">🤖</div>
+
                 <div>
+
                     <div class="font-extrabold text-sm tracking-tight flex items-center gap-1.5">
+
                         <span>Campus Retain AI</span>
-                        <span class="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded-md border border-emerald-500/30">Online</span>
+
+                        <span class="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded-md border border-emerald-500/30">Active</span>
+
                     </div>
-                    <p class="text-[10px] text-slate-400 font-medium">Alliance University Assistant</p>
+
+                    <p class="text-[10px] text-slate-400 font-medium">Alliance University Lost & Found Assistant</p>
+
                 </div>
+
             </div>
-            <button onclick="toggleAssistantDrawer()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+
+            <button type="button" onclick="toggleAssistantDrawer()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition focus:outline-none">
+
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+
             </button>
+
         </div>
 
-        <!-- Assistant Message Scroll Area -->
-        <div id="assistantMessages" class="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50/50 text-xs">
-            <!-- Initial AI Greeting Message -->
+
+
+        <div id="assistantMessages" class="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50/70 text-xs">
+
             <div class="flex items-start gap-2 max-w-[90%]">
-                <div class="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">🤖</div>
+
+                <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">🤖</div>
+
                 <div class="bg-white p-3.5 rounded-2xl rounded-tl-none border border-slate-200/80 shadow-2xs space-y-2 text-slate-800 font-medium leading-relaxed">
-                    <p>Hi! I'm <strong>Campus Retain AI</strong>. I can search campus lost-and-found records for you, explain claiming procedures, or guide you through reporting an item.</p>
+
+                    <p>Hi! I'm <strong>Campus Retain AI</strong>. I can search the catalog for your items, guide your claims, or check matching updates.</p>
+
                     <div class="pt-1 flex flex-wrap gap-1.5">
-                        <button onclick="sendAssistantPrompt('I lost a black backpack near the library')" class="bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200/70 px-2.5 py-1 rounded-full text-[11px] font-bold transition">🔎 Find my lost item</button>
-                        <button onclick="sendAssistantPrompt('How do I claim an item?')" class="bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200/70 px-2.5 py-1 rounded-full text-[11px] font-bold transition">❓ How does claiming work?</button>
-                        <button onclick="sendAssistantPrompt('How do I report a found item?')" class="bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200/70 px-2.5 py-1 rounded-full text-[11px] font-bold transition">📝 How to report found item</button>
+
+                        <button type="button" onclick="sendAssistantPrompt('How do I claim an item?')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 px-2.5 py-1 rounded-full text-[11px] font-bold transition">❓ How do I claim an item?</button>
+
+                        <button type="button" onclick="sendAssistantPrompt('How do I report a found item?')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 px-2.5 py-1 rounded-full text-[11px] font-bold transition">📝 How to report found item</button>
+
                     </div>
+
                 </div>
+
             </div>
+
         </div>
 
-        <!-- Assistant Input Bar -->
+
+
         <div class="p-3 bg-white border-t border-slate-200 shrink-0">
-            <form id="assistantChatForm" onsubmit="sendAssistantMessage(event)" class="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 focus-within:ring-2 ring-violet-500 focus-within:bg-white transition-all">
-                <input type="text" id="assistantInput" placeholder="Ask Campus Retain AI (e.g. 'I lost my keys')..." class="w-full px-3 py-2 outline-none text-xs font-medium text-slate-800 bg-transparent placeholder:text-slate-400">
-                <button type="submit" id="assistantSendBtn" class="w-8 h-8 rounded-xl bg-violet-600 hover:bg-violet-700 text-white flex items-center justify-center shrink-0 transition shadow-xs">
-                    <svg class="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19V5m0 0l-7 7m7-7l7 7"></path></svg>
+
+            <form id="assistantChatForm" onsubmit="sendAssistantMessage(event)" class="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:bg-white transition-all">
+
+                <input type="text" id="assistantInput" placeholder="Ask a question (e.g. 'I lost my calculator')..." class="w-full px-3 py-2 text-xs font-medium text-slate-800 bg-transparent outline-none placeholder:text-slate-400">
+
+                <button type="submit" id="assistantSendBtn" class="w-8 h-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shrink-0 transition shadow-xs">
+
+                    <svg class="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19V5m0 0l-7 7m7-7l7 7"/></svg>
+
                 </button>
+
             </form>
+
         </div>
+
     </div>
 
-    <!-- MODAL: REPORT FOUND ITEM -->
+
+
+    <!-- ================================================== -->
+
+    <!-- MODALS: REPORT FOUND / LOST / MATCHES / CLAIM -->
+
+    <!-- ================================================== -->
+
     <div id="reportModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-950/40 backdrop-blur-sm transition-all duration-300 overflow-y-auto py-10">
-        <div class="bg-white w-full max-w-lg rounded-[2rem] p-8 shadow-2xl relative border border-slate-100 animate__animated animate__zoomIn animate__fast my-auto">
-            <button onclick="toggleModal('reportModal')" class="absolute top-5 right-5 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-colors duration-300"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Report Found Item</h2>
-            <p class="text-xs font-semibold text-rose-600 bg-rose-50 p-3.5 rounded-xl border border-rose-100 mt-3 mb-5 flex gap-2"><span class="shrink-0">⚠️</span><span><strong>IMPORTANT:</strong> Hand discovered items over to the DOSS office physical counter immediately following dispatch parameters.</span></p>
-            
+
+        <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative border border-slate-100 my-auto">
+
+            <button type="button" onclick="toggleModal('reportModal')" class="absolute top-5 right-5 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+
+
+
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Report Found Item</h2>
+
+            <p class="text-xs font-semibold text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100 mt-2 mb-4">
+
+                ⚠️ Hand discovered items over to the physical DOSS counter promptly for safekeeping.
+
+            </p>
+
+
+
             <form id="reportForm" class="space-y-4">
-                <input type="text" id="reportItemName" name="name" placeholder="Item Name *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
-                <div class="grid grid-cols-2 gap-4">
-                    <select id="reportCategory" name="category" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-semibold text-sm text-slate-600">
-                        <option value="Electronics">Electronics</option>
-                        <option value="Accessories">Accessories</option>
-                        <option value="Books">Books</option>
-                        <option value="Clothing">Clothing</option>
-                        <option value="ID & Cards">ID & Cards</option>
-                        <option value="Keys">Keys</option>
-                        <option value="Water Bottles">Water Bottles</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    <input type="text" name="location" placeholder="Found Location *" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
-                </div>
-                <textarea name="secret_detail" placeholder="Secret Identification Detail (Hidden from general public view)..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all text-sm font-medium min-h-[80px]"></textarea>
 
-                <div class="mt-1 w-full space-y-3">
-                    <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100/70 transition-all relative overflow-hidden group">
-                        <div id="imagePlaceholder" class="flex flex-col items-center justify-center py-5 group-hover:-translate-y-0.5 transition-transform">
-                            <svg class="w-8 h-8 mb-1.5 text-violet-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            <p class="text-xs text-slate-600 font-bold">Upload Item Photo for AI Analysis</p>
+                <input type="text" id="reportItemName" name="name" placeholder="Item Name *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-medium text-sm" required>
+
+
+
+                <div class="grid grid-cols-2 gap-4">
+
+                    <select id="reportCategory" name="category" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-semibold text-sm text-slate-700">
+
+                        <option value="Electronics">Electronics</option>
+
+                        <option value="Accessories">Accessories</option>
+
+                        <option value="Books">Books</option>
+
+                        <option value="Clothing">Clothing</option>
+
+                        <option value="ID & Cards">ID & Cards</option>
+
+                        <option value="Keys">Keys</option>
+
+                        <option value="Water Bottles">Water Bottles</option>
+
+                        <option value="Other">Other</option>
+
+                    </select>
+
+                    <input type="text" name="location" placeholder="Found Location *" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-medium text-sm" required>
+
+                </div>
+
+
+
+                <textarea name="secret_detail" placeholder="Secret Identification Detail (strictly hidden from public)..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm font-medium min-h-[75px]"></textarea>
+
+
+
+                <div class="w-full space-y-3">
+
+                    <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition relative overflow-hidden">
+
+                        <div id="imagePlaceholder" class="flex flex-col items-center justify-center py-4">
+
+                            <svg class="w-7 h-7 mb-1 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+
+                            <p class="text-xs text-slate-600 font-bold">Upload Item Photo for AI Vision Analysis</p>
+
                         </div>
-                        <img id="imagePreview" src="" class="hidden absolute inset-0 w-full h-full object-cover">
-                        <input id="image" name="image" type="file" class="hidden" accept="image/*" onchange="previewAndAnalyzeImage(event)"/>
+
+                        <img id="imagePreview" src="" alt="Preview" class="hidden absolute inset-0 w-full h-full object-cover">
+
+                        <input id="image" name="image" type="file" class="hidden" accept="image/*" onchange="previewAndAnalyzeImage(event)">
+
                     </label>
 
-                    <!-- AI Analysis Progress State -->
-                    <div id="aiAnalysisLoading" class="hidden p-3.5 rounded-2xl bg-violet-50/80 border border-violet-100 text-violet-800 flex items-center gap-3 animate__animated animate__fadeIn">
-                        <div class="w-7 h-7 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0">
-                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+
+
+                    <div id="aiAnalysisLoading" class="hidden p-3 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-800 flex items-center gap-3">
+
+                        <div class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+
+                            <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+
                         </div>
-                        <div class="text-xs">
-                            <span class="font-extrabold block text-violet-900">🤖 Analyzing image with Multimodal AI...</span>
-                            <span class="text-[11px] text-violet-600 font-medium">Extracting category, colors, brand, and distinctive features</span>
-                        </div>
+
+                        <div class="text-xs font-bold">🤖 Analyzing photo with AI Vision...</div>
+
                     </div>
 
-                    <!-- AI Analysis Structured Result Card -->
-                    <div id="aiAnalysisResult" class="hidden p-4 rounded-2xl bg-gradient-to-br from-violet-50/90 via-indigo-50/70 to-purple-50/60 border border-violet-200/80 space-y-3 animate__animated animate__fadeIn">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-black text-violet-800 uppercase tracking-wider flex items-center gap-1.5">
-                                    <svg class="w-4 h-4 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-                                    AI Item Analysis
-                                </span>
-                            </div>
-                            <span id="aiConfidenceBadge" class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-violet-600 text-white shadow-xs">92% Confidence</span>
+
+
+                    <div id="aiAnalysisResult" class="hidden p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200/80 space-y-2 text-xs">
+
+                        <div class="flex items-center justify-between font-bold text-indigo-900">
+
+                            <span>🤖 AI Multimodal Tags</span>
+
+                            <button type="button" onclick="applyAISuggestions()" class="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-md font-bold">Apply</button>
+
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2 text-xs">
-                            <div class="bg-white/80 p-2.5 rounded-xl border border-violet-100/70 shadow-xs">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Category</span>
-                                <span id="aiResultCategory" class="font-bold text-slate-800 capitalize">-</span>
-                            </div>
-                            <div class="bg-white/80 p-2.5 rounded-xl border border-violet-100/70 shadow-xs">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Primary Color</span>
-                                <span id="aiResultColor" class="font-bold text-slate-800 capitalize">-</span>
-                            </div>
+                        <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-700 font-medium">
+
+                            <div>Category: <span id="aiResultCategory" class="font-bold text-indigo-700">-</span></div>
+
+                            <div>Color: <span id="aiResultColor" class="font-bold text-indigo-700">-</span></div>
+
                         </div>
 
-                        <div id="aiBrandRow" class="hidden bg-white/80 p-2.5 rounded-xl border border-violet-100/70 shadow-xs text-xs">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Identified Brand / Model</span>
-                            <span id="aiResultBrand" class="font-bold text-slate-800">-</span>
-                        </div>
-
-                        <div id="aiFeaturesRow" class="hidden bg-white/80 p-2.5 rounded-xl border border-violet-100/70 shadow-xs text-xs">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Distinctive Characteristics</span>
-                            <ul id="aiResultFeatures" class="list-disc list-inside text-slate-700 font-medium text-[11px] space-y-0.5"></ul>
-                        </div>
-
-                        <!-- Hidden serialized AI payload -->
-                        <input type="hidden" name="ai_metadata" id="aiMetadataInput">
                     </div>
 
-                    <!-- AI Safe Notice -->
-                    <div id="aiAnalysisNotice" class="hidden p-3 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium flex items-center gap-2">
-                        <span>ℹ️</span>
-                        <span id="aiNoticeText">AI analysis is temporarily unavailable. Manual item reporting is ready.</span>
-                    </div>
                 </div>
 
-                <div class="flex gap-3 pt-3">
-                    <button type="button" onclick="toggleModal('reportModal')" class="flex-1 font-bold text-slate-500 text-sm hover:bg-slate-100 rounded-xl transition py-3.5">Cancel</button>
-                    <button id="reportSubmitBtn" type="submit" class="flex-1 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:from-violet-700 hover:to-indigo-700 transition shadow-lg shadow-violet-100 flex justify-center items-center"><span>Submit Registry</span></button>
+
+
+                <input type="hidden" id="aiMetadataInput" name="ai_metadata" value="">
+
+
+
+                <div class="flex gap-3 pt-2">
+
+                    <button type="button" onclick="toggleModal('reportModal')" class="flex-1 py-3 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition">Cancel</button>
+
+                    <button type="submit" id="reportSubmitBtn" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-md">Submit Report</button>
+
                 </div>
+
             </form>
+
         </div>
+
     </div>
 
-    <!-- MODAL: REPORT LOST ITEM (WITH INSTANT AI MATCHING) -->
+
+
+    <!-- MODAL: REPORT LOST ITEM -->
+
     <div id="reportLostModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-950/40 backdrop-blur-sm transition-all duration-300 overflow-y-auto py-10">
-        <div class="bg-white w-full max-w-lg rounded-[2rem] p-8 shadow-2xl relative border border-slate-100 animate__animated animate__zoomIn animate__fast my-auto">
-            <button onclick="toggleModal('reportLostModal')" class="absolute top-5 right-5 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-violet-600 bg-violet-50 px-2.5 py-0.5 rounded-md">Smart Match Active</span>
-            </div>
-            <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Report Lost Item</h2>
-            <p class="text-xs text-slate-500 font-medium mt-1 mb-5">Provide details and AI will immediately match against currently discovered inventory.</p>
-            
+
+        <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative border border-slate-100 my-auto">
+
+            <button type="button" onclick="toggleModal('reportLostModal')" class="absolute top-5 right-5 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+
+
+
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Report Lost Item</h2>
+
+            <p class="text-xs text-slate-500 mt-1 mb-4">Register what you lost. AI will alert you when a match is found.</p>
+
+
+
             <form id="reportLostForm" class="space-y-4">
-                <input type="text" id="reportLostName" name="name" placeholder="What did you lose? (e.g. 'Black Nike Backpack') *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
+
+                <input type="text" id="reportLostName" name="name" placeholder="Item Name *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-medium text-sm" required>
+
+
+
                 <div class="grid grid-cols-2 gap-4">
-                    <select id="reportLostCategory" name="category" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-semibold text-sm text-slate-600">
+
+                    <select id="reportLostCategory" name="category" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-semibold text-sm text-slate-700">
+
                         <option value="Electronics">Electronics</option>
+
                         <option value="Accessories">Accessories</option>
+
                         <option value="Books">Books</option>
+
                         <option value="Clothing">Clothing</option>
+
                         <option value="ID & Cards">ID & Cards</option>
+
                         <option value="Keys">Keys</option>
+
                         <option value="Water Bottles">Water Bottles</option>
+
                         <option value="Other">Other</option>
+
                     </select>
-                    <input type="text" id="reportLostLocation" name="location" placeholder="Last Seen Location *" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
-                </div>
-                <textarea id="reportLostDetail" name="secret_detail" placeholder="Distinctive features (e.g. 'Red zipper, keychain on side pocket, scratch near logo')..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all text-sm font-medium min-h-[80px]"></textarea>
 
-                <div class="mt-1 w-full space-y-3">
-                    <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100/70 transition-all relative overflow-hidden group">
-                        <div id="lostImagePlaceholder" class="flex flex-col items-center justify-center py-4 group-hover:-translate-y-0.5 transition-transform">
-                            <svg class="w-7 h-7 mb-1 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            <p class="text-xs text-slate-600 font-bold">Reference Photo (Optional)</p>
-                        </div>
-                        <img id="lostImagePreview" src="" class="hidden absolute inset-0 w-full h-full object-cover">
-                        <input id="lostImage" name="image" type="file" class="hidden" accept="image/*" onchange="previewAndAnalyzeLostImage(event)"/>
-                    </label>
+                    <input type="text" name="location" placeholder="Last Seen Location *" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-medium text-sm" required>
 
-                    <input type="hidden" name="ai_metadata" id="lostAiMetadataInput">
                 </div>
 
-                <div class="flex gap-3 pt-3">
-                    <button type="button" onclick="toggleModal('reportLostModal')" class="flex-1 font-bold text-slate-500 text-sm hover:bg-slate-100 rounded-xl transition py-3.5">Cancel</button>
-                    <button id="reportLostSubmitBtn" type="submit" class="flex-1 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:from-violet-700 hover:to-indigo-700 transition shadow-lg shadow-violet-100 flex justify-center items-center">
-                        <span>🤖 Find AI Matches</span>
-                    </button>
+
+
+                <textarea name="secret_detail" placeholder="Secret/Unique Details..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm font-medium min-h-[75px]"></textarea>
+
+
+
+                <div class="flex gap-3 pt-2">
+
+                    <button type="button" onclick="toggleModal('reportLostModal')" class="flex-1 py-3 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition">Cancel</button>
+
+                    <button type="submit" id="reportLostSubmitBtn" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-md">Register Lost Report</button>
+
                 </div>
+
             </form>
+
         </div>
+
     </div>
 
-    <!-- MODAL: AI POTENTIAL MATCHES INSPECTION -->
+
+
+    <!-- MODAL: AI DISCOVERED MATCHES -->
+
     <div id="matchesModal" class="hidden fixed inset-0 z-[75] flex items-center justify-center px-4 bg-slate-950/50 backdrop-blur-sm transition-all duration-300 overflow-y-auto py-8">
-        <div class="bg-white w-full max-w-2xl rounded-[2rem] p-6 md:p-8 shadow-2xl relative border border-slate-100 animate__animated animate__zoomIn animate__fast my-auto max-h-[90vh] flex flex-col">
-            <button onclick="toggleModal('matchesModal')" class="absolute top-5 right-5 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            
-            <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs font-black uppercase tracking-wider text-violet-700 bg-violet-100 px-3 py-1 rounded-full flex items-center gap-1.5">
-                    <span>🤖</span> AI Matching Engine
-                </span>
+
+        <div class="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl relative border border-slate-100 my-auto flex flex-col max-h-[85vh]">
+
+            <button type="button" onclick="toggleModal('matchesModal')" class="absolute top-5 right-5 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+
+
+
+            <div class="mb-4">
+
+                <h2 id="matchesModalTitle" class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+
+                    <span>🤖</span> AI Discovered Matches
+
+                </h2>
+
+                <p id="matchesModalSubtitle" class="text-xs text-slate-500 font-medium mt-0.5">Potential candidate matches identified across campus reports.</p>
+
             </div>
-            <h2 id="matchesModalTitle" class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">AI Discovered Matches</h2>
-            <p id="matchesModalSubtitle" class="text-xs text-slate-500 font-medium mt-1 mb-5">Potential candidate matches identified across campus reports.</p>
-            
-            <div id="matchesModalContent" class="overflow-y-auto space-y-4 pr-1 flex-grow">
-                <!-- Dynamically populated via openMatchesModal() -->
+
+
+
+            <div id="matchesModalContent" class="overflow-y-auto space-y-3 pr-1 flex-grow"></div>
+
+
+
+            <div class="pt-4 mt-4 border-t border-slate-100 flex justify-end shrink-0">
+
+                <button type="button" onclick="toggleModal('matchesModal')" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">Close</button>
+
             </div>
-            
-            <div class="pt-4 mt-4 border-t border-slate-100 flex justify-end">
-                <button onclick="toggleModal('matchesModal')" class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">Close</button>
-            </div>
+
         </div>
+
     </div>
 
-    <!-- MODAL: CLAIM ITEM -->
+
+
+    <!-- MODAL: CLAIM PROPERTY -->
+
     <div id="claimModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center px-4 bg-slate-950/40 backdrop-blur-sm transition-all duration-300">
-        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden relative border border-slate-100 animate__animated animate__zoomIn animate__fast">
-            <button onclick="toggleModal('claimModal')" class="absolute top-5 right-5 z-10 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            <div id="claimFormContainer" class="p-8">
-                <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Claim Item</h2>
-                <form id="claimForm" class="space-y-4 pt-3">
-                    <input id="modalItemId" type="hidden">
-                    <input id="modalItemNameDisplay" type="text" readonly class="w-full text-center font-bold text-sm text-violet-600 bg-violet-50/60 border border-violet-100 py-2.5 rounded-xl focus:outline-none mb-2 cursor-default">
-                    <input type="text" id="claimStudentId" placeholder="Student ID *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm font-medium" required>
-                    <input type="email" id="claimEmail" value="{{ user_email }}" readonly class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-100 text-slate-400 focus:outline-none transition text-sm font-semibold shadow-inner">
-                    <input type="tel" id="claimPhone" placeholder="Your Active Phone Number *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm font-medium" required>
-                    <textarea id="claimVerification" placeholder="Tell us unique identifier attributes validation matching (e.g., 'back cover contains custom sticker left edge')..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm font-medium min-h-[100px]" required></textarea>
-                    <button id="claimSubmitBtn" type="submit" class="w-full py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-100 hover:from-violet-700 hover:to-indigo-700 transition flex justify-center items-center mt-3 transform active:scale-[0.98]"><span>Dispatch Claim Request</span></button>
-                </form>
-            </div>
-            <div id="claimSuccess" class="hidden p-12 text-center flex flex-col items-center">
-                <div class="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full border border-emerald-100 flex items-center justify-center mb-5 shadow-inner"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
-                <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Claim Registered Successfully!</h2>
-                <p class="text-slate-400 text-sm font-medium mt-1 max-w-xs mx-auto">We've delivered confirmation coordinates to your organization inbox. Evaluations are pending.</p>
-                <button onclick="location.reload()" class="w-full mt-8 py-3.5 bg-slate-950 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition shadow-md">Return to Inventory</button>
-            </div>
+
+        <div class="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative border border-slate-100">
+
+            <button type="button" onclick="toggleModal('claimModal')" class="absolute top-5 right-5 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+
+
+
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Claim Property</h2>
+
+            <p class="text-xs text-slate-500 mt-1 mb-4">Item: <strong id="claimItemNameDisplay" class="text-indigo-700"></strong></p>
+
+
+
+            <form id="claimForm" class="space-y-4">
+
+                <input type="hidden" id="claimItemId" name="item_id" value="">
+
+
+
+                <div>
+
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">Student ID *</label>
+
+                    <input type="text" id="claimStudentId" name="student_id" placeholder="CED2026-001" class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm font-medium" required>
+
+                </div>
+
+
+
+                <div>
+
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">Contact Phone Number *</label>
+
+                    <input type="tel" id="claimPhone" name="phone" placeholder="9876543210" class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm font-medium" required>
+
+                </div>
+
+
+
+                <div>
+
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">Ownership Proof Description *</label>
+
+                    <textarea id="claimProof" name="proof_description" placeholder="Provide distinct proof of ownership..." class="w-full border border-slate-200 p-3 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm font-medium min-h-[90px]" required></textarea>
+
+                </div>
+
+
+
+                <div class="flex gap-3 pt-2">
+
+                    <button type="button" onclick="toggleModal('claimModal')" class="flex-1 py-3 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition">Cancel</button>
+
+                    <button type="submit" id="claimSubmitBtn" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-md">Submit Claim</button>
+
+                </div>
+
+            </form>
+
         </div>
+
     </div>
 
-    <!-- TOAST CONTAINER -->
-    <div id="toastContainer" class="fixed bottom-6 left-6 z-[90] flex flex-col gap-3"></div>
 
-    <!-- CLIENT JAVASCRIPT PIPELINES -->
+
+    <!-- JAVASCRIPT LOGIC -->
+
     <script>
-        let originalItemGridHtml = '';
-        document.addEventListener('DOMContentLoaded', () => {
-            originalItemGridHtml = document.getElementById('itemGrid').innerHTML;
-        });
 
         function toggleModal(id) {
-            const el = document.getElementById(id);
-            el.classList.toggle('hidden');
+
+            const modal = document.getElementById(id);
+
+            if (!modal) return;
+
+            modal.classList.toggle('hidden');
+
         }
 
-        function toggleAssistantDrawer() {
-            const drawer = document.getElementById('assistantChatDrawer');
-            drawer.classList.toggle('hidden');
-            if (!drawer.classList.contains('hidden')) {
-                document.getElementById('assistantInput').focus();
+
+
+        function toggleMobileMenu() {
+
+            const menu = document.getElementById('mobileMenu');
+
+            if (menu) menu.classList.toggle('hidden');
+
+        }
+
+
+
+        document.addEventListener('keydown', (e) => {
+
+            if (e.key === 'Escape') {
+
+                ['reportModal', 'reportLostModal', 'matchesModal', 'claimModal'].forEach(id => {
+
+                    const el = document.getElementById(id);
+
+                    if (el && !el.classList.contains('hidden')) el.classList.add('hidden');
+
+                });
+
+                const drawer = document.getElementById('assistantChatDrawer');
+
+                if (drawer && !drawer.classList.contains('hidden')) drawer.classList.add('hidden');
+
             }
+
+        });
+
+
+
+        function showToast(message, type = 'success') {
+
+            const container = document.getElementById('toastContainer');
+
+            if (!container) return;
+
+
+
+            const toast = document.createElement('div');
+
+            toast.className = `p-4 rounded-2xl shadow-lg border text-xs font-bold pointer-events-auto flex items-center justify-between gap-3 animate__animated animate__fadeInDown animate__faster ${
+
+                type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-slate-900 text-white border-slate-800'
+
+            }`;
+
+            toast.innerHTML = `
+
+                <div class="flex items-center gap-2">
+
+                    <span>${type === 'error' ? '❌' : '✓'}</span>
+
+                    <span>${escapeHtml(message)}</span>
+
+                </div>
+
+                <button onclick="this.parentElement.remove()" class="opacity-60 hover:opacity-100 text-sm">✕</button>
+
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => toast.remove(), 4000);
+
         }
 
-        function sendAssistantPrompt(promptText) {
-            document.getElementById('assistantInput').value = promptText;
-            sendAssistantMessage(null, promptText);
+
+
+        function escapeHtml(str) {
+
+            if (!str) return '';
+
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
         }
 
-        async function sendAssistantMessage(event, explicitText = null) {
-            if (event) event.preventDefault();
-            const input = document.getElementById('assistantInput');
-            const message = explicitText || input.value.trim();
-            if (!message) return;
 
-            const messagesContainer = document.getElementById('assistantMessages');
-            
-            // Append User Message bubble
-            messagesContainer.innerHTML += `
-                <div class="flex items-start justify-end gap-2 max-w-[90%] ml-auto animate__animated animate__fadeInUp animate__faster">
-                    <div class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white p-3 rounded-2xl rounded-tr-none shadow-xs font-medium text-xs leading-relaxed">
-                        ${escapeHtml(message)}
-                    </div>
-                </div>
-            `;
-            input.value = '';
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-            // Append Typing indicator
-            const typingId = 'typing-' + Date.now();
-            messagesContainer.innerHTML += `
-                <div id="${typingId}" class="flex items-center gap-2 max-w-[80%] animate__animated animate__fadeIn">
-                    <div class="w-6 h-6 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-xs shrink-0">🤖</div>
-                    <div class="bg-white px-3 py-2 rounded-2xl rounded-tl-none border border-slate-200 shadow-2xs text-slate-400 italic text-[11px] flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce"></span>
-                        <span class="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce" style="animation-delay: 0.15s"></span>
-                        <span class="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce" style="animation-delay: 0.3s"></span>
-                    </div>
-                </div>
-            `;
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        function filterCategory(cat) {
+
+            document.querySelectorAll('.cat-pill').forEach(btn => {
+
+                btn.classList.remove('bg-indigo-600', 'text-white');
+
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+
+            });
+
+            event.target.classList.remove('bg-slate-100', 'text-slate-600');
+
+            event.target.classList.add('bg-indigo-600', 'text-white');
+
+
+
+            const cards = document.querySelectorAll('.item-card');
+
+            cards.forEach(card => {
+
+                if (cat === 'all' || card.getAttribute('data-category') === cat) {
+
+                    card.style.display = 'flex';
+
+                } else {
+
+                    card.style.display = 'none';
+
+                }
+
+            });
+
+        }
+
+
+
+        // AI Search
+
+        function handleSearchInput() {
+
+            const val = document.getElementById('searchInput').value.trim();
+
+            if (val === '') resetSearch();
+
+        }
+
+
+
+        async function executeAISearch(e) {
+
+            if (e) e.preventDefault();
+
+            const input = document.getElementById('searchInput');
+
+            const query = input.value.trim();
+
+            if (!query) return;
+
+
+
+            const btn = document.getElementById('searchBtn');
+
+            const originalContent = btn.innerHTML;
+
+            btn.disabled = true;
+
+            btn.innerHTML = `<span>Searching...</span>`;
+
+
 
             try {
-                const response = await fetch('/api/ai/chat', {
+
+                const response = await fetch('/api/ai/search', {
+
                     method: 'POST',
+
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
+
+                    body: JSON.stringify({ query: query })
+
                 });
+
+
+
+                if (!response.ok) {
+
+                    showToast('Search service temporarily unavailable.', 'error');
+
+                    return;
+
+                }
+
+
+
+                const res = await response.json();
+
+                if (res.success && res.data) {
+
+                    renderSearchResults(res.data);
+
+                } else {
+
+                    showToast(res.error || 'Search failed.', 'error');
+
+                }
+
+            } catch (err) {
+
+                showToast('Network error during search.', 'error');
+
+            } finally {
+
+                btn.disabled = false;
+
+                btn.innerHTML = originalContent;
+
+            }
+
+        }
+
+
+
+        function renderSearchResults(data) {
+
+            const banner = document.getElementById('aiSearchBanner');
+
+            const queryText = document.getElementById('searchBannerQueryText');
+
+            const tagsContainer = document.getElementById('searchTagsContainer');
+
+            const countBadge = document.getElementById('searchResultCountBadge');
+
+            const grid = document.getElementById('itemGrid');
+
+            const headerTitle = document.getElementById('catalogHeaderTitle');
+
+
+
+            banner.classList.remove('hidden');
+
+            queryText.innerText = `Query: "${data.query}"`;
+
+            countBadge.innerText = `${data.results.length} item${data.results.length === 1 ? '' : 's'} ranked by AI relevance`;
+
+            headerTitle.innerHTML = `<span class="w-2.5 h-6 bg-indigo-600 rounded-full inline-block"></span> Search Results`;
+
+
+
+            tagsContainer.innerHTML = '';
+
+            const u = data.query_understanding || {};
+
+            if (u.category) tagsContainer.innerHTML += `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">Category: ${escapeHtml(u.category)}</span>`;
+
+            if (u.primary_color) tagsContainer.innerHTML += `<span class="bg-violet-100 text-violet-700 px-2 py-0.5 rounded text-[10px] font-bold">Color: ${escapeHtml(u.primary_color)}</span>`;
+
+            if (u.brand) tagsContainer.innerHTML += `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">Brand: ${escapeHtml(u.brand)}</span>`;
+
+
+
+            if (data.results.length === 0) {
+
+                grid.innerHTML = `
+
+                    <div class="col-span-full py-16 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-white p-8 space-y-3">
+
+                        <div class="text-3xl">🤖</div>
+
+                        <h3 class="text-base font-bold text-slate-800">No matching reports found</h3>
+
+                        <button type="button" onclick="resetSearch()" class="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">Reset Search</button>
+
+                    </div>
+
+                `;
+
+                return;
+
+            }
+
+
+
+            grid.innerHTML = data.results.map(item => `
+
+                <div class="item-card group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs hover-card flex flex-col justify-between">
+
+                    <div>
+
+                        <div class="relative overflow-hidden aspect-[4/3] bg-slate-100">
+
+                            ${item.image_data ? `<img src="${item.image_data}" alt="${escapeHtml(item.name)}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-300 text-xs font-bold">Photo Secured</div>`}
+
+                            <div class="absolute top-3 right-3 bg-indigo-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md">
+
+                                ${item.relevance_score}% Match
+
+                            </div>
+
+                        </div>
+
+                        <div class="p-5 space-y-2">
+
+                            <span class="text-[10px] font-extrabold text-indigo-700 uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded-md">${escapeHtml(item.category || 'Asset')}</span>
+
+                            <h3 class="font-bold text-slate-900 text-base truncate">${escapeHtml(item.name)}</h3>
+
+                            <p class="text-xs text-slate-500 flex items-center gap-1">📍 ${escapeHtml(item.location || 'Campus')}</p>
+
+                            ${item.explanation ? `<p class="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg font-medium">${escapeHtml(item.explanation)}</p>` : ''}
+
+                        </div>
+
+                    </div>
+
+                    <div class="px-5 pb-5">
+
+                        <button type="button" onclick="openClaimModal('${item.id}', '${escapeHtml(item.name)}')" class="w-full py-2.5 bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-xs">
+
+                            Claim Property
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            `).join('');
+
+        }
+
+
+
+        function resetSearch() {
+
+            document.getElementById('searchInput').value = '';
+
+            document.getElementById('aiSearchBanner').classList.add('hidden');
+
+            location.href = '/dashboard#browse';
+
+        }
+
+
+
+        // AI Assistant
+
+        function toggleAssistantDrawer() {
+
+            const drawer = document.getElementById('assistantChatDrawer');
+
+            if (!drawer) return;
+
+            drawer.classList.toggle('hidden');
+
+            if (!drawer.classList.contains('hidden')) {
+
+                document.getElementById('assistantInput')?.focus();
+
+            }
+
+        }
+
+
+
+        function sendAssistantPrompt(text) {
+
+            sendAssistantMessage(null, text);
+
+        }
+
+
+
+        async function sendAssistantMessage(event, explicitText = null) {
+
+            if (event) event.preventDefault();
+
+            const input = document.getElementById('assistantInput');
+
+            const message = explicitText || input.value.trim();
+
+            if (!message) return;
+
+
+
+            const container = document.getElementById('assistantMessages');
+
+            container.innerHTML += `
+
+                <div class="flex items-start justify-end gap-2 max-w-[90%] ml-auto">
+
+                    <div class="bg-indigo-600 text-white p-3 rounded-2xl rounded-tr-none shadow-xs font-medium text-xs">
+
+                        ${escapeHtml(message)}
+
+                    </div>
+
+                </div>
+
+            `;
+
+            input.value = '';
+
+            container.scrollTop = container.scrollHeight;
+
+
+
+            const typingId = 'typing-' + Date.now();
+
+            container.innerHTML += `
+
+                <div id="${typingId}" class="flex items-center gap-2 max-w-[80%]">
+
+                    <div class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0">🤖</div>
+
+                    <div class="bg-white px-3 py-2 rounded-2xl rounded-tl-none border border-slate-200 text-slate-400 italic text-[11px]">Thinking...</div>
+
+                </div>
+
+            `;
+
+            container.scrollTop = container.scrollHeight;
+
+
+
+            try {
+
+                const response = await fetch('/api/ai/chat', {
+
+                    method: 'POST',
+
+                    headers: { 'Content-Type': 'application/json' },
+
+                    body: JSON.stringify({ message: message })
+
+                });
+
+
 
                 document.getElementById(typingId)?.remove();
 
+
+
                 if (!response.ok) {
-                    if (response.status === 401 || response.status === 403) {
-                        renderAssistantText("Please sign in with your student account to continue.");
-                    } else if (response.status >= 500) {
-                        renderAssistantText("Campus Retain AI is temporarily unavailable. Please try standard search.");
-                    } else {
-                        renderAssistantText("Unable to process this request right now. Please try again.");
-                    }
+
+                    renderAssistantText("Unable to process request right now.");
+
                     return;
+
                 }
+
+
 
                 const res = await response.json();
 
                 if (res && res.success && res.data) {
+
                     renderAssistantReply(res.data);
+
                 } else if (res && res.data && res.data.message) {
+
                     renderAssistantReply(res.data);
+
                 } else {
-                    renderAssistantText((res && res.error) || "Campus Retain AI is temporarily unable to process this request. Please try standard search.");
+
+                    renderAssistantText((res && res.error) || "Unable to complete request.");
+
                 }
+
             } catch (err) {
+
                 document.getElementById(typingId)?.remove();
-                renderAssistantText("Unable to reach Campus Retain AI service. Please check your connection and retry.");
+
+                renderAssistantText("Network fault communicating with AI assistant.");
+
             }
+
         }
+
+
 
         function renderAssistantReply(data) {
-            const messagesContainer = document.getElementById('assistantMessages');
-            let resultsHtml = '';
 
-            if (data.results && data.results.length > 0) {
-                resultsHtml = `<div class="space-y-2 pt-2">`;
-                data.results.forEach(item => {
-                    resultsHtml += `
-                        <div class="p-2.5 bg-slate-50 hover:bg-violet-50/60 rounded-xl border border-slate-200/80 transition flex items-center justify-between gap-2">
-                            <div class="truncate">
-                                <span class="text-[9px] font-extrabold text-violet-700 uppercase">${item.category || 'Asset'}</span>
-                                <div class="font-bold text-slate-900 text-xs truncate">${escapeHtml(item.name)}</div>
-                                <div class="text-[10px] text-slate-400 truncate">📍 ${escapeHtml(item.location || 'Campus')}</div>
-                            </div>
-                            <button onclick="toggleAssistantDrawer(); openClaimModal('${item.id}', '${escapeHtml(item.name)}')" class="px-2.5 py-1.5 bg-slate-950 hover:bg-violet-600 text-white rounded-lg font-bold text-[10px] shrink-0 transition">Claim</button>
-                        </div>
-                    `;
-                });
-                resultsHtml += `</div>`;
-            }
+            const container = document.getElementById('assistantMessages');
 
-            let actionsHtml = '';
-            if (data.suggested_actions && data.suggested_actions.length > 0) {
-                actionsHtml = `<div class="pt-2 flex flex-wrap gap-1.5">`;
-                data.suggested_actions.forEach(act => {
-                    actionsHtml += `<button onclick="sendAssistantPrompt('${escapeHtml(act)}')" class="bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200/70 px-2 py-0.5 rounded-full text-[10px] font-bold transition">${escapeHtml(act)}</button>`;
-                });
-                actionsHtml += `</div>`;
-            }
+            container.innerHTML += `
 
-            messagesContainer.innerHTML += `
-                <div class="flex items-start gap-2 max-w-[90%] animate__animated animate__fadeInUp animate__faster">
-                    <div class="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">🤖</div>
+                <div class="flex items-start gap-2 max-w-[90%]">
+
+                    <div class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">🤖</div>
+
                     <div class="bg-white p-3.5 rounded-2xl rounded-tl-none border border-slate-200/80 shadow-2xs space-y-1.5 text-slate-800 font-medium leading-relaxed">
-                        <p class="whitespace-pre-line">${escapeHtml(data.message)}</p>
-                        ${resultsHtml}
-                        ${actionsHtml}
+
+                        <div>${escapeHtml(data.message).replace(/\n/g, '<br>')}</div>
+
                     </div>
+
                 </div>
+
             `;
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            container.scrollTop = container.scrollHeight;
+
         }
+
+
 
         function renderAssistantText(text) {
-            const messagesContainer = document.getElementById('assistantMessages');
-            messagesContainer.innerHTML += `
-                <div class="flex items-start gap-2 max-w-[90%] animate__animated animate__fadeInUp animate__faster">
-                    <div class="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">🤖</div>
-                    <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-2xs text-slate-800 font-medium">
-                        <p>${escapeHtml(text)}</p>
+
+            const container = document.getElementById('assistantMessages');
+
+            container.innerHTML += `
+
+                <div class="flex items-start gap-2 max-w-[90%]">
+
+                    <div class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">🤖</div>
+
+                    <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200/80 shadow-2xs text-slate-700 font-medium">
+
+                        ${escapeHtml(text)}
+
                     </div>
+
                 </div>
+
             `;
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            container.scrollTop = container.scrollHeight;
+
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        }
 
-        function openClaimModal(id, name) {
-            document.getElementById('modalItemId').value = id;
-            document.getElementById('modalItemNameDisplay').value = name;
-            document.getElementById('claimForm').reset();
-            document.getElementById('claimFormContainer').classList.remove('hidden');
-            document.getElementById('claimSuccess').classList.add('hidden');
-            toggleModal('claimModal');
-        }
 
-        function handleSearchInput() {
-            let input = document.getElementById('searchInput').value.trim().toLowerCase();
-            if (input === '') {
-                resetSearch();
-                return;
-            }
-            filterItems();
-        }
+        // Image Analysis
 
-        function filterItems() {
-            let input = document.getElementById('searchInput').value.toLowerCase();
-            document.querySelectorAll('.card').forEach(card => {
-                let name = (card.dataset.name || '').toLowerCase();
-                let cat = (card.dataset.category || '').toLowerCase();
-                let loc = (card.dataset.location || '').toLowerCase();
-                card.style.display = (name.includes(input) || cat.includes(input) || loc.includes(input)) ? "flex" : "none";
-            });
-        }
-
-        function searchExample(queryText) {
-            document.getElementById('searchInput').value = queryText;
-            executeAISearch(null, queryText);
-        }
-
-        function resetSearch() {
-            const banner = document.getElementById('aiSearchBanner');
-            banner.classList.add('hidden');
-            document.getElementById('catalogHeaderTitle').innerHTML = `<span class="w-2.5 h-6 bg-violet-600 rounded-full inline-block"></span> Recently Found Items`;
-            const myLostSec = document.getElementById('myLostSection');
-            if (myLostSec) myLostSec.classList.remove('hidden');
-            document.getElementById('itemGrid').innerHTML = originalItemGridHtml;
-            document.getElementById('searchInput').value = '';
-        }
-
-        async function executeAISearch(event, explicitQuery = null) {
-            if (event) event.preventDefault();
-            const query = explicitQuery || document.getElementById('searchInput').value.trim();
-            if (!query) return;
-
-            const btn = document.getElementById('searchBtn');
-            const originalBtnHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Searching...`;
-
-            try {
-                const response = await fetch('/api/ai/search', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query, target: 'all' })
-                });
-                const res = await response.json();
-
-                if (res.success && res.data) {
-                    renderAISearchResults(res.data);
-                } else {
-                    showToast(res.error || 'AI search unavailable. Using standard filters.', 'error');
-                    filterItems();
-                }
-            } catch (err) {
-                showToast('Network error during AI search. Using standard filters.', 'error');
-                filterItems();
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalBtnHtml;
-            }
-        }
-
-        function renderAISearchResults(data) {
-            const banner = document.getElementById('aiSearchBanner');
-            const queryTextEl = document.getElementById('searchBannerQueryText');
-            const countBadge = document.getElementById('searchResultCountBadge');
-            const tagsContainer = document.getElementById('searchTagsContainer');
-            const itemGrid = document.getElementById('itemGrid');
-            const headerTitle = document.getElementById('catalogHeaderTitle');
-            const myLostSec = document.getElementById('myLostSection');
-
-            if (myLostSec) myLostSec.classList.add('hidden');
-
-            const q = data.query_understanding || {};
-            queryTextEl.innerText = `"${data.query}"`;
-            countBadge.innerText = `${data.results.length} relevant item${data.results.length === 1 ? '' : 's'} ranked by AI`;
-
-            tagsContainer.innerHTML = '';
-            if (q.category) tagsContainer.innerHTML += `<span class="bg-white border border-violet-200 text-violet-800 px-2.5 py-0.5 rounded-md text-[11px] font-bold">Category: ${q.category}</span>`;
-            if (q.primary_color) tagsContainer.innerHTML += `<span class="bg-white border border-violet-200 text-violet-800 px-2.5 py-0.5 rounded-md text-[11px] font-bold capitalize">Color: ${q.primary_color}</span>`;
-            if (q.brand) tagsContainer.innerHTML += `<span class="bg-white border border-violet-200 text-violet-800 px-2.5 py-0.5 rounded-md text-[11px] font-bold">Brand: ${q.brand}</span>`;
-            if (q.location) tagsContainer.innerHTML += `<span class="bg-white border border-violet-200 text-violet-800 px-2.5 py-0.5 rounded-md text-[11px] font-bold">Location: ${q.location}</span>`;
-            if (q.time_reference) tagsContainer.innerHTML += `<span class="bg-white border border-violet-200 text-violet-800 px-2.5 py-0.5 rounded-md text-[11px] font-bold capitalize">Time: ${q.time_reference}</span>`;
-
-            banner.classList.remove('hidden');
-            headerTitle.innerHTML = `<span class="w-2.5 h-6 bg-violet-600 rounded-full inline-block"></span> AI Ranked Search Results`;
-
-            if (data.results.length === 0) {
-                itemGrid.innerHTML = `
-                    <div class="col-span-full py-16 text-center text-slate-500 border-2 border-dashed border-slate-200 rounded-3xl bg-white/70 animate__animated animate__fadeIn">
-                        <span class="text-4xl block mb-2">🔍</span>
-                        <p class="text-lg font-bold text-slate-700">No relevant items found for this description</p>
-                        <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">Try specifying item details such as category, color, brand, or campus location.</p>
-                        <button onclick="resetSearch()" class="mt-5 px-5 py-2.5 bg-slate-950 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition">View Full Catalog</button>
-                    </div>
-                `;
-                return;
-            }
-
-            let resultsHtml = '';
-            data.results.forEach(item => {
-                let badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
-                if (item.relevance_score >= 80) badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                else if (item.relevance_score >= 60) badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
-
-                const reasonsHtml = (item.matching_attributes || []).slice(0, 3).map(r => 
-                    `<div class="text-emerald-700 font-semibold text-[11px] flex items-center gap-1"><span class="text-emerald-500 font-bold">✓</span><span>${r}</span></div>`
-                ).join('');
-
-                resultsHtml += `
-                    <div class="card bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(109,40,217,0.08)] transform transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between" data-name="${item.name}">
-                        <div>
-                            <div class="relative overflow-hidden aspect-[4/3] bg-slate-50">
-                                <img src="${item.image_data || 'https://via.placeholder.com/400x300?text=No+Image'}" class="w-full h-full object-cover">
-                                <div class="absolute top-3 right-3 z-10">
-                                    <span class="text-[10px] font-black px-2.5 py-1 rounded-full border ${badgeClass} shadow-xs backdrop-blur-xs">
-                                        ${item.relevance_score}% Relevant
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="p-5 space-y-2">
-                                <span class="text-[9px] font-extrabold text-violet-600 uppercase tracking-widest bg-violet-50 px-2 py-0.5 rounded-md inline-block">${item.category || 'Asset'}</span>
-                                <h3 class="font-bold text-slate-900 text-base truncate">${item.name}</h3>
-                                <p class="text-slate-400 text-xs font-medium flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-                                    <span class="truncate">${item.location}</span>
-                                </p>
-
-                                ${reasonsHtml ? `
-                                    <div class="pt-2 border-t border-slate-100 space-y-1">
-                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Why this result?</span>
-                                        ${reasonsHtml}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-
-                        <div class="px-5 pb-5 pt-1">
-                            ${item.status === 'Available' ? `
-                                <button onclick="openClaimModal('${item.id}', '${item.name}')" class="w-full py-2.5 bg-slate-950 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-violet-600 transition shadow-md flex items-center justify-center gap-1">
-                                    Claim Property
-                                </button>
-                            ` : `
-                                <button disabled class="w-full py-2.5 bg-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider rounded-xl cursor-not-allowed">Claimed</button>
-                            `}
-                        </div>
-                    </div>
-                `;
-            });
-
-            itemGrid.innerHTML = resultsHtml;
-            showToast(`🤖 Discovered ${data.results.length} relevant items!`, 'success');
-        }
-
-        const CATEGORY_MAP = {
-            'smartphone': 'Electronics',
-            'phone': 'Electronics',
-            'laptop': 'Electronics',
-            'tablet': 'Electronics',
-            'headphones': 'Electronics',
-            'earbuds': 'Electronics',
-            'charger': 'Electronics',
-            'watch': 'Accessories',
-            'smartwatch': 'Electronics',
-            'backpack': 'Accessories',
-            'bag': 'Accessories',
-            'wallet': 'Accessories',
-            'purse': 'Accessories',
-            'glasses': 'Accessories',
-            'sunglasses': 'Accessories',
-            'umbrella': 'Accessories',
-            'keys': 'Keys',
-            'keychain': 'Keys',
-            'id card': 'ID & Cards',
-            'card': 'ID & Cards',
-            'book': 'Books',
-            'notebook': 'Books',
-            'textbook': 'Books',
-            'water bottle': 'Water Bottles',
-            'bottle': 'Water Bottles',
-            'flask': 'Water Bottles',
-            'clothing': 'Clothing',
-            'jacket': 'Clothing',
-            'hoodie': 'Clothing',
-            'shirt': 'Clothing',
-            'shoes': 'Clothing',
-            'cap': 'Clothing'
-        };
+        let lastAiAnalysis = null;
 
         async function previewAndAnalyzeImage(event) {
+
             const input = event.target;
+
             if (!input.files || !input.files[0]) return;
 
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const previewEl = document.getElementById('imagePreview');
-                previewEl.src = e.target.result;
-                previewEl.classList.remove('hidden');
-                document.getElementById('imagePlaceholder').classList.add('opacity-0');
-            };
-            reader.readAsDataURL(file);
 
-            const loadingEl = document.getElementById('aiAnalysisLoading');
-            const resultEl = document.getElementById('aiAnalysisResult');
-            const noticeEl = document.getElementById('aiAnalysisNotice');
-
-            loadingEl.classList.remove('hidden');
-            resultEl.classList.add('hidden');
-            noticeEl.classList.add('hidden');
-
-            const formData = new FormData();
-            formData.append('image', file);
-
-            try {
-                const response = await fetch('/api/ai/analyze-image', { method: 'POST', body: formData });
-                const res = await response.json();
-
-                if (res.success && res.data) {
-                    const d = res.data;
-                    document.getElementById('aiMetadataInput').value = JSON.stringify(d);
-
-                    document.getElementById('aiResultCategory').innerText = d.category || 'Unknown';
-                    document.getElementById('aiResultColor').innerText = d.primary_color || 'Unknown';
-
-                    const brandRow = document.getElementById('aiBrandRow');
-                    if (d.brand || d.model) {
-                        document.getElementById('aiResultBrand').innerText = [d.brand, d.model].filter(Boolean).join(' - ');
-                        brandRow.classList.remove('hidden');
-                    } else { brandRow.classList.add('hidden'); }
-
-                    const featRow = document.getElementById('aiFeaturesRow');
-                    const featList = document.getElementById('aiResultFeatures');
-                    featList.innerHTML = '';
-                    if (d.distinctive_features && d.distinctive_features.length > 0) {
-                        d.distinctive_features.forEach(f => {
-                            const li = document.createElement('li');
-                            li.textContent = f;
-                            featList.appendChild(li);
-                        });
-                        featRow.classList.remove('hidden');
-                    } else { featRow.classList.add('hidden'); }
-
-                    const confPct = Math.round((d.confidence || 0.85) * 100);
-                    document.getElementById('aiConfidenceBadge').innerText = `${confPct}% Confidence`;
-
-                    const nameInput = document.getElementById('reportItemName');
-                    if (!nameInput.value || nameInput.value.trim() === '') {
-                        const parts = [];
-                        if (d.primary_color && d.primary_color !== 'unknown') parts.push(d.primary_color);
-                        if (d.brand) parts.push(d.brand);
-                        if (d.model) parts.push(d.model);
-                        if (d.category && d.category !== 'other') parts.push(d.category);
-                        if (parts.length > 0) {
-                            nameInput.value = parts.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                        }
-                    }
-
-                    const categorySelect = document.getElementById('reportCategory');
-                    const mappedCategory = CATEGORY_MAP[(d.category || '').toLowerCase()] || 'Other';
-                    for (let opt of categorySelect.options) {
-                        if (opt.value.toLowerCase() === mappedCategory.toLowerCase()) {
-                            categorySelect.value = opt.value;
-                            break;
-                        }
-                    }
-
-                    resultEl.classList.remove('hidden');
-                    showToast('🤖 AI Vision analyzed item attributes!', 'success');
-                } else {
-                    document.getElementById('aiNoticeText').innerText = res.error || 'AI analysis temporarily unavailable.';
-                    noticeEl.classList.remove('hidden');
-                }
-            } catch (err) {
-                document.getElementById('aiNoticeText').innerText = 'AI analysis temporarily unavailable. Manual item reporting is ready.';
-                noticeEl.classList.remove('hidden');
-            } finally {
-                loadingEl.classList.add('hidden');
-            }
-        }
-
-        async function previewAndAnalyzeLostImage(event) {
-            const input = event.target;
-            if (!input.files || !input.files[0]) return;
 
             const file = input.files[0];
+
             const reader = new FileReader();
-            reader.onload = function (e) {
-                const previewEl = document.getElementById('lostImagePreview');
-                previewEl.src = e.target.result;
-                previewEl.classList.remove('hidden');
-                document.getElementById('lostImagePlaceholder').classList.add('opacity-0');
+
+            reader.onload = function(e) {
+
+                const preview = document.getElementById('imagePreview');
+
+                preview.src = e.target.result;
+
+                preview.classList.remove('hidden');
+
+                document.getElementById('imagePlaceholder')?.classList.add('opacity-0');
+
             };
+
             reader.readAsDataURL(file);
 
+
+
+            const loading = document.getElementById('aiAnalysisLoading');
+
+            const result = document.getElementById('aiAnalysisResult');
+
+            loading.classList.remove('hidden');
+
+            result.classList.add('hidden');
+
+
+
             const formData = new FormData();
+
             formData.append('image', file);
 
+
+
             try {
+
                 const response = await fetch('/api/ai/analyze-image', { method: 'POST', body: formData });
+
                 const res = await response.json();
-                if (res.success && res.data) {
-                    const d = res.data;
-                    document.getElementById('lostAiMetadataInput').value = JSON.stringify(d);
-                    const nameInput = document.getElementById('reportLostName');
-                    if (!nameInput.value || nameInput.value.trim() === '') {
-                        const parts = [d.primary_color, d.brand, d.category].filter(w => w && w !== 'unknown' && w !== 'other');
-                        if (parts.length > 0) {
-                            nameInput.value = parts.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                        }
-                    }
-                    const categorySelect = document.getElementById('reportLostCategory');
-                    const mappedCategory = CATEGORY_MAP[(d.category || '').toLowerCase()] || 'Other';
-                    for (let opt of categorySelect.options) {
-                        if (opt.value.toLowerCase() === mappedCategory.toLowerCase()) {
-                            categorySelect.value = opt.value;
-                            break;
-                        }
-                    }
-                    showToast('🤖 AI Vision extracted lost item metadata!', 'success');
+
+
+
+                if (response.ok && res.success && res.data) {
+
+                    lastAiAnalysis = res.data;
+
+                    document.getElementById('aiMetadataInput').value = JSON.stringify(res.data);
+
+                    document.getElementById('aiResultCategory').innerText = res.data.category || 'Unknown';
+
+                    document.getElementById('aiResultColor').innerText = res.data.primary_color || 'Unknown';
+
+                    result.classList.remove('hidden');
+
                 }
+
             } catch (err) {}
+
+            finally {
+
+                loading.classList.add('hidden');
+
+            }
+
         }
+
+
+
+        function applyAISuggestions() {
+
+            if (!lastAiAnalysis) return;
+
+            if (lastAiAnalysis.category) {
+
+                const sel = document.getElementById('reportCategory');
+
+                for (let i = 0; i < sel.options.length; i++) {
+
+                    if (sel.options[i].value.toLowerCase() === lastAiAnalysis.category.toLowerCase()) {
+
+                        sel.selectedIndex = i;
+
+                        break;
+
+                    }
+
+                }
+
+            }
+
+            showToast('AI suggestions applied.');
+
+        }
+
+
+
+        // Matches Modal
 
         async function openMatchesModal(itemId, itemName) {
-            const modalTitle = document.getElementById('matchesModalTitle');
-            const modalSubtitle = document.getElementById('matchesModalSubtitle');
+
             const content = document.getElementById('matchesModalContent');
 
-            modalTitle.innerText = `AI Matches for "${itemName}"`;
-            modalSubtitle.innerText = `Searching campus lost & found database for potential matches...`;
-            content.innerHTML = `
-                <div class="py-12 text-center text-slate-400">
-                    <svg class="animate-spin h-8 w-8 text-violet-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <p class="font-bold text-slate-700 text-sm">Evaluating Potential Matches...</p>
-                    <p class="text-xs text-slate-400 mt-0.5">Comparing descriptions, AI visual features, categories, and locations</p>
-                </div>
-            `;
+            content.innerHTML = `<div class="py-8 text-center text-slate-400 font-semibold text-xs">Scanning match records...</div>`;
+
             toggleModal('matchesModal');
 
+
+
             try {
+
                 const response = await fetch(`/api/ai/matches/${itemId}`);
+
                 const res = await response.json();
 
-                if (res.success && res.data && res.data.matches && res.data.matches.length > 0) {
-                    const matches = res.data.matches;
-                    modalSubtitle.innerText = `Found ${matches.length} potential matching item report${matches.length > 1 ? 's' : ''}.`;
-                    
-                    let html = '';
-                    matches.forEach((m) => {
-                        let confBadgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
-                        let confText = 'Possible Match';
-                        if (m.match_score >= 80) {
-                            confBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                            confText = 'Likely Match';
-                        } else if (m.match_score >= 60) {
-                            confBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
-                            confText = 'Potential Match';
-                        }
 
-                        const matchAttributesHtml = (m.matching_attributes || []).map(a => 
-                            `<li class="flex items-start gap-1.5 text-xs text-emerald-800 font-semibold"><span class="text-emerald-500 font-bold shrink-0">✓</span><span>${a}</span></li>`
-                        ).join('');
 
-                        const differencesHtml = (m.differences || []).map(d => 
-                            `<li class="flex items-start gap-1.5 text-xs text-slate-600 font-medium"><span class="text-amber-500 font-bold shrink-0">•</span><span>${d}</span></li>`
-                        ).join('');
+                if (response.ok && res.success && res.data) {
 
-                        html += `
-                            <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:border-violet-200 transition space-y-3">
-                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                    <div class="flex items-center gap-3">
-                                        <img src="${m.matched_item_image || 'https://via.placeholder.com/60x60?text=Item'}" class="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0 bg-slate-50">
-                                        <div>
-                                            <span class="text-[9px] font-extrabold text-violet-600 uppercase tracking-widest bg-violet-50 px-2 py-0.5 rounded-md">${m.matched_item_category || 'Item'}</span>
-                                            <h4 class="font-bold text-slate-900 text-base mt-0.5">${m.matched_item_name}</h4>
-                                            <p class="text-[11px] text-slate-400 font-medium">📍 ${m.matched_item_location}</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex sm:flex-col items-center sm:items-end justify-between">
-                                        <span class="text-xs font-black px-3 py-1 rounded-full border ${confBadgeClass} flex items-center gap-1 shadow-xs">
-                                            <span>${m.match_score}%</span>
-                                            <span class="font-semibold text-[10px]">(${confText})</span>
-                                        </span>
-                                    </div>
-                                </div>
+                    const matches = res.data.matches || [];
 
-                                <div class="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100 space-y-2">
-                                    ${matchAttributesHtml ? `
-                                        <div>
-                                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Why this matches</span>
-                                            <ul class="space-y-1">${matchAttributesHtml}</ul>
-                                        </div>
-                                    ` : ''}
+                    if (matches.length === 0) {
 
-                                    ${differencesHtml ? `
-                                        <div class="pt-1.5 border-t border-slate-200/60">
-                                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Possible differences</span>
-                                            <ul class="space-y-1">${differencesHtml}</ul>
-                                        </div>
-                                    ` : ''}
+                        content.innerHTML = `<div class="py-8 text-center text-slate-500 bg-slate-50 rounded-2xl p-6 text-xs font-semibold">No active matches found currently.</div>`;
 
-                                    ${m.explanation ? `
-                                        <p class="text-xs text-slate-600 italic pt-1 border-t border-slate-200/60">"${m.explanation}"</p>
-                                    ` : ''}
-                                </div>
-
-                                <div class="flex items-center justify-end gap-2 pt-1">
-                                    ${m.matched_item_type === 'found' && m.matched_item_status === 'Available' ? `
-                                        <button onclick="toggleModal('matchesModal'); openClaimModal('${m.matched_item_id}', '${m.matched_item_name}')" class="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold text-xs hover:from-violet-700 hover:to-indigo-700 transition shadow-sm">
-                                            Claim This Item →
-                                        </button>
-                                    ` : `
-                                        <span class="text-[11px] text-slate-400 font-semibold italic">Report recorded in registry</span>
-                                    `}
-                                </div>
-                            </div>
-                        `;
-                    });
-                    content.innerHTML = html;
-                } else {
-                    modalSubtitle.innerText = `No strong candidate matches identified yet.`;
-                    content.innerHTML = `
-                        <div class="py-12 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                            <span class="text-3xl block mb-2">🔍</span>
-                            <p class="font-bold text-slate-700 text-base">No Potential Matches Discovered</p>
-                            <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">We haven't found opposing item reports with sufficient similarity yet. When a matching item is logged, the AI matching engine will automatically pair them.</p>
-                        </div>
-                    `;
-                }
-            } catch (err) {
-                content.innerHTML = `
-                    <div class="py-8 text-center text-slate-500">
-                        <p class="font-bold text-rose-600 text-sm">Failed to retrieve AI matches</p>
-                        <p class="text-xs text-slate-400 mt-1">Standard registry items remain accessible.</p>
-                    </div>
-                `;
-            }
-        }
-
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            let iconSvg = type === 'success' ? `<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>` : `<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
-            let bgClass = type === 'success' ? 'bg-slate-950 border-l-4 border-emerald-500' : 'bg-rose-600 border-l-4 border-rose-800';
-
-            toast.className = `flex items-center gap-3 ${bgClass} text-white px-5 py-4 rounded-xl shadow-2xl transform translate-y-12 opacity-0 transition-all duration-300 min-w-[300px] font-semibold text-sm animate__animated animate__fadeInUp animate__fast`;
-            toast.innerHTML = `<div class="shrink-0 flex items-center justify-center">${iconSvg}</div><span>${message}</span>`;
-
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.add('translate-y-12', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-
-        document.getElementById('reportForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('reportSubmitBtn');
-            const originalContent = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-
-            try {
-                const response = await fetch('/api/report', { method: 'POST', body: new FormData(e.target) });
-                const res = await response.json();
-                if (response.ok) {
-                    showToast('Reported! Please drop the item off at the DOSS office.');
-                    toggleModal('reportModal');
-                    setTimeout(() => location.reload(), 1500);
-                } else { showToast(res.error || 'Failed to execute report pipeline.', 'error'); }
-            } catch (err) { showToast('Network error occurred.', 'error'); }
-            finally { btn.disabled = false; btn.innerHTML = originalContent; }
-        };
-
-        document.getElementById('reportLostForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('reportLostSubmitBtn');
-            const originalContent = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-
-            try {
-                const response = await fetch('/api/report-lost', { method: 'POST', body: new FormData(e.target) });
-                const res = await response.json();
-                if (response.ok) {
-                    toggleModal('reportLostModal');
-                    if (res.matches && res.matches.length > 0) {
-                        showToast(`🤖 ${res.matches.length} Potential Match${res.matches.length > 1 ? 'es' : ''} Found!`, 'success');
-                        openMatchesModal(res.item_id, document.getElementById('reportLostName').value);
                     } else {
-                        showToast('Lost item registered. AI will notify you of future matches!', 'success');
-                        setTimeout(() => location.reload(), 1500);
+
+                        content.innerHTML = matches.map(m => `
+
+                            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+
+                                <div class="flex items-center justify-between">
+
+                                    <span class="text-xs font-black text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full">${m.match_score}% Match</span>
+
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">${escapeHtml(m.matched_item_type || 'Found')}</span>
+
+                                </div>
+
+                                <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(m.matched_item_name)}</h4>
+
+                                <p class="text-xs text-slate-500">📍 ${escapeHtml(m.matched_item_location || 'Campus')}</p>
+
+                                ${m.explanation ? `<p class="text-xs text-slate-600 bg-white p-2 rounded-lg">${escapeHtml(m.explanation)}</p>` : ''}
+
+                            </div>
+
+                        `).join('');
+
                     }
-                } else { showToast(res.error || 'Failed to register lost report.', 'error'); }
-            } catch (err) { showToast('Network error occurred.', 'error'); }
-            finally { btn.disabled = false; btn.innerHTML = originalContent; }
-        };
+
+                }
+
+            } catch (err) {
+
+                content.innerHTML = `<div class="p-4 text-center text-xs text-rose-600 font-bold">Failed to load matches.</div>`;
+
+            }
+
+        }
+
+
+
+        // Claim
+
+        function openClaimModal(id, name) {
+
+            document.getElementById('claimItemId').value = id;
+
+            document.getElementById('claimItemNameDisplay').innerText = name;
+
+            toggleModal('claimModal');
+
+        }
+
+
 
         document.getElementById('claimForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('claimSubmitBtn');
-            const originalContent = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
-            const data = {
-                item_id: document.getElementById('modalItemId').value,
-                student_id: document.getElementById('claimStudentId').value,
-                student_email: document.getElementById('claimEmail').value,
-                phone: document.getElementById('claimPhone').value,
-                proof_description: document.getElementById('claimVerification').value
-            };
+            e.preventDefault();
+
+            const btn = document.getElementById('claimSubmitBtn');
+
+            btn.disabled = true;
+
+
 
             try {
+
                 const response = await fetch('/api/claim', {
+
                     method: 'POST',
+
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+
+                    body: JSON.stringify({
+
+                        item_id: document.getElementById('claimItemId').value,
+
+                        student_id: document.getElementById('claimStudentId').value,
+
+                        phone: document.getElementById('claimPhone').value,
+
+                        proof_description: document.getElementById('claimProof').value,
+
+                    })
+
                 });
-                if (response.ok) {
-                    showToast('Claim query successfully registered!', 'success');
-                    document.getElementById('claimFormContainer').classList.add('hidden');
-                    document.getElementById('claimSuccess').classList.remove('hidden');
+
+                const res = await response.json();
+
+                if (response.ok && res.status === 'success') {
+
+                    showToast('Claim submitted for administrator review!');
+
+                    toggleModal('claimModal');
+
+                    setTimeout(() => location.reload(), 1200);
+
                 } else {
-                    showToast('Failed to deploy claim properties.', 'error');
-                    btn.disabled = false; btn.innerHTML = originalContent;
+
+                    showToast(res.error || 'Failed to submit claim.', 'error');
+
                 }
-            } catch (err) { showToast('Network error encountered.', 'error'); btn.disabled = false; btn.innerHTML = originalContent; }
+
+            } catch (err) {
+
+                showToast('Network error submitting claim.', 'error');
+
+            } finally {
+
+                btn.disabled = false;
+
+            }
+
         };
+
+
+
+        // Report Forms
+
+        document.getElementById('reportForm').onsubmit = async (e) => {
+
+            e.preventDefault();
+
+            const btn = document.getElementById('reportSubmitBtn');
+
+            btn.disabled = true;
+
+
+
+            try {
+
+                const response = await fetch('/api/report', { method: 'POST', body: new FormData(e.target) });
+
+                const res = await response.json();
+
+                if (response.ok) {
+
+                    showToast('Found report registered!');
+
+                    toggleModal('reportModal');
+
+                    setTimeout(() => location.reload(), 1200);
+
+                } else {
+
+                    showToast(res.error || 'Submission failed.', 'error');
+
+                }
+
+            } catch (err) {
+
+                showToast('Network error submitting report.', 'error');
+
+            } finally {
+
+                btn.disabled = false;
+
+            }
+
+        };
+
+
+
+        document.getElementById('reportLostForm').onsubmit = async (e) => {
+
+            e.preventDefault();
+
+            const btn = document.getElementById('reportLostSubmitBtn');
+
+            btn.disabled = true;
+
+
+
+            try {
+
+                const response = await fetch('/api/report-lost', { method: 'POST', body: new FormData(e.target) });
+
+                const res = await response.json();
+
+                if (response.ok) {
+
+                    toggleModal('reportLostModal');
+
+                    showToast('Lost item registered!');
+
+                    setTimeout(() => location.reload(), 1200);
+
+                } else {
+
+                    showToast(res.error || 'Submission failed.', 'error');
+
+                }
+
+            } catch (err) {
+
+                showToast('Network error submitting report.', 'error');
+
+            } finally {
+
+                btn.disabled = false;
+
+            }
+
+        };
+
     </script>
 
-    <script type="module">
-        import { inject } from 'https://cdn.jsdelivr.net/npm/@vercel/analytics@1/dist/index.mjs';
-        inject();
-    </script>
 </body>
+
 </html>
