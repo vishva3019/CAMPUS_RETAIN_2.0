@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ code }} | Campus Retain</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    {% include "partials/theme.html" %}
+    <style>body { font-family: var(--font-sans); }</style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex items-center justify-center px-4">
+    <main class="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.05)] p-10 text-center">
+        <div class="text-5xl font-black text-violet-600">{{ code }}</div>
+        <p class="mt-4 text-slate-600 font-medium">{{ message }}</p>
+        <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="javascript:history.back()" class="px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50">Go back</a>
+            <a href="{{ url_for('student.index') }}" class="px-5 py-3 rounded-xl bg-slate-950 text-white text-sm font-bold hover:bg-slate-800">Home</a>
+        </div>
+    </main>
+</body>
+</html>

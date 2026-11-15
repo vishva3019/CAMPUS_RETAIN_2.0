@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "partials/simple_head.html" %}
+    <title>Pickup desk | {{ college.display_name }}</title>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+    {% set page_label = "Pickup desk · " ~ college.display_name %}
+    {% include "partials/simple_header.html" %}
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <section>
+            <h1 class="text-xl font-bold">Waiting for pickup</h1>
+            <p class="text-sm text-slate-500 mt-1">Check the student's college ID card, then enter the 6-digit code they received by email. After {{ max_attempts }} wrong codes the student has to send themselves a new one from <em>My activity</em>.</p>
+            <form method="GET" class="mt-4 flex gap-2">
+                <input type="search" name="q" value="{{ q }}" placeholder="Search item, email or student ID" aria-label="Search" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500">
+                <button class="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-900 text-white">Search</button>
+            </form>
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+            {% for c in claims %}
+            <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">
+                <img src="{{ photo_url(c.item) }}" alt="" class="w-16 h-16 rounded-lg object-cover bg-slate-100 shrink-0">
+                <div class="flex-1 min-w-0">
+                    <div class="font-semibold">{{ c.item.name }}</div>
+                    <div class="text-xs text-slate-500 mt-1">{{ c.student_email }} · ID {{ c.student_id }}{% if c.phone %} · {{ c.phone }}{% endif %}</div>
+                    <div class="text-xs text-slate-500 mt-1">Approved {{ c.reviewed_at.strftime('%d %b %Y') if c.reviewed_at else '' }}{% if c.item.collection_point %} · at {{ c.item.collection_point.name }}{% endif %}</div>
+                    {% if c.pickup_code_attempts %}<div class="text-xs text-amber-700 mt-1">{{ c.pickup_code_attempts }} wrong code{{ 's' if c.pickup_code_attempts != 1 }} entered</div>{% endif %}
+                </div>
+                <form method="POST" action="{{ url_for('desk.verify', claim_id=c.id, q=q or None) }}" class="flex gap-2 shrink-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="off" placeholder="6-digit code" aria-label="Pickup code for {{ c.item.name }}" class="w-32 border border-slate-200 rounded-lg px-3 py-2 text-sm tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    <button class="px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Hand over</button>
+                </form>
+            </div>
+            {% else %}
+            <p class="p-8 text-center text-sm text-slate-500">{% if q %}Nothing waiting for pickup matches “{{ q }}”.{% else %}No approved items are waiting for pickup.{% endif %}</p>
+            {% endfor %}
+        </section>
+
+        {% if pagination.pages > 1 %}
+        <nav class="flex items-center justify-center gap-3 text-sm font-semibold" aria-label="Pages">
+            {% if pagination.has_prev %}<a class="px-3 py-2 rounded-lg border border-slate-200 bg-white" href="{{ url_for('desk.index', page=pagination.prev_num, q=q or None) }}">← Previous</a>{% endif %}
+            <span class="text-slate-500">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            {% if pagination.has_next %}<a class="px-3 py-2 rounded-lg border border-slate-200 bg-white" href="{{ url_for('desk.index', page=pagination.next_num, q=q or None) }}">Next →</a>{% endif %}
+        </nav>
+        {% endif %}
+
+        <section class="bg-white border border-slate-200 rounded-xl">
+            <h2 class="px-5 py-4 border-b border-slate-200 font-bold">Recently handed over</h2>
+            {% for c in recent %}
+            <div class="px-5 py-3 border-b border-slate-100 last:border-0 text-sm flex flex-col sm:flex-row sm:justify-between gap-1">
+                <span><span class="font-semibold">{{ c.item.name }}</span> to {{ c.student_email }}</span>
+                <span class="text-xs text-slate-500">{{ c.collected_at.strftime('%d %b, %H:%M') }} UTC{% if c.collected_by %} · by {{ c.collected_by.email }}{% endif %}</span>
+            </div>
+            {% else %}
+            <p class="p-6 text-sm text-slate-500">No handovers yet.</p>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "partials/simple_head.html" %}
+    <title>My activity | {{ college.display_name }}</title>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+    {% set page_label = "My activity" %}
+    {% include "partials/simple_header.html" %}
+    {% set claim_labels = {'pending': 'Under review', 'approved': 'Approved: ready to collect', 'rejected': 'Not approved', 'withdrawn': 'Withdrawn', 'collected': 'Collected', 'closed': 'Closed'} %}
+    {% set claim_colors = {'pending': 'bg-amber-50 text-amber-700', 'approved': 'bg-emerald-50 text-emerald-700', 'collected': 'bg-slate-100 text-slate-600', 'rejected': 'bg-rose-50 text-rose-700'} %}
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <section class="bg-white border border-slate-200 rounded-xl">
+            <h2 class="px-5 py-4 border-b border-slate-200 font-bold">My claims</h2>
+            {% for c in claims %}
+            <div class="p-5 border-b border-slate-100 last:border-0 flex flex-col sm:flex-row sm:items-start gap-3">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold">{{ c.item.name }}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-semibold {{ claim_colors.get(c.status, 'bg-slate-100 text-slate-600') }}">{{ claim_labels.get(c.status, c.status) }}</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">Claimed {{ c.timestamp.strftime('%d %b %Y') }}{% if c.collected_at %} · collected {{ c.collected_at.strftime('%d %b %Y') }}{% endif %}</div>
+                    {% if c.review_remarks and c.status in ('rejected', 'approved') %}<div class="text-sm text-slate-600 mt-2">Staff: {{ c.review_remarks }}</div>{% endif %}
+                    {% if c.status == 'approved' %}
+                    <div class="text-sm text-slate-700 mt-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+                        {% if c.item.collection_point %}{{ c.item.collection_point.pickup_text() }}{% else %}{{ college.pickup_instructions or ("Collect it from " ~ college.support_office ~ ".") if (college.pickup_instructions or college.support_office) else "Staff will contact you with pickup details." }}{% endif %}
+                        Show the 6-digit pickup code from your email and your college ID card.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="flex gap-2 shrink-0">
+                    {% if c.status == 'approved' %}
+                    <form method="POST" action="{{ url_for('student.new_pickup_code', claim_id=c.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="px-3 py-2 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50">Email a new pickup code</button>
+                    </form>
+                    {% elif c.status == 'pending' %}
+                    <form method="POST" action="{{ url_for('student.withdraw_claim_view', claim_id=c.id) }}" onsubmit="return confirm('Withdraw this claim? Someone else can then claim the item.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="px-3 py-2 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50">Withdraw</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <p class="p-6 text-sm text-slate-500">You haven't claimed anything. If you see your item on the <a class="text-violet-600 font-semibold" href="{{ url_for('student.dashboard') }}">found items</a> page, claim it there.</p>
+            {% endfor %}
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-xl">
+            <h2 class="px-5 py-4 border-b border-slate-200 font-bold">My reports</h2>
+            {% for item in reports %}
+            <div class="p-5 border-b border-slate-100 last:border-0 flex flex-col sm:flex-row sm:items-center gap-3">
+                <img src="{{ photo_url(item) }}" alt="" class="w-14 h-14 rounded-lg object-cover bg-slate-100 shrink-0">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold">{{ item.name }}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-semibold {% if item.kind == 'lost' %}bg-rose-50 text-rose-700{% else %}bg-violet-50 text-violet-700{% endif %}">{{ 'Lost' if item.kind == 'lost' else 'Found' }}</span>
+                        {% if item.kind == 'lost' %}
+                        <span class="text-xs text-slate-500">{{ 'Still missing' if item.status == 'Available' else 'Got it back' }}</span>
+                        {% else %}
+                        <span class="text-xs text-slate-500">{{ {'Available': 'Waiting for its owner', 'Pending': 'Claim under review', 'Claimed': 'Owner found, awaiting pickup', 'Returned': 'Returned to its owner'}.get(item.status, item.status) }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">{{ item.location }} · reported {{ item.date_found.strftime('%d %b %Y') }}</div>
+                </div>
+                {% if item.kind == 'lost' and item.status == 'Available' %}
+                <div class="flex gap-2 shrink-0">
+                    <form method="POST" action="{{ url_for('student.close_lost_report_view', item_id=item.id, action='found') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="px-3 py-2 text-sm font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">I got it back</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('student.close_lost_report_view', item_id=item.id, action='withdraw') }}" onsubmit="return confirm('Remove this lost-item report?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="px-3 py-2 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50">Remove</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <p class="p-6 text-sm text-slate-500">You haven't reported any found or lost items yet.</p>
+            {% endfor %}
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-xl">
+            <h2 class="px-5 py-4 border-b border-slate-200 font-bold">Notifications</h2>
+            {% for n in notes %}
+            <div class="px-5 py-4 border-b border-slate-100 last:border-0 {% if n.id in unread_ids %}bg-violet-50/50{% endif %}">
+                <div class="flex items-center gap-2">
+                    {% if n.id in unread_ids %}<span class="w-2 h-2 rounded-full bg-violet-600 shrink-0" aria-label="New"></span>{% endif %}
+                    {% if n.link and n.link.startswith('/') and not n.link.startswith('//') %}<a href="{{ n.link }}" class="font-semibold text-sm hover:text-violet-600">{{ n.title }}</a>{% else %}<span class="font-semibold text-sm">{{ n.title }}</span>{% endif %}
+                    <span class="ml-auto text-xs text-slate-400 shrink-0">{{ n.created_at.strftime('%d %b, %H:%M') }} UTC</span>
+                </div>
+                {% if n.body %}<p class="text-sm text-slate-600 mt-1">{{ n.body }}</p>{% endif %}
+            </div>
+            {% else %}
+            <p class="p-6 text-sm text-slate-500">No notifications yet.</p>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>

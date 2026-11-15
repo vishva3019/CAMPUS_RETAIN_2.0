@@ -1,0 +1,15 @@
+.env
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+instance/
+.DS_Store
+.vercel
+
+# Local design samples (not shipped)
+static/samples/
+
+# Page screenshots (local)
+screenshots/

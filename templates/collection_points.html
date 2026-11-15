@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "partials/simple_head.html" %}
+    <title>Collection points | {{ college.display_name }}</title>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+    {% set page_label = "Collection points · " ~ college.display_name %}
+    {% set field = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 mt-1" %}
+    {% include "partials/simple_header.html" %}
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <section>
+            <h1 class="text-xl font-bold">Collection points</h1>
+            <p class="text-sm text-slate-500 mt-1">Places where found items are handed in and collected, such as a security cabin or the student services desk. Students pick one when they report a found item, and approved claimants are told where to go.</p>
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+            {% for p in points %}
+            <div class="p-5 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold">{{ p.name }}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-semibold {% if p.is_active %}bg-emerald-50 text-emerald-700{% else %}bg-slate-100 text-slate-500{% endif %}">{{ 'Open' if p.is_active else 'Closed' }}</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">{% if p.campus %}{{ p.campus.name }} campus · {% endif %}{{ p.opening_hours or 'No hours set' }} · {{ held.get(p.id, 0) }} item{{ 's' if held.get(p.id, 0) != 1 }} held</div>
+                    {% if p.description %}<div class="text-sm text-slate-600 mt-1">{{ p.description }}</div>{% endif %}
+                </div>
+                <form method="POST" action="{{ url_for('admin.toggle_collection_point', point_id=p.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="px-3 py-2 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50">{{ 'Close' if p.is_active else 'Reopen' }}</button>
+                </form>
+            </div>
+            {% else %}
+            <p class="p-8 text-center text-sm text-slate-500">No collection points yet. Until you add one, students are pointed to {{ college.support_office or "your lost-and-found office" }}.</p>
+            {% endfor %}
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-xl p-5">
+            <h2 class="font-bold">Add a collection point</h2>
+            <form method="POST" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label class="text-sm font-medium">Name<input name="name" required maxlength="120" placeholder="e.g. Main gate security cabin" class="{{ field }}"></label>
+                <label class="text-sm font-medium">Opening hours<input name="opening_hours" maxlength="160" placeholder="e.g. Mon–Sat, 9 am – 5 pm" class="{{ field }}"></label>
+                {% if campuses %}
+                <label class="text-sm font-medium">Campus
+                    <select name="campus_id" class="{{ field }}"><option value="">All campuses</option>{% for c in campuses %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select>
+                </label>
+                {% endif %}
+                <label class="text-sm font-medium md:col-span-2">Directions (optional)<textarea name="description" maxlength="1000" rows="2" class="{{ field }}"></textarea></label>
+                <div class="md:col-span-2"><button class="px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-700">Add collection point</button></div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

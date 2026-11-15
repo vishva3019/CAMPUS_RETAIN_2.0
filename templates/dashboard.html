@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CampusRetain | Alliance University</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ college.display_name }} | Campus Retain</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% include "partials/theme.html" %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: var(--font-sans); }
         .vibrant-bg {
             background: linear-gradient(-45deg, #eef2ff, #f5f3ff, #fdf2f8, #f0fdf4);
             background-size: 400% 400%;
@@ -27,26 +28,32 @@
         }
     </style>
 </head>
-<body class="bg-slate-50/50 text-slate-900 scroll-smooth min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-900 scroll-smooth min-h-screen flex flex-col">
 
     <nav class="sticky top-0 z-50 border-b border-slate-100 glass-nav transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="flex items-center space-x-3 cursor-pointer group" onclick="location.href='/'">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-3">
+            <a href="{{ url_for('student.dashboard') }}" class="flex items-center space-x-3 cursor-pointer group">
                 <div class="relative w-10 h-10 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-[0_4px_12px_rgba(109,40,217,0.3)] transform transition duration-300 group-hover:scale-110 group-hover:rotate-3">
                     <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                     </svg>
                 </div>
-                <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent transform transition duration-300 group-hover:translate-x-0.5">
+                <span class="hidden sm:inline text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent transform transition duration-300 group-hover:translate-x-0.5">
                     Campus<span class="text-violet-600">Retain</span>
                 </span>
-            </div>
+            </a>
             
-            <div class="flex items-center gap-5">
-                <span class="hidden md:inline text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200/60 px-3.5 py-1.5 rounded-full shadow-inner">{{ user_email }}</span>
-                <button onclick="toggleModal('reportModal')"
-                    class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-6 py-2.5 rounded-full font-bold text-sm hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 shadow-[0_4px_15px_rgba(109,40,217,0.25)] hover:shadow-[0_6px_20px_rgba(109,40,217,0.4)] transform active:scale-[0.98]">Report Found</button>
-                <a href="{{ url_for('logout') }}" class="text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-rose-600 transition pl-3 border-l border-slate-200">Logout</a>
+            <div class="flex items-center gap-3 sm:gap-5 whitespace-nowrap">
+                <span class="hidden md:inline text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200/60 px-3.5 py-1.5 rounded-full shadow-inner" title="{{ college.name }}">{{ user_email }}</span>
+                {% if is_staff %}<a href="{{ url_for('admin.dashboard') }}" class="text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-violet-600 transition">Admin</a>{% endif %}
+                {% if can_desk %}<a href="{{ url_for('desk.index') }}" class="hidden sm:inline text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-violet-600 transition">Pickup desk</a>{% endif %}
+                <a href="{{ url_for('student.activity') }}" class="relative text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-violet-600 transition"><span class="sm:hidden">Me</span><span class="hidden sm:inline">My activity</span>{% if unread %}<span class="absolute -top-2 -right-4 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] leading-[18px] text-center" aria-label="{{ unread }} unread">{{ unread }}</span>{% endif %}</a>
+                {% if can_report %}
+                <button onclick="openReport('found')"
+                    class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-4 sm:px-6 py-2.5 rounded-full font-bold text-sm hover:from-violet-700 hover:to-indigo-700 transition-all duration-300 shadow-[0_4px_15px_rgba(109,40,217,0.25)] hover:shadow-[0_6px_20px_rgba(109,40,217,0.4)] transform active:scale-[0.98]">Report<span class="hidden sm:inline">&nbsp;item</span></button>
+                {% endif %}
+                <a href="{{ url_for('auth.logout') }}" class="text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-rose-600 transition pl-3 border-l border-slate-200">Log out</a>
+            </div>
         </div>
     </nav>
 
@@ -55,28 +62,39 @@
         <h1 class="text-4xl md:text-6xl font-black tracking-tight text-slate-900 relative z-10 animate__animated animate__fadeInDown">
             Lost it? <span class="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Find it.</span>
         </h1>
-        <p class="mt-3 text-slate-500 font-medium text-sm md:text-base relative z-10 animate__animated animate__fadeIn animate__delay-1s">Alliance University Lost and Found Management System</p>
+        <p class="mt-3 text-slate-500 font-medium text-sm md:text-base relative z-10 animate__animated animate__fadeIn animate__delay-1s">{{ college.name }} · Lost &amp; Found</p>
         
-        <div class="mt-10 flex flex-col md:flex-row items-center justify-center gap-3 max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100/80 transition-all duration-300 focus-within:ring-2 ring-violet-500 focus-within:shadow-[0_20px_50px_rgba(109,40,217,0.1)] relative z-10 animate__animated animate__fadeInUp">
+        <form method="GET" action="{{ url_for('student.dashboard') }}" role="search" data-view="{{ view }}" class="mt-10 flex flex-col md:flex-row items-center justify-center gap-3 max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100/80 transition-all duration-300 focus-within:ring-2 ring-violet-500 focus-within:shadow-[0_20px_50px_rgba(109,40,217,0.1)] relative z-10 animate__animated animate__fadeInUp">
             <div class="flex items-center w-full px-3 gap-2">
                 <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Search items by name (e.g. 'iPhone', 'Keys')..." class="w-full py-3 outline-none rounded-xl text-sm font-medium text-slate-700 placeholder:text-slate-400">
+                <input type="search" id="searchInput" name="q" value="{{ q }}" onkeyup="filterItems()" aria-label="Search items" placeholder="Search by name, category or place (e.g. 'iPhone', 'Library')" class="w-full py-3 outline-none rounded-xl text-sm font-medium text-slate-700 placeholder:text-slate-400">
             </div>
-            <button class="w-full md:w-auto bg-slate-950 text-white px-8 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition shadow-md shrink-0">Search</button>
-        </div>
+            {% if view == 'lost' %}<input type="hidden" name="view" value="lost">{% endif %}
+            <button type="submit" class="w-full md:w-auto bg-slate-950 text-white px-8 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition shadow-md shrink-0">Search</button>
+        </form>
     </header>
 
-    <main id="browse" class="max-w-7xl mx-auto px-6 py-16 flex-grow w-full">
-        <h2 class="text-2xl font-extrabold tracking-tight text-slate-800 mb-8 flex items-center gap-2">
+    <main id="browse" class="max-w-7xl mx-auto px-4 sm:px-6 py-12 flex-grow w-full">
+        {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}
+        <div role="status" class="mb-6 px-4 py-3 rounded-xl text-sm font-semibold border {% if category == 'error' %}bg-rose-50 border-rose-200 text-rose-700{% else %}bg-emerald-50 border-emerald-200 text-emerald-700{% endif %}">{{ message }}</div>
+        {% endfor %}{% endwith %}
+        <div class="flex gap-2 mb-8" role="tablist">
+            <a role="tab" aria-selected="{{ 'true' if view == 'found' else 'false' }}" href="{{ url_for('student.dashboard', q=q or None) }}" class="px-5 py-2.5 rounded-full text-sm font-bold border {% if view == 'found' %}bg-slate-950 text-white border-slate-950{% else %}bg-white text-slate-600 border-slate-200 hover:bg-slate-50{% endif %}">Found items</a>
+            <a role="tab" aria-selected="{{ 'true' if view == 'lost' else 'false' }}" href="{{ url_for('student.dashboard', view='lost', q=q or None) }}" class="px-5 py-2.5 rounded-full text-sm font-bold border {% if view == 'lost' %}bg-slate-950 text-white border-slate-950{% else %}bg-white text-slate-600 border-slate-200 hover:bg-slate-50{% endif %}">Lost reports</a>
+        </div>
+        <h2 class="text-2xl font-extrabold tracking-tight text-slate-800 mb-8 flex items-center gap-2 flex-wrap">
             <span class="w-2.5 h-6 bg-violet-600 rounded-full inline-block"></span>
-            Recently Found Items
+            {% if q %}Results for “{{ q }}”{% elif view == 'lost' %}Items people are looking for{% else %}Recently Found Items{% endif %}
+            <span class="text-sm font-semibold text-slate-400 ml-1">{{ pagination.total }}</span>
+            {% if q %}<a href="{{ url_for('student.dashboard', view=view if view == 'lost' else None) }}" class="ml-auto text-xs font-bold text-violet-600 hover:underline">Clear search</a>{% endif %}
         </h2>
+        {% if view == 'lost' %}<p class="-mt-5 mb-8 text-sm text-slate-500">Seen one of these? Tap <strong>I found this</strong> to report it. The owner is told straight away and can claim it.</p>{% endif %}
         
         <div id="itemGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {% for item in items %}
-            <div class="card bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgba(109,40,217,0.06)] transform transition-all duration-300 hover:-translate-y-1 group" data-name="{{ item.name }}">
+            <div class="card bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgba(109,40,217,0.06)] transform transition-all duration-300 hover:-translate-y-1 group" data-name="{{ item.name }} {{ item.category or '' }} {{ item.location or '' }}">
                 <div class="relative overflow-hidden aspect-[4/3] bg-slate-50">
-                    <img src="{{ item.image_data if item.image_data else 'https://via.placeholder.com/400x300?text=No+Image+Provided' }}"
+                    <img loading="lazy" alt="{{ item.name }}" src="{{ photo_url(item) }}"
                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                     {% if item.status == 'Pending' %}
                     <div class="absolute inset-0 bg-white/70 backdrop-blur-xs flex items-center justify-center z-10 animate__animated animate__fadeIn">
@@ -92,53 +110,93 @@
                         <span class="truncate">{{ item.location }}</span>
                     </p>
                     
-                    {% if item.status == 'Available' %}
-                    <button onclick="openClaimModal('{{ item.id }}', '{{ item.name }}')"
+                    {% if item.description %}<p class="text-slate-500 text-xs mt-2 line-clamp-2">{{ item.description }}</p>{% endif %}
+                    {% if item.occurred_on %}<p class="text-slate-400 text-[11px] mt-1">{{ 'Lost' if item.kind == 'lost' else 'Found' }} on {{ item.occurred_on.strftime('%d %b %Y') }}</p>{% endif %}
+                    {% if item.collection_point %}<p class="text-slate-400 text-[11px] mt-1">Held at {{ item.collection_point.name }}</p>{% endif %}
+                    {% if item.kind == 'lost' %}
+                        {% if item.reported_by_id == current_user.id %}
+                        <a href="{{ url_for('student.activity') }}" class="block text-center w-full mt-5 py-3 bg-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider rounded-xl border border-slate-200/30">Your report</a>
+                        {% elif can_report %}
+                        <button data-id="{{ item.id }}" data-name="{{ item.name }}" data-category="{{ item.category }}" onclick="openReport('found', this.dataset)"
+                            class="w-full mt-5 py-3 bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-emerald-700 transition shadow-md">I found this</button>
+                        {% endif %}
+                    {% elif item.status == 'Available' and can_claim and item.reported_by_id != current_user.id %}
+                    <button data-id="{{ item.id }}" data-name="{{ item.name }}" onclick="openClaimModal(this.dataset.id, this.dataset.name)"
                         class="w-full mt-5 py-3 bg-slate-950 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-violet-600 transition-all duration-300 shadow-md group-hover:shadow-[0_8px_20px_rgba(109,40,217,0.2)] flex items-center justify-center gap-1 transform active:scale-[0.98]">
                         Claim Property
                     </button>
                     {% else %}
-                    <button disabled class="w-full mt-5 py-3 bg-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider rounded-xl cursor-not-allowed border border-slate-200/30">Claimed</button>
+                    {% set labels = {'Available': 'Reported by you' if item.reported_by_id == current_user.id else 'Available', 'Pending': 'Under review', 'Claimed': 'Claimed', 'Returned': 'Returned'} %}
+                    <button disabled class="w-full mt-5 py-3 bg-slate-100 text-slate-400 text-xs font-bold uppercase tracking-wider rounded-xl cursor-not-allowed border border-slate-200/30">{{ labels.get(item.status, item.status) }}</button>
                     {% endif %}
                 </div>
             </div>
             {% else %}
             <div class="col-span-full py-20 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-3xl bg-white/50 animate__animated animate__fadeIn">
                 <svg class="w-16 h-16 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                <p class="text-lg font-bold text-slate-600">No active discoveries listed</p>
-                <p class="text-xs font-medium text-slate-400 mt-0.5">When items are recorded on campus, they will appear in this channel.</p>
+                <p class="text-lg font-bold text-slate-600">{% if q %}No items match “{{ q }}”{% elif view == 'lost' %}No open lost-item reports{% else %}No found items yet{% endif %}</p>
+                <p class="text-xs font-medium text-slate-400 mt-0.5">{% if q %}Try a different word, or clear the search.{% elif view == 'lost' %}Lost something? Use “Report item” to tell people what to look for.{% else %}When someone at {{ college.display_name }} reports a found item, it will appear here.{% endif %}</p>
             </div>
             {% endfor %}
         </div>
+
+        {% if pagination.pages > 1 %}
+        <nav class="mt-10 flex items-center justify-center gap-3 text-sm font-bold" aria-label="Pages">
+            {% if pagination.has_prev %}<a class="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50" href="{{ url_for('student.dashboard', page=pagination.prev_num, q=q or None, view=view if view == 'lost' else None) }}">← Newer</a>{% endif %}
+            <span class="text-slate-500">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            {% if pagination.has_next %}<a class="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50" href="{{ url_for('student.dashboard', page=pagination.next_num, q=q or None, view=view if view == 'lost' else None) }}">Older →</a>{% endif %}
+        </nav>
+        {% endif %}
     </main>
 
     <div id="reportModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-950/40 backdrop-blur-sm transition-all duration-300">
         <div class="bg-white w-full max-w-lg rounded-[2rem] p-8 shadow-2xl relative border border-slate-100 animate__animated animate__zoomIn animate__fast">
             <button onclick="toggleModal('reportModal')" class="absolute top-5 right-5 text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-colors duration-300"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Report Found Item</h2>
-            <p class="text-xs font-semibold text-rose-600 bg-rose-50 p-3.5 rounded-xl border border-rose-100 mt-3 mb-5 flex gap-2"><span class="shrink-0">⚠️</span><span><strong>IMPORTANT:</strong> Hand discovered items over to the DOSS office physical counter immediately following dispatch parameters.</span></p>
-            
-            <form id="reportForm" class="space-y-4">
+            <h2 id="reportTitle" class="text-2xl font-extrabold text-slate-800 tracking-tight">Report an item</h2>
+            <div class="grid grid-cols-2 gap-2 mt-4" role="radiogroup" aria-label="Report type">
+                <button type="button" data-kind="found" onclick="setKind('found')" class="kind-btn py-2.5 rounded-xl text-sm font-bold border">I found something</button>
+                <button type="button" data-kind="lost" onclick="setKind('lost')" class="kind-btn py-2.5 rounded-xl text-sm font-bold border">I lost something</button>
+            </div>
+            <p id="matchNote" class="hidden text-xs font-semibold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-100 mt-3"></p>
+            <p data-for="found" class="text-xs font-semibold text-rose-600 bg-rose-50 p-3.5 rounded-xl border border-rose-100 mt-3 mb-5 flex gap-2"><span class="shrink-0">⚠️</span><span><strong>IMPORTANT:</strong> Hand the item over to {{ "a collection point" if points else (college.support_office or "your college's lost-and-found office") }} after reporting it.</span></p>
+            <p data-for="lost" class="hidden text-xs font-semibold text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200 mt-3 mb-5">Your report is shown to students at {{ college.display_name }}. If someone finds it, you'll get an email. Don't include private details; you'll prove ownership when you claim it.</p>
+
+            <form id="reportForm" class="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="kind" id="reportKind" value="found">
+                <input type="hidden" name="lost_item_id" id="lostItemId" value="">
                 <input type="text" name="name" placeholder="Item Name *" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
                 <div class="grid grid-cols-2 gap-4">
                     <select name="category" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-semibold text-sm text-slate-600">
-                        <option>Electronics</option><option>Accessories</option><option>Books</option><option>Clothing</option><option>Other</option>
+                        {% for c in ['Electronics', 'Accessories', 'Books', 'Clothing', 'ID & Cards', 'Keys', 'Bags', 'Bottles', 'Sports', 'Other'] %}<option>{{ c }}</option>{% endfor %}
                     </select>
-                    <input type="text" name="location" placeholder="Found Location *" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
+                    <input type="text" name="location" id="reportLocation" placeholder="Where you found it *" class="border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm" required>
                 </div>
-                <textarea name="secret_detail" placeholder="Secret Identification Detail (Hidden from general public view)..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all text-sm font-medium min-h-[90px]"></textarea>
+                <textarea name="description" maxlength="2000" placeholder="Public description (colour, brand, condition)..." class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm min-h-[70px]"></textarea>
+                <label class="block text-xs font-bold text-slate-500"><span id="dateLabel">Date found</span>
+                    <input type="date" name="occurred_on" max="{{ today }}" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-medium text-sm mt-1">
+                </label>
+                {% if points %}
+                <label data-for="found" class="block text-xs font-bold text-slate-500">Where did you hand it in?
+                    <select name="collection_point_id" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all font-semibold text-sm text-slate-600 mt-1">
+                        <option value="">Not handed in yet</option>
+                        {% for p in points %}<option value="{{ p.id }}">{{ p.name }}{% if p.campus %} · {{ p.campus.name }}{% endif %}</option>{% endfor %}
+                    </select>
+                </label>
+                {% endif %}
+                <textarea data-for="found" name="secret_detail" placeholder="Private detail only staff will see, used to check claims (e.g. lock-screen photo, sticker inside the cover)" class="w-full border border-slate-200 p-3.5 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all text-sm font-medium min-h-[90px]"></textarea>
 
                 <div class="mt-1 w-full">
                     <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100/70 transition-all relative overflow-hidden group">
-                        <div id="imagePlaceholder" class="flex flex-col items-center justify-center py-5 group-hover:-translate-y-0.5 transition-transform"><svg class="w-8 h-8 mb-1.5 text-violet-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><p class="text-xs text-slate-600 font-bold">Upload Snapshot Verification</p></div>
+                        <div id="imagePlaceholder" class="flex flex-col items-center justify-center py-5 group-hover:-translate-y-0.5 transition-transform"><svg class="w-8 h-8 mb-1.5 text-violet-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><p class="text-xs text-slate-600 font-bold">Add up to {{ config.MAX_PHOTOS_PER_ITEM }} photos</p></div>
                         <img id="imagePreview" src="" class="hidden absolute inset-0 w-full h-full object-cover">
-                        <input id="image" name="image" type="file" class="hidden" accept="image/*" onchange="previewImage(event)"/>
+                        <input id="image" name="images" type="file" multiple class="hidden" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(event)"/>
                     </label>
                 </div>
 
                 <div class="flex gap-3 pt-3">
                     <button type="button" onclick="toggleModal('reportModal')" class="flex-1 font-bold text-slate-500 text-sm hover:bg-slate-100 rounded-xl transition py-3.5">Cancel</button>
-                    <button id="reportSubmitBtn" type="submit" class="flex-1 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:from-violet-700 hover:to-indigo-700 transition shadow-lg shadow-violet-100 flex justify-center items-center"><span>Submit Registry</span></button>
+                    <button id="reportSubmitBtn" type="submit" class="flex-1 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:from-violet-700 hover:to-indigo-700 transition shadow-lg shadow-violet-100 flex justify-center items-center"><span>Submit Report</span></button>
                 </div>
             </form>
         </div>
@@ -171,9 +229,43 @@
     <div id="toastContainer" class="fixed bottom-6 right-6 z-[80] flex flex-col gap-3"></div>
 
     <script>
+        const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
+        const DROP_OFF_MESSAGE = {{ ("Reported! Please hand the item to " ~ (college.support_office or "your college's lost-and-found office") ~ ".") | tojson }};
+
         function toggleModal(id) {
             const el = document.getElementById(id);
             el.classList.toggle('hidden');
+        }
+
+        const MAX_PHOTOS = {{ config.MAX_PHOTOS_PER_ITEM }};
+        function setKind(kind) {
+            document.getElementById('reportKind').value = kind;
+            document.querySelectorAll('.kind-btn').forEach(b => {
+                const on = b.dataset.kind === kind;
+                b.className = 'kind-btn py-2.5 rounded-xl text-sm font-bold border ' + (on ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600 border-slate-200');
+                b.setAttribute('aria-checked', on);
+            });
+            document.querySelectorAll('#reportModal [data-for]').forEach(el => el.classList.toggle('hidden', el.dataset.for !== kind));
+            document.getElementById('reportLocation').placeholder = kind === 'lost' ? 'Where you last had it *' : 'Where you found it *';
+            document.getElementById('dateLabel').textContent = kind === 'lost' ? 'Date lost' : 'Date found';
+        }
+
+        function openReport(kind, match) {
+            const form = document.getElementById('reportForm');
+            form.reset();
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('imagePlaceholder').classList.remove('opacity-0');
+            const note = document.getElementById('matchNote');
+            document.getElementById('lostItemId').value = match ? match.id : '';
+            if (match) {
+                form.elements['name'].value = match.name;
+                form.elements['category'].value = match.category;
+                note.textContent = 'Reporting a found item for the lost report "' + match.name + '". The owner will be told.';
+                note.classList.remove('hidden');
+            } else { note.classList.add('hidden'); }
+            document.querySelectorAll('.kind-btn').forEach(b => b.disabled = !!match);
+            setKind(kind);
+            toggleModal('reportModal');
         }
 
         function openClaimModal(id, name) {
@@ -195,6 +287,11 @@
 
         function previewImage(event) {
             const input = event.target;
+            if (input.files && input.files.length > MAX_PHOTOS) {
+                showToast('You can add up to ' + MAX_PHOTOS + ' photos.', 'error');
+                input.value = '';
+                return;
+            }
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function (e) {
@@ -213,7 +310,8 @@
             let bgClass = type === 'success' ? 'bg-slate-950 border-l-4 border-emerald-500' : 'bg-rose-600 border-l-4 border-rose-800';
 
             toast.className = `flex items-center gap-3 ${bgClass} text-white px-5 py-4 rounded-xl shadow-2xl transform translate-y-12 opacity-0 transition-all duration-300 min-w-[300px] font-semibold text-sm animate__animated animate__fadeInUp animate__fast`;
-            toast.innerHTML = `<div class="shrink-0 flex items-center justify-center">${iconSvg}</div><span>${message}</span>`;
+            toast.innerHTML = `<div class="shrink-0 flex items-center justify-center">${iconSvg}</div><span></span>`;
+            toast.querySelector('span').textContent = message;
 
             container.appendChild(toast);
             setTimeout(() => {
@@ -230,12 +328,12 @@
             btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
             try {
-                const response = await fetch('/api/report', { method: 'POST', body: new FormData(e.target) });
+                const response = await fetch('/api/report', { method: 'POST', headers: { 'X-CSRFToken': CSRF_TOKEN }, body: new FormData(e.target) });
                 if (response.ok) {
-                    showToast('Reported! Please drop the item off at the DOSS office.');
+                    showToast(document.getElementById('reportKind').value === 'lost' ? 'Lost-item report posted. We\'ll email you if someone finds it.' : DROP_OFF_MESSAGE);
                     toggleModal('reportModal');
                     setTimeout(() => location.reload(), 1500);
-                } else { showToast('Failed to execute report pipeline.', 'error'); }
+                } else { const err = await response.json().catch(() => ({})); showToast(err.error || 'Failed to save the report.', 'error'); }
             } catch (err) { showToast('Network error occurred.', 'error'); }
             finally { btn.disabled = false; btn.innerHTML = originalContent; }
         };
@@ -250,7 +348,6 @@
             const data = {
                 item_id: document.getElementById('modalItemId').value,
                 student_id: document.getElementById('claimStudentId').value,
-                student_email: document.getElementById('claimEmail').value,
                 phone: document.getElementById('claimPhone').value,
                 proof_description: document.getElementById('claimVerification').value
             };
@@ -258,7 +355,7 @@
             try {
                 const response = await fetch('/api/claim', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
                     body: JSON.stringify(data)
                 });
                 if (response.ok) {
@@ -266,7 +363,8 @@
                     document.getElementById('claimFormContainer').classList.add('hidden');
                     document.getElementById('claimSuccess').classList.remove('hidden');
                 } else {
-                    showToast('Failed to deploy claim properties.', 'error');
+                    const err = await response.json().catch(() => ({}));
+                    showToast(err.error || 'Failed to submit the claim.', 'error');
                     btn.disabled = false; btn.innerHTML = originalContent;
                 }
             } catch (err) { showToast('Network error encountered.', 'error'); btn.disabled = false; btn.innerHTML = originalContent; }

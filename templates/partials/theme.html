@@ -1,0 +1,28 @@
+{# Mist & Sapphire theme for the classic (server-rendered) pages. Remaps the colour
+   names these pages use onto the same sapphire blue and cool slate as the React app. #}
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f3f6fb">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style type="text/tailwindcss">
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, sans-serif;
+  --color-ivory: #f3f6fb;
+  --color-brand-50: #eff6ff; --color-brand-100: #dbeafe; --color-brand-200: #bfdbfe; --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa; --color-brand-500: #3b82f6; --color-brand-600: #2563eb; --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af; --color-brand-900: #1e3a8a; --color-brand-950: #172554;
+  --color-violet-50: #eff6ff; --color-violet-100: #dbeafe; --color-violet-200: #bfdbfe; --color-violet-300: #93c5fd;
+  --color-violet-400: #60a5fa; --color-violet-500: #3b82f6; --color-violet-600: #2563eb; --color-violet-700: #1d4ed8;
+  --color-violet-800: #1e40af; --color-violet-900: #1e3a8a; --color-violet-950: #172554;
+  --color-indigo-50: #eff6ff; --color-indigo-100: #dbeafe; --color-indigo-200: #bfdbfe; --color-indigo-300: #93c5fd;
+  --color-indigo-400: #60a5fa; --color-indigo-500: #3b82f6; --color-indigo-600: #2563eb; --color-indigo-700: #1d4ed8;
+  --color-indigo-800: #1e40af; --color-indigo-900: #1e3a8a; --color-indigo-950: #172554;
+  --color-purple-50: #eff6ff; --color-purple-100: #dbeafe; --color-purple-500: #3b82f6; --color-purple-600: #2563eb; --color-purple-700: #1d4ed8;
+  --color-cyan-300: #93c5fd; --color-cyan-400: #60a5fa; --color-cyan-500: #3b82f6; --color-cyan-600: #2563eb; --color-cyan-950: #172554;
+  --color-stone-50: #f8fafc; --color-stone-100: #f1f5f9; --color-stone-200: #e2e8f0; --color-stone-300: #cbd5e1; --color-stone-400: #94a3b8; --color-stone-500: #64748b; --color-stone-600: #475569; --color-stone-700: #334155; --color-stone-800: #1e293b; --color-stone-900: #0f172a; --color-stone-950: #020617;
+  --color-fuchsia-500: #3b82f6; --color-fuchsia-600: #2563eb;
+}
+body { font-family: var(--font-sans); }
+h1, h2, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+@media (max-width: 639px) { input:not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px !important; } }
+</style>

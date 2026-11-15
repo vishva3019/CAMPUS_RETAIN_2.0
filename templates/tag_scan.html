@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include "partials/simple_head.html" %}
+    <meta name="robots" content="noindex">
+    <title>Found this item? | Campus Retain</title>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+    <main class="max-w-md mx-auto px-4 py-10">
+        <div class="text-center">
+            <span class="text-lg font-extrabold tracking-tight">Campus<span class="text-violet-600">Retain</span></span>
+            <p class="text-xs text-slate-500 mt-1">{{ college.name }}</p>
+        </div>
+        <section class="mt-6 bg-white border border-slate-200 rounded-2xl p-6">
+            {% if sent %}
+            <h1 class="text-xl font-bold">Thank you!</h1>
+            <p class="mt-2 text-sm text-slate-600">The owner of <strong>{{ tag.label }}</strong> has been sent your message.</p>
+            <p class="mt-3 text-sm text-slate-600">If you can, hand the item in to {{ college.support_office or "the college's lost-and-found office" }}.</p>
+            {% else %}
+            <h1 class="text-xl font-bold">You found: {{ tag.label }}</h1>
+            <p class="mt-2 text-sm text-slate-600">This item belongs to a student at {{ college.name }}. Send them a message and we'll pass it on. You won't see who they are, and they'll only see what you write.</p>
+            {% if error %}<p role="alert" class="mt-3 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">{{ error }}</p>{% endif %}
+            <form method="POST" class="mt-4 space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label class="block text-sm font-medium">Message
+                    <textarea name="message" required minlength="5" maxlength="1000" rows="4" placeholder="e.g. Found it in the library, 2nd floor. I've left it at the front desk." class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">{{ request.form.get('message', '') }}</textarea>
+                </label>
+                <label class="block text-sm font-medium">How can they reach you? <span class="font-normal text-slate-500">(optional)</span>
+                    <input name="contact" maxlength="160" placeholder="Phone or email" class="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" value="{{ request.form.get('contact', '') }}">
+                </label>
+                <button class="w-full py-2.5 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700">Send to the owner</button>
+            </form>
+            <p class="mt-4 text-xs text-slate-500">Or hand it in to {{ college.support_office or "the college's lost-and-found office" }}.</p>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

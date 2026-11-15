@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Console | Campus Retain</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    {% include "partials/theme.html" %}
+    <style>body { font-family: var(--font-sans); }</style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+    {% set field = "w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500" %}
+    <header class="bg-white border-b border-slate-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-lg font-extrabold tracking-tight">Campus<span class="text-violet-600">Retain</span></span>
+                <span class="text-xs font-semibold text-slate-500 border-l border-slate-200 pl-3">Platform console</span>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+                <span class="hidden sm:inline text-slate-500">{{ current_user.email }}</span>
+                <a href="{{ url_for('auth.logout') }}" class="font-semibold text-slate-600 hover:text-rose-600">Log out</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div role="status" class="px-4 py-3 rounded-lg text-sm font-medium border {% if category == 'error' %}bg-rose-50 border-rose-200 text-rose-700{% else %}bg-emerald-50 border-emerald-200 text-emerald-700{% endif %}">{{ message }}</div>
+        {% endfor %}
+        {% endwith %}
+
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {% set active = colleges | selectattr('status', 'equalto', 'active') | list | length %}
+            {% set pending = colleges | selectattr('status', 'equalto', 'pending') | list | length %}
+            {% for label, value in [('Colleges', colleges|length), ('Active', active), ('Awaiting approval', pending), ('Accounts', students.values()|sum)] %}
+            <div class="bg-white border border-slate-200 rounded-xl p-4">
+                <div class="text-xs font-semibold text-slate-500">{{ label }}</div>
+                <div class="text-2xl font-bold mt-1">{{ value }}</div>
+            </div>
+            {% endfor %}
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200">
+                <h2 class="font-bold">Colleges</h2>
+            </div>
+            {% if colleges %}
+            <div class="divide-y divide-slate-100">
+                {% for c in colleges %}
+                <div class="p-5 flex flex-col lg:flex-row lg:items-start gap-4">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold">{{ c.name }}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full font-semibold {% if c.status == 'active' %}bg-emerald-50 text-emerald-700{% elif c.status == 'pending' %}bg-amber-50 text-amber-700{% else %}bg-rose-50 text-rose-700{% endif %}">{{ c.status }}</span>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-1">/c/{{ c.slug }} · {{ c.domains | map(attribute='domain') | join(', ') }}{% if c.city %} · {{ c.city }}{% endif %}</div>
+                        {% set n_acc, n_items = students.get(c.id, 0), items.get(c.id, 0) %}
+                        <div class="text-xs text-slate-500 mt-1">{{ n_acc }} account{{ 's' if n_acc != 1 }} · {{ n_items }} item{{ 's' if n_items != 1 }} · {{ returned.get(c.id, 0) }} approved or returned</div>
+                        <div class="text-xs text-slate-500 mt-1">Admins: {% for a in admins.get(c.id, []) %}{{ a.email }}{% if not a.is_verified %} (invited){% endif %}{% if not loop.last %}, {% endif %}{% else %}none yet{% endfor %}</div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <form method="POST" action="{{ url_for('platform.set_status', college_id=c.id) }}" class="flex gap-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="status" aria-label="Status for {{ c.name }}" class="border border-slate-200 rounded-lg px-2 py-2 text-sm">
+                                {% for s in statuses %}<option value="{{ s }}" {% if s == c.status %}selected{% endif %}>{{ s }}</option>{% endfor %}
+                            </select>
+                            <button class="px-3 py-2 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50">Update</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('platform.invite_admin', college_id=c.id) }}" class="flex gap-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="email" name="email" required placeholder="admin email" aria-label="New admin email for {{ c.name }}" class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-48">
+                            <button class="px-3 py-2 text-sm font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800">Invite admin</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="p-8 text-center text-sm text-slate-500">No colleges yet. Add the first one below.</p>
+            {% endif %}
+        </section>
+
+        <section class="bg-white border border-slate-200 rounded-xl p-5">
+            <h2 class="font-bold">Add a college</h2>
+            <p class="text-xs text-slate-500 mt-1">New colleges start as <strong>pending</strong>. Students can register only after you set them to active.</p>
+            <form method="POST" action="{{ url_for('platform.add_college') }}" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label class="text-sm font-medium">Name<input name="name" required maxlength="160" class="{{ field }} mt-1"></label>
+                <label class="text-sm font-medium">Slug (used in the URL)<input name="slug" required maxlength="60" pattern="[a-z0-9-]+" placeholder="e.g. mvj-ce" class="{{ field }} mt-1"></label>
+                <label class="text-sm font-medium">Short name<input name="short_name" maxlength="40" class="{{ field }} mt-1"></label>
+                <label class="text-sm font-medium">City<input name="city" maxlength="80" class="{{ field }} mt-1"></label>
+                <label class="text-sm font-medium md:col-span-2">Student email domains (comma separated)<input name="domains" required placeholder="students.example.edu.in, example.edu.in" class="{{ field }} mt-1"></label>
+                <label class="text-sm font-medium">Lost-and-found contact email<input name="contact_email" type="email" maxlength="160" class="{{ field }} mt-1"></label>
+                <label class="text-sm font-medium">Lost-and-found office<input name="support_office" maxlength="160" placeholder="e.g. Student Services, Block A" class="{{ field }} mt-1"></label>
+                <label class="text-sm font-medium md:col-span-2">Pickup instructions (sent when a claim is approved)<textarea name="pickup_instructions" maxlength="2000" rows="2" class="{{ field }} mt-1"></textarea></label>
+                <div class="md:col-span-2"><button class="px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-700">Add college</button></div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

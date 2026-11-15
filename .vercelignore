@@ -1,0 +1,11 @@
+tests/
+docs/
+venv/
+.venv/
+instance/
+__pycache__/
+.env
+.pytest_cache/
+frontend/
+static/samples/
+screenshots/
